@@ -3,16 +3,24 @@
   "WorkspaceRootPath": "C:\\dev\\StarStudio\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{AB9C488B-80B5-4C38-915F-16BD91016FB9}|Sandbox\\Sandbox.vcxproj|C:\\dev\\StarStudio\\Sandbox\\src\\Application.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{AB9C488B-80B5-4C38-915F-16BD91016FB9}|Sandbox\\Sandbox.vcxproj|solutionrelative:Sandbox\\src\\Application.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{AB9C488B-80B5-4C38-915F-16BD91016FB9}|Sandbox\\Sandbox.vcxproj|C:\\dev\\StarStudio\\Sandbox\\src\\SandboxApp.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{AB9C488B-80B5-4C38-915F-16BD91016FB9}|Sandbox\\Sandbox.vcxproj|solutionrelative:Sandbox\\src\\SandboxApp.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{74135402-CC63-4AB1-A905-8E87EACD2FA9}|StarStudio\\StarStudio.vcxproj|C:\\dev\\StarStudio\\StarStudio\\src\\Test.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{74135402-CC63-4AB1-A905-8E87EACD2FA9}|StarStudio\\StarStudio.vcxproj|solutionrelative:StarStudio\\src\\Test.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{74135402-CC63-4AB1-A905-8E87EACD2FA9}|StarStudio\\StarStudio.vcxproj|C:\\dev\\StarStudio\\StarStudio\\src\\StarStudio\\Application.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{74135402-CC63-4AB1-A905-8E87EACD2FA9}|StarStudio\\StarStudio.vcxproj|solutionrelative:StarStudio\\src\\StarStudio\\Application.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{74135402-CC63-4AB1-A905-8E87EACD2FA9}|StarStudio\\StarStudio.vcxproj|C:\\dev\\StarStudio\\StarStudio\\src\\Test.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{74135402-CC63-4AB1-A905-8E87EACD2FA9}|StarStudio\\StarStudio.vcxproj|solutionrelative:StarStudio\\src\\Test.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{74135402-CC63-4AB1-A905-8E87EACD2FA9}|StarStudio\\StarStudio.vcxproj|C:\\dev\\StarStudio\\StarStudio\\src\\StarStudio\\Core.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{74135402-CC63-4AB1-A905-8E87EACD2FA9}|StarStudio\\StarStudio.vcxproj|solutionrelative:StarStudio\\src\\StarStudio\\Core.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{74135402-CC63-4AB1-A905-8E87EACD2FA9}|StarStudio\\StarStudio.vcxproj|C:\\dev\\StarStudio\\StarStudio\\src\\StarStudio\\Application.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{74135402-CC63-4AB1-A905-8E87EACD2FA9}|StarStudio\\StarStudio.vcxproj|solutionrelative:StarStudio\\src\\StarStudio\\Application.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{74135402-CC63-4AB1-A905-8E87EACD2FA9}|StarStudio\\StarStudio.vcxproj|C:\\dev\\StarStudio\\StarStudio\\src\\StarStudio.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{74135402-CC63-4AB1-A905-8E87EACD2FA9}|StarStudio\\StarStudio.vcxproj|solutionrelative:StarStudio\\src\\StarStudio.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,45 +30,71 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Application.cpp",
-              "DocumentMoniker": "C:\\dev\\StarStudio\\Sandbox\\src\\Application.cpp",
-              "RelativeDocumentMoniker": "Sandbox\\src\\Application.cpp",
-              "ToolTip": "C:\\dev\\StarStudio\\Sandbox\\src\\Application.cpp",
-              "RelativeToolTip": "Sandbox\\src\\Application.cpp",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAVAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-01-18T20:55:49.481Z",
+              "DocumentIndex": 4,
+              "Title": "StarStudio.h",
+              "DocumentMoniker": "C:\\dev\\StarStudio\\StarStudio\\src\\StarStudio.h",
+              "RelativeDocumentMoniker": "StarStudio\\src\\StarStudio.h",
+              "ToolTip": "C:\\dev\\StarStudio\\StarStudio\\src\\StarStudio.h",
+              "RelativeToolTip": "StarStudio\\src\\StarStudio.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-01-18T21:23:36.901Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Test.cpp",
-              "DocumentMoniker": "C:\\dev\\StarStudio\\StarStudio\\src\\Test.cpp",
-              "RelativeDocumentMoniker": "StarStudio\\src\\Test.cpp",
-              "ToolTip": "C:\\dev\\StarStudio\\StarStudio\\src\\Test.cpp",
-              "RelativeToolTip": "StarStudio\\src\\Test.cpp",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAUAAAAAAAAAA==",
+              "DocumentIndex": 3,
+              "Title": "Application.cpp",
+              "DocumentMoniker": "C:\\dev\\StarStudio\\StarStudio\\src\\StarStudio\\Application.cpp",
+              "RelativeDocumentMoniker": "StarStudio\\src\\StarStudio\\Application.cpp",
+              "ToolTip": "C:\\dev\\StarStudio\\StarStudio\\src\\StarStudio\\Application.cpp",
+              "RelativeToolTip": "StarStudio\\src\\StarStudio\\Application.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAUAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-01-18T20:50:19.612Z",
+              "WhenOpened": "2025-01-18T21:10:37.131Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "Test.h",
-              "DocumentMoniker": "C:\\dev\\StarStudio\\StarStudio\\src\\Test.h",
-              "RelativeDocumentMoniker": "StarStudio\\src\\Test.h",
-              "ToolTip": "C:\\dev\\StarStudio\\StarStudio\\src\\Test.h",
-              "RelativeToolTip": "StarStudio\\src\\Test.h",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAABAAAAAAAAAA==",
+              "Title": "Application.h",
+              "DocumentMoniker": "C:\\dev\\StarStudio\\StarStudio\\src\\StarStudio\\Application.h",
+              "RelativeDocumentMoniker": "StarStudio\\src\\StarStudio\\Application.h",
+              "ToolTip": "C:\\dev\\StarStudio\\StarStudio\\src\\StarStudio\\Application.h",
+              "RelativeToolTip": "StarStudio\\src\\StarStudio\\Application.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAOAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-01-18T20:50:02.195Z",
+              "WhenOpened": "2025-01-18T21:10:08.666Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Core.h",
+              "DocumentMoniker": "C:\\dev\\StarStudio\\StarStudio\\src\\StarStudio\\Core.h",
+              "RelativeDocumentMoniker": "StarStudio\\src\\StarStudio\\Core.h",
+              "ToolTip": "C:\\dev\\StarStudio\\StarStudio\\src\\StarStudio\\Core.h",
+              "RelativeToolTip": "StarStudio\\src\\StarStudio\\Core.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-01-18T21:09:46.293Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "SandboxApp.cpp",
+              "DocumentMoniker": "C:\\dev\\StarStudio\\Sandbox\\src\\SandboxApp.cpp",
+              "RelativeDocumentMoniker": "Sandbox\\src\\SandboxApp.cpp",
+              "ToolTip": "C:\\dev\\StarStudio\\Sandbox\\src\\SandboxApp.cpp",
+              "RelativeToolTip": "Sandbox\\src\\SandboxApp.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-01-18T20:55:49.481Z",
               "EditorCaption": ""
             }
           ]
