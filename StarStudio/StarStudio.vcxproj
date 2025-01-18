@@ -14,6 +14,7 @@
     <ClInclude Include="src\StarStudio.h" />
     <ClInclude Include="src\StarStudio\Application.h" />
     <ClInclude Include="src\StarStudio\Core.h" />
+    <ClInclude Include="src\StarStudio\EntryPoint.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\StarStudio\Application.cpp" />

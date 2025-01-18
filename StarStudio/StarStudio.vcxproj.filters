@@ -24,6 +24,9 @@
     <ClInclude Include="src\StarStudio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\StarStudio\EntryPoint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\StarStudio\Application.cpp">
