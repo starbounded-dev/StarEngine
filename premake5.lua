@@ -11,6 +11,11 @@ workspace "StarStudio"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
+IncludeDir = {}
+IncludeDir["GLFW"] = "StarStudio/vendor/GLFW/include"
+
+include "StarStudio/vendor/GLFW"
+
 project "StarStudio"
 	location "StarStudio"
 	kind "SharedLib"
@@ -31,7 +36,14 @@ project "StarStudio"
 	includedirs
 	{
 		"%{prj.name}/src",
-		"%{prj.name}/vendor/spdlog/include"
+		"%{prj.name}/vendor/spdlog/include",
+		"%{IncludeDir.GLFW}"
+	}
+
+	links
+	{
+		"GLFW",
+		"opengl32.lib"
 	}
 
 	filter "system:windows"
