@@ -1,9 +1,7 @@
 #pragma once
-
+#include "sspch.h"
 #include "StarStudio/Core.h"
 
-#include <string>
-#include <functional>
 namespace StarStudio {
 	// Events in Hazel are currently blocking, meaning when an event occurs it
 	// immediately gets dispatched and must be dealt with right then an there.

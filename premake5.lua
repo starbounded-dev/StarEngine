@@ -19,6 +19,9 @@ project "StarStudio"
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
+	pchheader "sspch.h"
+	pchsource "StarStudio/src/sspch.cpp"
+
 	files
 	{
 		"%{prj.name}/src/**.h",

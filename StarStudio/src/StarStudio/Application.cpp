@@ -1,3 +1,5 @@
+#include "sspch.h"
+
 #include "Application.h"
 
 #include "StarStudio/Events/ApplicationEvent.h"
