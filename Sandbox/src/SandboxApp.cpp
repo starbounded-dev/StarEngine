@@ -9,7 +9,7 @@ public:
 	}
 	void OnUpdate() override
 	{
-		SS_INFO("ExampleLayer::Update");
+
 	}
 	void OnEvent(StarStudio::Event& event) override
 	{

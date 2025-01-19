@@ -59,7 +59,8 @@ project "StarStudio"
 		defines
 		{
 			"SS_PLATFORM_WINDOWS",
-			"SS_BUILD_DLL"
+			"SS_BUILD_DLL",
+			"GLFW_INCLUDE_NONE"
 		}
 
 		postbuildcommands
