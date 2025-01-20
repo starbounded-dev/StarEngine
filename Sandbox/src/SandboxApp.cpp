@@ -21,6 +21,7 @@ class Sandbox : public StarStudio::Application {
 public:
 	Sandbox() {
 		PushLayer(new ExampleLayer());
+		PushOverlay(new StarStudio::ImGuiLayer());
 	}
 	~Sandbox() {
 
