@@ -10,6 +10,10 @@
 	#error StarStudio only supports Windows!
 #endif
 
+#ifdef SS_DEBUG
+	#define SS_ENABLE_ASSERTS
+#endif
+
 #ifdef SS_ENABLE_ASSERTS
 	#define SS_ASSERT(x, ...) { if(!(x)) { SS_ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
 	#define SS_CORE_ASSERT(x, ...) { if(!(x)) { SS_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }

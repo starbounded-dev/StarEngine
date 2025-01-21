@@ -24,6 +24,7 @@ project "StarStudio"
 	location "StarStudio"
 	kind "SharedLib"
 	language "C++"
+	staticruntime "Off"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
@@ -58,7 +59,6 @@ project "StarStudio"
 
 	filter "system:windows"
 		cppdialect "C++17"
-		staticruntime "On"
 		systemversion "latest"
 
 		defines
@@ -74,18 +74,18 @@ project "StarStudio"
 		}
 
 	filter "configurations:Debug"
-		defines "HZ_DEBUG"
-		buildoptions "/MDd"
+		defines "SS_DEBUG"
+		runtime "Debug"
 		symbols "On"
 
 	filter "configurations:Release"
-		defines "HZ_RELEASE"
-		buildoptions "/MD"
+		defines "SS_RELEASE"
+		runtime "Release"
 		optimize "On"
 
 	filter "configurations:Dist"
-		defines "HZ_DIST"
-		buildoptions "/MD"
+		defines "SS_DIST"
+		runtime "Release"
 		optimize "On"
 
 	filter "action:vs2022"
@@ -95,6 +95,7 @@ project "Sandbox"
 	location "Sandbox"
 	kind "ConsoleApp"
 	language "C++"
+	staticruntime "Off"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
@@ -118,7 +119,6 @@ project "Sandbox"
 
 	filter "system:windows"
 		cppdialect "C++17"
-		staticruntime "On"
 		systemversion "latest"
 		defines
 		{
@@ -126,18 +126,18 @@ project "Sandbox"
 		}
 
 	filter "configurations:Debug"
-		defines "HZ_DEBUG"
-		buildoptions "/MDd"
+		defines "SS_DEBUG"
+		runtime "Debug"
 		symbols "On"
 
 	filter "configurations:Release"
-		defines "HZ_RELEASE"
-		buildoptions "/MD"
+		defines "SS_RELEASE"
+		runtime "Release"
 		optimize "On"
 
 	filter "configurations:Dist"
-		defines "HZ_DIST"
-		buildoptions "/MD"
+		defines "SS_DIST"
+		runtime "Release"
 		optimize "On"
 
 	filter "action:vs2022"
