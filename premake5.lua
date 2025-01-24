@@ -16,9 +16,12 @@ IncludeDir["GLFW"] = "StarStudio/vendor/GLFW/include"
 IncludeDir["GLAD"] = "StarStudio/vendor/GLAD/include"
 IncludeDir["imgui"] = "StarStudio/vendor/imgui"
 
-include "StarStudio/vendor/GLFW"
-include "StarStudio/vendor/GLAD"
-include "StarStudio/vendor/imgui"
+
+group "Dependencies"
+	include "StarStudio/vendor/GLFW"
+	include "StarStudio/vendor/GLAD"
+	include "StarStudio/vendor/imgui"
+group ""
 
 project "StarStudio"
 	location "StarStudio"
@@ -70,7 +73,7 @@ project "StarStudio"
 
 		postbuildcommands
 		{
-			("{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/Sandbox")
+			("{COPY} %{cfg.buildtarget.relpath} \"../bin/" .. outputdir .. "/Sandbox/\"")
 		}
 
 	filter "configurations:Debug"
