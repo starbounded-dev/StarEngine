@@ -15,6 +15,7 @@ IncludeDir = {}
 IncludeDir["GLFW"] = "StarStudio/vendor/GLFW/include"
 IncludeDir["GLAD"] = "StarStudio/vendor/GLAD/include"
 IncludeDir["imgui"] = "StarStudio/vendor/imgui"
+IncludeDir["glm"] = "StarStudio/vendor/glm"
 
 
 group "Dependencies"
@@ -38,7 +39,9 @@ project "StarStudio"
 	files
 	{
 		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp"
+		"%{prj.name}/src/**.cpp",
+		"%{prj.name}/vendor/glm/glm/**.hpp",
+		"%{prj.name}/vendor/glm/glm/**.inl"
 	}
 
 	includedirs
@@ -47,7 +50,8 @@ project "StarStudio"
 		"%{prj.name}/vendor/spdlog/include",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.GLAD}",
-		"%{IncludeDir.imgui}"
+		"%{IncludeDir.imgui}",
+		"%{IncludeDir.glm}"
 
 	}
 
@@ -112,7 +116,8 @@ project "Sandbox"
 	includedirs
 	{
 		"StarStudio/vendor/spdlog/include",
-		"StarStudio/src"
+		"StarStudio/src",
+		"%{IncludeDir.glm}"
 	}
 
 	links
