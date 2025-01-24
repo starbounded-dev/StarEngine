@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarStudio/Window.h"
+#include "StarStudio/Renderer/GraphicsContext.h"
 
 #include <GLFW/glfw3.h>
 
@@ -28,6 +29,7 @@ namespace StarStudio {
 		virtual void Shutdown();
 	private:
 		GLFWwindow* m_Window;
+		GraphicsContext* m_Context;
 
 		struct WindowData
 		{
