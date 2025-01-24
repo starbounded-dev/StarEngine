@@ -1,11 +1,15 @@
 #pragma once
 
 #ifdef SS_PLATFORM_WINDOWS
+#if SS_DYNAMIC_LINK
 	#ifdef SS_BUILD_DLL
 		#define STARSTUDIO_API __declspec(dllexport)
 	#else
 		#define STARSTUDIO_API __declspec(dllimport)
 	#endif
+#else
+	#define STARSTUDIO_API
+#endif
 #else
 	#error StarStudio only supports Windows!
 #endif
