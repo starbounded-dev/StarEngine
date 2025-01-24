@@ -9,11 +9,20 @@ public:
 	}
 	void OnUpdate() override
 	{
+		//SS_INFO("ExampleLayer::Update");
 
+		if (StarStudio::Input::IsKeyPressed(SS_KEY_TAB))
+			SS_TRACE("Tab key is pressed!");
 	}
 	void OnEvent(StarStudio::Event& event) override
 	{
-		SS_TRACE("{0}", event);
+		if (event.GetEventType() == StarStudio::EventType::KeyPressed)
+		{
+			StarStudio::KeyPressedEvent& e = (StarStudio::KeyPressedEvent&)event;
+			if (e.GetKeyCode() == SS_KEY_TAB)
+				SS_TRACE("Tab key is pressed (event)!");
+			SS_TRACE("{0}", (char)e.GetKeyCode());
+		}
 	}
 };
 
