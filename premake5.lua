@@ -28,7 +28,7 @@ project "StarStudio"
 	location "StarStudio"
 	kind "SharedLib"
 	language "C++"
-	staticruntime "Off"
+	staticruntime "off"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
@@ -83,17 +83,17 @@ project "StarStudio"
 	filter "configurations:Debug"
 		defines "SS_DEBUG"
 		runtime "Debug"
-		symbols "On"
+		symbols "on"
 
 	filter "configurations:Release"
 		defines "SS_RELEASE"
 		runtime "Release"
-		optimize "On"
+		optimize "on"
 
 	filter "configurations:Dist"
 		defines "SS_DIST"
 		runtime "Release"
-		optimize "On"
+		optimize "on"
 
 	filter "action:vs2022"
       buildoptions { "/utf-8" }
@@ -137,17 +137,17 @@ project "Sandbox"
 	filter "configurations:Debug"
 		defines "SS_DEBUG"
 		runtime "Debug"
-		symbols "On"
+		symbols "on"
 
 	filter "configurations:Release"
 		defines "SS_RELEASE"
 		runtime "Release"
-		optimize "On"
+		optimize "on"
 
 	filter "configurations:Dist"
 		defines "SS_DIST"
 		runtime "Release"
-		optimize "On"
+		optimize "on"
 
 	filter "action:vs2022"
       buildoptions { "/utf-8" }
