@@ -1,5 +1,7 @@
 #include <StarStudio.h>
 
+#include "imgui/imgui.h"
+
 class ExampleLayer : public StarStudio::Layer
 {
 public:
@@ -15,6 +17,14 @@ public:
 		if (StarStudio::Input::IsKeyPressed(SS_KEY_TAB))
 			SS_TRACE("Tab key is pressed!");
 	}
+
+	virtual void OnImGuiRender() override
+	{
+		ImGui::Begin("Test");
+		ImGui::Text("Hello World");
+		ImGui::End();
+	}
+
 	void OnEvent(StarStudio::Event& event) override
 	{
 		if (event.GetEventType() == StarStudio::EventType::KeyPressed)
@@ -31,7 +41,6 @@ class Sandbox : public StarStudio::Application {
 public:
 	Sandbox() {
 		PushLayer(new ExampleLayer());
-		PushOverlay(new StarStudio::ImGuiLayer());
 	}
 	~Sandbox() {
 

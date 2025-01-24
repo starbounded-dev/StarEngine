@@ -117,6 +117,7 @@ project "Sandbox"
 	{
 		"StarStudio/vendor/spdlog/include",
 		"StarStudio/src",
+		"StarStudio/vendor",
 		"%{IncludeDir.glm}"
 	}
 
