@@ -6,4 +6,4 @@ bin-int/
 *.vcxproj
 *.filters
 *.sln
-*/imgui.ini
+*imgui.ini
