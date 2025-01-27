@@ -8,3 +8,4 @@ bin-int/
 *.sln
 *imgui.ini
 /Sandbox/imgui.ini
+/StarStudio/vendor/GLAD/bin
