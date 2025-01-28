@@ -19,7 +19,7 @@ jobs:
         version: "5.0.0-beta4"
 
     - name: pull
-      run: git pull --recurse-submodules
+      run: git pull origin main --recurse-submodules
 
   
     - name: premake
