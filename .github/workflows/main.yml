@@ -1,35 +1,35 @@
-name: C/C++ PreMake
+name: Build StarStudio
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build:
-
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
-  
-    - uses: abel0b/setup-premake@v2.4
-      with:
-        version: "5.0.0-beta4"
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: pull
-      run: git pull origin main --recurse-submodules
+      - name: Install Premake
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/premake/premake-core/releases/download/v5.0.0-beta4/premake-5.0.0-beta4-windows.zip" -OutFile premake.zip
+          Expand-Archive premake.zip -DestinationPath .
+          echo "$(pwd)\premake5.exe" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-  
-    - name: premake
-      run: premake5 vs2022
+      - name: Generate project files with Premake
+        run: premake5 vs2022
 
-    - name: compile to exe
-      run: msbuild /p:Configuration=Debug StarStudio.sln
+      - name: Build project with MSBuild
+        run: MSBuild /m /p:Configuration=Debug StarStudio.sln
 
-    - name: Archive build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: build
-        path: bin/Debug-windows-x86_6/Sandbox/Sandbox.exe
+      - name: Upload executable
+        uses: actions/upload-artifact@v3
+        with:
+          name: StarStudio-Windows
+          path: "**/Sandbox/Sandbox.exe"
