@@ -19,9 +19,9 @@ jobs:
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v1.0.2
 
-      - name: Install dependencies
-        run: |
-          choco install premake
+      - uses: abel0b/setup-premake@v2.4
+        with:
+            version: "5.0.0-beta4"
 
       - name: Generate project files with Premake
         run: premake5 vs2022
