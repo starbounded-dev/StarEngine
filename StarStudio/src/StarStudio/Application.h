@@ -3,6 +3,7 @@
 #include "Core.h"
 
 #include "Window.h"
+#include "Renderer/OrthographicCamera.h"
 #include "StarStudio/LayerStack.h"
 #include "StarStudio/Events/Event.h"
 #include "StarStudio/Events/ApplicationEvent.h"
@@ -44,6 +45,7 @@ namespace StarStudio
 			std::shared_ptr<Shader> m_BlueShader;
 			std::shared_ptr<VertexArray> m_SquareVA;
 
+			OrthographicCamera m_Camera;
 	private:
 			static Application* s_Instance;
 	};
