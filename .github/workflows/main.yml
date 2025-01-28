@@ -17,6 +17,10 @@ jobs:
     - uses: abel0b/setup-premake@v2.4
       with:
         version: "5.0.0-beta4"
+
+    - name: pull
+      run: git pull --recurse-submodules
+
   
     - name: premake
       run: premake5 vs2022
