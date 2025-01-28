@@ -1,0 +1,27 @@
+name: C/C++ PreMake
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+  
+    - name: premake
+      run: ./vendor/bin/premake/premake5.exe vs2022
+
+    - name: compile to exe
+      run: msbuild /p:Configuration=Release StarStudio.sln
+
+    - name: Archive build artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: build
+        path: bin/Debug-windows-x86_6/Sandbox/Sandbox.exe
