@@ -14,11 +14,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
   
+    - uses: abel0b/setup-premake@v2.4
+      with:
+        version: "5.0.0-beta4"
+  
     - name: premake
-      run: ./vendor/bin/premake/premake5.exe vs2022
+      run: premake5 vs2022
 
     - name: compile to exe
-      run: msbuild /p:Configuration=Release StarStudio.sln
+      run: msbuild /p:Configuration=Debug StarStudio.sln
 
     - name: Archive build artifacts
       uses: actions/upload-artifact@v4
