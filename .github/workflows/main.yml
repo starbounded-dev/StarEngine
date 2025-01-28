@@ -11,6 +11,10 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      BUILD_TYPE: Debug
+      PLATFORM: windows
+      ARCHITECTURE: x86-64
 
     steps:
       - name: Checkout repository
@@ -35,4 +39,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: StarStudio-Windows
-          path: "**/Sandbox/Sandbox.exe"
+          path: "bin/$BUILD_TYPE-$PLATFORM-$ARCHITECTURE/Sandbox/Sandbox.exe"
