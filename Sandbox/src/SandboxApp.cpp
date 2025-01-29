@@ -6,7 +6,7 @@ class ExampleLayer : public StarStudio::Layer
 {
 	public:
 		ExampleLayer() 
-			: Layer("Example"), m_Camera(-1.6f, 1.6f, -0.9f, 0.9f)
+			: Layer("Example"), m_Camera(-1.6f, 1.6f, -0.9f, 0.9f), m_CameraPostion(0.0f)
 		{
 			m_VertexArray.reset(StarStudio::VertexArray::Create());
 
@@ -126,11 +126,27 @@ class ExampleLayer : public StarStudio::Layer
 		}
 		void OnUpdate() override
 		{
+			if (StarStudio::Input::IsKeyPressed(SS_KEY_LEFT))
+				m_CameraPostion.x -= m_CameraMoveSpeed;
+			else if (StarStudio::Input::IsKeyPressed(SS_KEY_RIGHT))
+				m_CameraPostion.x += m_CameraMoveSpeed;
+
+			if (StarStudio::Input::IsKeyPressed(SS_KEY_UP))
+				m_CameraPostion.y += m_CameraMoveSpeed;
+			else if (StarStudio::Input::IsKeyPressed(SS_KEY_DOWN))
+				m_CameraPostion.y -= m_CameraMoveSpeed;
+
+			if (StarStudio::Input::IsKeyPressed(SS_KEY_A))
+				m_Camera.SetRotation(m_Camera.GetRotation() + m_CameraMoveSpeed);
+			if (StarStudio::Input::IsKeyPressed(SS_KEY_D))
+				m_Camera.SetRotation(m_Camera.GetRotation() - m_CameraMoveSpeed);
+
+
 			StarStudio::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
 			StarStudio::RenderCommand::Clear();
 
-			m_Camera.SetPosition({ 0.5f, 0.5f, 0.0f });
-			m_Camera.SetRotation(45.0f);
+			m_Camera.SetPosition(m_CameraPostion);
+			m_Camera.SetRotation(0.0f);
 
 			StarStudio::Renderer::BeginScene(m_Camera);
 
@@ -147,19 +163,17 @@ class ExampleLayer : public StarStudio::Layer
 
 		void OnEvent(StarStudio::Event& event) override
 		{
-			StarStudio::EventDispatcher dispatcher(event);
-			dispatcher.Dispatch<StarStudio::KeyPressedEvent>(SS_BIND_EVENT_FN(ExampleLayer::OnKeyPressedEvent));
-		}
-
-		bool OnKeyPressedEvent(StarStudio::KeyPressedEvent& event)
-		{
-			SS_CORE_TRACE("{0}", (char)event.GetKeyCode());
-
-			return false;
+			
 		}
 
 	private:
 		StarStudio::OrthographicCamera m_Camera;
+		glm::vec3 m_CameraPostion;
+
+		float m_CameraMoveSpeed = 0.05f;
+
+		float m_CameraRotationSpeed = 2.0f;
+		float m_CameraRotation = 0.0f;
 
 		std::shared_ptr<StarStudio::Shader> m_Shader;
 		std::shared_ptr<StarStudio::VertexArray> m_VertexArray;
