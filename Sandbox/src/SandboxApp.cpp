@@ -6,7 +6,7 @@ class ExampleLayer : public StarStudio::Layer
 {
 	public:
 		ExampleLayer() 
-			: Layer("Example"), m_Camera(-1.6f, 1.6f, -0.9f, 0.9f), m_CameraPostion(0.0f)
+			: Layer("Example"), m_Camera(-1.6f, 1.6f, -0.9f, 0.9f), m_CameraPosition(0.0f)
 		{
 			m_VertexArray.reset(StarStudio::VertexArray::Create());
 
@@ -124,29 +124,27 @@ class ExampleLayer : public StarStudio::Layer
 
 			m_BlueShader.reset(new StarStudio::Shader(blueShaderVertexSrc, blueShaderFragmentSrc));
 		}
-		void OnUpdate() override
+		void OnUpdate(StarStudio::Timestep ts) override
 		{
 			if (StarStudio::Input::IsKeyPressed(SS_KEY_LEFT))
-				m_CameraPostion.x -= m_CameraMoveSpeed;
+				m_CameraPosition.x -= m_CameraMoveSpeed * ts;
 			else if (StarStudio::Input::IsKeyPressed(SS_KEY_RIGHT))
-				m_CameraPostion.x += m_CameraMoveSpeed;
-
+				m_CameraPosition.x += m_CameraMoveSpeed * ts;
 			if (StarStudio::Input::IsKeyPressed(SS_KEY_UP))
-				m_CameraPostion.y += m_CameraMoveSpeed;
+				m_CameraPosition.y += m_CameraMoveSpeed * ts;
 			else if (StarStudio::Input::IsKeyPressed(SS_KEY_DOWN))
-				m_CameraPostion.y -= m_CameraMoveSpeed;
-
+				m_CameraPosition.y -= m_CameraMoveSpeed * ts;
 			if (StarStudio::Input::IsKeyPressed(SS_KEY_A))
-				m_Camera.SetRotation(m_Camera.GetRotation() + m_CameraMoveSpeed);
+				m_CameraRotation += m_CameraRotationSpeed * ts;
 			if (StarStudio::Input::IsKeyPressed(SS_KEY_D))
-				m_Camera.SetRotation(m_Camera.GetRotation() - m_CameraMoveSpeed);
+				m_CameraRotation -= m_CameraRotationSpeed * ts;
 
 
 			StarStudio::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
 			StarStudio::RenderCommand::Clear();
 
-			m_Camera.SetPosition(m_CameraPostion);
-			m_Camera.SetRotation(0.0f);
+			m_Camera.SetPosition(m_CameraPosition);
+			m_Camera.SetRotation(m_CameraRotation);
 
 			StarStudio::Renderer::BeginScene(m_Camera);
 
@@ -168,8 +166,8 @@ class ExampleLayer : public StarStudio::Layer
 
 	private:
 		StarStudio::OrthographicCamera m_Camera;
-		glm::vec3 m_CameraPostion;
 
+		glm::vec3 m_CameraPosition;
 		float m_CameraMoveSpeed = 0.05f;
 
 		float m_CameraRotationSpeed = 2.0f;

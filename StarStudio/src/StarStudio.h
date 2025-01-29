@@ -5,6 +5,8 @@
 #include "StarStudio/Layer.h"
 #include "StarStudio/Log.h"
 
+#include "StarStudio/Core/Timestep.h"
+
 // ---Input-------------------------
 #include "StarStudio/Input.h"
 #include "StarStudio/KeyCodes.h"

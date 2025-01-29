@@ -3,20 +3,17 @@
 #include "Core.h"
 
 #include "Window.h"
-#include "Renderer/OrthographicCamera.h"
 #include "StarStudio/LayerStack.h"
 #include "StarStudio/Events/Event.h"
 #include "StarStudio/Events/ApplicationEvent.h"
 
-#include "StarStudio/ImGui/ImGuiLayer.h"
+#include "StarStudio/Core/Timestep.h"
 
-#include "StarStudio/Renderer/Shader.h"
-#include "StarStudio/Renderer/Buffer.h"
-#include "StarStudio/Renderer/VertexArray.h"
+#include "StarStudio/ImGui/ImGuiLayer.h"
 
 namespace StarStudio
 {
-	class STARSTUDIO_API Application
+	class Application
 	{
 		public:
 			Application();
@@ -38,6 +35,8 @@ namespace StarStudio
 
 			bool m_Running = true;
 			LayerStack m_LayerStack;
+
+			float m_LastFrameTime = 0.0f;
 	private:
 			static Application* s_Instance;
 	};
