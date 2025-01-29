@@ -147,7 +147,15 @@ class ExampleLayer : public StarStudio::Layer
 
 		void OnEvent(StarStudio::Event& event) override
 		{
-			
+			StarStudio::EventDispatcher dispatcher(event);
+			dispatcher.Dispatch<StarStudio::KeyPressedEvent>(SS_BIND_EVENT_FN(ExampleLayer::OnKeyPressedEvent));
+		}
+
+		bool OnKeyPressedEvent(StarStudio::KeyPressedEvent& event)
+		{
+			SS_CORE_TRACE("{0}", (char)event.GetKeyCode());
+
+			return false;
 		}
 
 	private:
