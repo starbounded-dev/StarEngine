@@ -1,12 +1,15 @@
 #pragma once
+
 #include "sspch.h"
 #include "StarStudio/Core.h"
 
 namespace StarStudio {
+
 	// Events in Hazel are currently blocking, meaning when an event occurs it
 	// immediately gets dispatched and must be dealt with right then an there.
 	// For the future, a better strategy might be to buffer events in an event
 	// bus and process them during the "event" part of the update stage.
+
 	enum class EventType
 	{
 		None = 0,
@@ -15,6 +18,7 @@ namespace StarStudio {
 		KeyPressed, KeyReleased, KeyTyped,
 		MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled
 	};
+
 	enum EventCategory
 	{
 		None = 0,
@@ -24,10 +28,13 @@ namespace StarStudio {
 		EventCategoryMouse = BIT(3),
 		EventCategoryMouseButton = BIT(4)
 	};
+
 #define EVENT_CLASS_TYPE(type) static EventType GetStaticType() { return EventType::##type; }\
 								virtual EventType GetEventType() const override { return GetStaticType(); }\
 								virtual const char* GetName() const override { return #type; }
+
 #define EVENT_CLASS_CATEGORY(category) virtual int GetCategoryFlags() const override { return category; }
+
 	class STARSTUDIO_API Event
 	{
 	public:
@@ -37,11 +44,13 @@ namespace StarStudio {
 		virtual const char* GetName() const = 0;
 		virtual int GetCategoryFlags() const = 0;
 		virtual std::string ToString() const { return GetName(); }
+
 		inline bool IsInCategory(EventCategory category)
 		{
 			return GetCategoryFlags() & category;
 		}
 	};
+
 	class EventDispatcher
 	{
 		template<typename T>
@@ -51,6 +60,7 @@ namespace StarStudio {
 			: m_Event(event)
 		{
 		}
+
 		template<typename T>
 		bool Dispatch(EventFn<T> func)
 		{
@@ -64,8 +74,10 @@ namespace StarStudio {
 	private:
 		Event& m_Event;
 	};
-	inline std::string format_as(const Event& e) {
-		return e.ToString();
 
+	inline std::ostream& operator<<(std::ostream& os, const Event& e)
+	{
+		return os << e.ToString();
 	}
+
 }
