@@ -166,7 +166,16 @@ class ExampleLayer : public StarStudio::Layer
 
 		virtual void OnImGuiRender() override
 		{
+			ImGui::Begin("Camera Info");
 
+			ImGui::Text("Camera Position");
+			ImGui::Text("X: %.2f", m_CameraPosition.x);
+			ImGui::Text("Y: %.2f", m_CameraPosition.y);
+			ImGui::Text("Z: %.2f", m_CameraPosition.z);
+
+			ImGui::Text("Camera Rotation: %.2f", m_CameraRotation);
+
+			ImGui::End();
 		}
 
 		void OnEvent(StarStudio::Event& event) override
