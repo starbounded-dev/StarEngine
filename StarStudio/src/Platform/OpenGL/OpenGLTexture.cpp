@@ -10,6 +10,7 @@ namespace StarStudio
 		: m_Path(path), m_Width(0), m_Height(0)
 	{
 		int width, height, channels;
+		stbi_set_flip_vertically_on_load(1);
 		stbi_uc* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
 		SS_CORE_ASSERT(data, "Failed to load image!");
 
