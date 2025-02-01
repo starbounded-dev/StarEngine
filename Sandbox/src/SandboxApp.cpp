@@ -175,6 +175,11 @@ class ExampleLayer : public StarStudio::Layer
 
 			ImGui::Text("Camera Rotation: %.2f", m_CameraRotation);
 
+			if (ImGui::Button("Reset")) {
+				m_CameraPosition = glm::vec3(0.0f);
+				m_CameraRotation = 0.0f;
+			}
+
 			ImGui::End();
 		}
 
