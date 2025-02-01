@@ -21,7 +21,7 @@ class ExampleLayer : public StarStudio::Layer
 				 0.0f,  0.5f, 0.0f, 0.8f, 0.8f, 0.2f, 1.0f
 			};
 
-			std::shared_ptr<StarStudio::VertexBuffer> vertexBuffer;
+			StarStudio::Ref<StarStudio::VertexBuffer> vertexBuffer;
 			vertexBuffer.reset(StarStudio::VertexBuffer::Create(vertices, sizeof(vertices)));
 			StarStudio::BufferLayout layout = {
 				{ StarStudio::ShaderDataType::Float3, "a_Position" },
@@ -31,7 +31,7 @@ class ExampleLayer : public StarStudio::Layer
 			m_VertexArray->AddVertexBuffer(vertexBuffer);
 
 			uint32_t indices[3] = { 0, 1, 2 };
-			std::shared_ptr<StarStudio::IndexBuffer> indexBuffer;
+			StarStudio::Ref<StarStudio::IndexBuffer> indexBuffer;
 			indexBuffer.reset(StarStudio::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
 			m_VertexArray->SetIndexBuffer(indexBuffer);
 
@@ -44,7 +44,7 @@ class ExampleLayer : public StarStudio::Layer
 				-0.5f,  0.5f, 0.0f
 			};
 
-			std::shared_ptr<StarStudio::VertexBuffer> squareVB;
+			StarStudio::Ref<StarStudio::VertexBuffer> squareVB;
 			squareVB.reset(StarStudio::VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
 			squareVB->SetLayout({
 				{ StarStudio::ShaderDataType::Float3, "a_Position" }
@@ -52,7 +52,7 @@ class ExampleLayer : public StarStudio::Layer
 			m_SquareVA->AddVertexBuffer(squareVB);
 
 			uint32_t squareIndices[6] = { 0, 1, 2, 2, 3, 0 };
-			std::shared_ptr<StarStudio::IndexBuffer> squareIB;
+			StarStudio::Ref<StarStudio::IndexBuffer> squareIB;
 			squareIB.reset(StarStudio::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t)));
 			m_SquareVA->SetIndexBuffer(squareIB);
 
@@ -213,11 +213,11 @@ class ExampleLayer : public StarStudio::Layer
 		}
 
 private:
-	std::shared_ptr<StarStudio::Shader> m_Shader;
-	std::shared_ptr<StarStudio::VertexArray> m_VertexArray;
+	StarStudio::Ref<StarStudio::Shader> m_Shader;
+	StarStudio::Ref<StarStudio::VertexArray> m_VertexArray;
 
-	std::shared_ptr<StarStudio::Shader> m_FlatColorShader;
-	std::shared_ptr<StarStudio::VertexArray> m_SquareVA;
+	StarStudio::Ref<StarStudio::Shader> m_FlatColorShader;
+	StarStudio::Ref<StarStudio::VertexArray> m_SquareVA;
 
 	StarStudio::OrthographicCamera m_Camera;
 	glm::vec3 m_CameraPosition;
