@@ -90,7 +90,7 @@ class ExampleLayer : public StarStudio::Layer
 
 			m_Shader.reset(new StarStudio::Shader(vertexSrc, fragmentSrc));
 
-			std::string blueShaderVertexSrc = R"(
+			std::string flatColorShaderVertexSrc = R"(
 			#version 330 core
 			
 			layout(location = 0) in vec3 a_Position;
@@ -107,20 +107,22 @@ class ExampleLayer : public StarStudio::Layer
 			}
 		)";
 
-			std::string blueShaderFragmentSrc = R"(
+			std::string flatColorShaderFragmentSrc = R"(
 			#version 330 core
 			
 			layout(location = 0) out vec4 color;
 
 			in vec3 v_Position;
 
+			uniform vec4 u_color;
+
 			void main()
 			{
-				color = vec4(0.2, 0.3, 0.8, 1.0);
+				color = u_color;
 			}
 		)";
 
-			m_BlueShader.reset(new StarStudio::Shader(blueShaderVertexSrc, blueShaderFragmentSrc));
+			m_flatColorShader.reset(new StarStudio::Shader(flatColorShaderVertexSrc, flatColorShaderFragmentSrc));
 		}
 
 		void OnUpdate(StarStudio::Timestep ts) override
@@ -149,13 +151,23 @@ class ExampleLayer : public StarStudio::Layer
 			StarStudio::Renderer::BeginScene(m_Camera);
 
 			glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+
+			glm::vec4 redColor(0.8f, 0.2f, 0.3f, 1.0f);
+			glm::vec4 greenColor(0.2f, 0.8f, 0.3f, 1.0f);
+			glm::vec4 blueColor(0.2f, 0.3f, 0.8f, 1.0f);
 			for (int y = 0; y < 20; y++)
 			{
 				for (int x = 0; x < 20; x++)
 				{
 					glm::vec3 pos(x * 0.11f, y * 0.11f, 0.0f);
 					glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
-					StarStudio::Renderer::Submit(m_BlueShader, m_SquareVA, transform);
+					if (x % 3 == 0)
+						m_flatColorShader->UploadUniformFloat4("u_color", redColor);
+					else if (x % 3 == 1)
+						m_flatColorShader->UploadUniformFloat4("u_color", greenColor);
+					else if (x % 3 == 2)
+						m_flatColorShader->UploadUniformFloat4("u_color", blueColor);
+					StarStudio::Renderer::Submit(m_flatColorShader, m_SquareVA, transform);
 				}
 			}
 
@@ -192,7 +204,7 @@ private:
 	std::shared_ptr<StarStudio::Shader> m_Shader;
 	std::shared_ptr<StarStudio::VertexArray> m_VertexArray;
 
-	std::shared_ptr<StarStudio::Shader> m_BlueShader;
+	std::shared_ptr<StarStudio::Shader> m_flatColorShader;
 	std::shared_ptr<StarStudio::VertexArray> m_SquareVA;
 
 	StarStudio::OrthographicCamera m_Camera;
