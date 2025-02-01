@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #ifdef SS_PLATFORM_WINDOWS
 #if SS_DYNAMIC_LINK
 	#ifdef SS_BUILD_DLL
@@ -29,3 +31,13 @@
 
 #define BIT(x) (1 << x)
 #define SS_BIND_EVENT_FN(fn) std::bind(&fn, this, std::placeholders::_1)
+
+namespace StarStudio
+{
+	template<typename T>
+	using scope = std::unique_ptr<T>;
+
+	template<typename T>
+	using ref = std::shared_ptr<T>;
+
+}
