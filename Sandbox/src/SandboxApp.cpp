@@ -37,17 +37,18 @@ class ExampleLayer : public StarStudio::Layer
 
 			m_SquareVA.reset(StarStudio::VertexArray::Create());
 
-			float squareVertices[3 * 4] = {
-				-0.5f, -0.5f, 0.0f,
-				 0.5f, -0.5f, 0.0f,
-				 0.5f,  0.5f, 0.0f,
-				-0.5f,  0.5f, 0.0f
+			float squareVertices[5 * 4] = {
+				-0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 
+				 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+				 0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
+				-0.5f,  0.5f, 0.0f ,0.0f, 1.0f
 			};
 
 			StarStudio::Ref<StarStudio::VertexBuffer> squareVB;
 			squareVB.reset(StarStudio::VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
 			squareVB->SetLayout({
-				{ StarStudio::ShaderDataType::Float3, "a_Position" }
+				{ StarStudio::ShaderDataType::Float3, "a_Position" },
+				{ StarStudio::ShaderDataType::Float2, "a_TexCoord" }
 				});
 			m_SquareVA->AddVertexBuffer(squareVB);
 
