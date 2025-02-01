@@ -1,12 +1,15 @@
 #pragma once
 
 #include "StarStudio/Renderer/Texture.h"
-namespace StarStudio
-{
+
+namespace StarStudio {
+
 	class OpenGLTexture2D : public Texture2D
 	{
+
 	public:
 		OpenGLTexture2D(const std::string& path);
+
 		virtual ~OpenGLTexture2D();
 
 		virtual uint32_t GetWidth() const override { return m_Width; }
@@ -15,8 +18,8 @@ namespace StarStudio
 		virtual void Bind(uint32_t slot = 0) const override;
 	private:
 		std::string m_Path;
+
 		uint32_t m_Width, m_Height;
 		uint32_t m_RendererID;
 	};
 }
-
