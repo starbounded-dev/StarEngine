@@ -128,6 +128,41 @@ class ExampleLayer : public StarStudio::Layer
 
 			m_FlatColorShader.reset(StarStudio::Shader::Create(flatColorShaderVertexSrc, flatColorShaderFragmentSrc));
 
+			std::string textureShaderVertexSrc = R"(
+			#version 330 core
+			
+			layout(location = 0) in vec3 a_Position;
+			layout(location = 1) in vec2 a_TexCoord;
+
+			uniform mat4 u_ViewProjection;
+			uniform mat4 u_Transform;
+
+			out vec2 v_TexCoord;
+
+			void main()
+			{
+				v_TexCoord = a_TexCoord;
+				gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0);	
+			}
+		)";
+
+			std::string textureShaderFragmentSrc = R"(
+			#version 330 core
+			
+			layout(location = 0) out vec4 color;
+
+			in vec2 v_TexCoord;
+
+			uniform vec3 u_Color;
+
+			void main()
+			{
+				color = vec4(v_TexCoord, 0.0, 1.0);
+			}
+		)";
+
+			m_TextureShader.reset(StarStudio::Shader::Create(textureShaderVertexSrc, textureShaderFragmentSrc));
+
 		}
 
 		void OnUpdate(StarStudio::Timestep ts) override
@@ -171,7 +206,7 @@ class ExampleLayer : public StarStudio::Layer
 				}
 			}*/
 
-			StarStudio::Renderer::Submit(m_FlatColorShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+			StarStudio::Renderer::Submit(m_TextureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
 			//triangle
 			//StarStudio::Renderer::Submit(m_Shader, m_VertexArray);
@@ -220,7 +255,7 @@ private:
 	StarStudio::Ref<StarStudio::Shader> m_Shader;
 	StarStudio::Ref<StarStudio::VertexArray> m_VertexArray;
 
-	StarStudio::Ref<StarStudio::Shader> m_FlatColorShader;
+	StarStudio::Ref<StarStudio::Shader> m_FlatColorShader, m_TextureShader;
 	StarStudio::Ref<StarStudio::VertexArray> m_SquareVA;
 
 	StarStudio::OrthographicCamera m_Camera;
