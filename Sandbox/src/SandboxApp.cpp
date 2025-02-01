@@ -1,9 +1,10 @@
 #include <StarStudio.h>
 
+#include "Platform/OpenGL/OpenGLShader.h"
+
 #include "imgui/imgui.h"
 
 #include <glm/gtc/matrix_transform.hpp>
-
 #include "glm/gtc/type_ptr.hpp"
 
 class ExampleLayer : public StarStudio::Layer
@@ -90,7 +91,7 @@ class ExampleLayer : public StarStudio::Layer
 			}
 		)";
 
-			m_Shader.reset(new StarStudio::Shader(vertexSrc, fragmentSrc));
+			m_Shader.reset(StarStudio::Shader::Create(vertexSrc, fragmentSrc));
 
 			std::string flatColorShaderVertexSrc = R"(
 			#version 330 core
@@ -116,15 +117,16 @@ class ExampleLayer : public StarStudio::Layer
 
 			in vec3 v_Position;
 
-			uniform vec4 u_color;
+			uniform vec3 u_Color;
 
 			void main()
 			{
-				color = u_color;
+				color = vec4(u_Color, 1.0);
 			}
 		)";
 
-			m_flatColorShader.reset(new StarStudio::Shader(flatColorShaderVertexSrc, flatColorShaderFragmentSrc));
+			m_FlatColorShader.reset(StarStudio::Shader::Create(flatColorShaderVertexSrc, flatColorShaderFragmentSrc));
+
 		}
 
 		void OnUpdate(StarStudio::Timestep ts) override
@@ -154,9 +156,8 @@ class ExampleLayer : public StarStudio::Layer
 
 			glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
 
-			glm::vec4 redColor(0.8f, 0.2f, 0.3f, 1.0f);
-			glm::vec4 greenColor(0.2f, 0.8f, 0.3f, 1.0f);
-			glm::vec4 blueColor(0.2f, 0.3f, 0.8f, 1.0f);
+			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(m_FlatColorShader)->Bind();
+			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(m_FlatColorShader)->UploadUniformFloat3("u_Color", m_SquareColor);
 
 			for (int y = 0; y < 20; y++)
 			{
@@ -164,16 +165,8 @@ class ExampleLayer : public StarStudio::Layer
 				{
 					glm::vec3 pos(x * 0.11f, y * 0.11f, 0.0f);
 					glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
-					/*
-					if (x % 3 == 0)
-						m_flatColorShader->UploadUniformFloat4("u_color", redColor);
-					else if (x % 3 == 1)
-						m_flatColorShader->UploadUniformFloat4("u_color", greenColor);
-					else if (x % 3 == 2)
-						m_flatColorShader->UploadUniformFloat4("u_color", blueColor);
-						*/
-					m_flatColorShader->UploadUniformFloat4("u_color", m_SquareColor);
-					StarStudio::Renderer::Submit(m_flatColorShader, m_SquareVA, transform);
+
+					StarStudio::Renderer::Submit(m_FlatColorShader, m_SquareVA, transform);
 				}
 			}
 
@@ -205,10 +198,10 @@ class ExampleLayer : public StarStudio::Layer
 			//Color Picker
 			ImGui::Begin("Color Picker");
 
-			ImGui::ColorEdit4("Square Color", glm::value_ptr(m_SquareColor));
+			ImGui::ColorEdit3("Square Color", glm::value_ptr(m_SquareColor));
 			if (ImGui::Button("Reset"))
 			{
-				m_SquareColor = { 0.2f, 0.2f, 0.2f, 1.0f };
+				m_SquareColor = { 0.2f, 0.2f, 0.2f};
 			}
 
 			ImGui::End();
@@ -223,7 +216,7 @@ private:
 	std::shared_ptr<StarStudio::Shader> m_Shader;
 	std::shared_ptr<StarStudio::VertexArray> m_VertexArray;
 
-	std::shared_ptr<StarStudio::Shader> m_flatColorShader;
+	std::shared_ptr<StarStudio::Shader> m_FlatColorShader;
 	std::shared_ptr<StarStudio::VertexArray> m_SquareVA;
 
 	StarStudio::OrthographicCamera m_Camera;
@@ -233,7 +226,7 @@ private:
 	float m_CameraRotation = 0.0f;
 	float m_CameraRotationSpeed = 180.0f;
 
-	glm::vec4 m_SquareColor = { 0.2f, 0.2f, 0.2f, 1.0f };
+	glm::vec3 m_SquareColor = { 0.2f, 0.2f, 0.2f};
 };
 
 class Sandbox : public StarStudio::Application
