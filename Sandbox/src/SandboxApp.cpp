@@ -153,15 +153,20 @@ class ExampleLayer : public StarStudio::Layer
 
 			in vec2 v_TexCoord;
 
-			uniform vec3 u_Color;
+			uniform sampler2D u_Texture;
 
 			void main()
 			{
-				color = vec4(v_TexCoord, 0.0, 1.0);
+				color = texture(u_Texture, v_TexCoord);
 			}
 		)";
 
 			m_TextureShader.reset(StarStudio::Shader::Create(textureShaderVertexSrc, textureShaderFragmentSrc));
+
+			m_Texture = StarStudio::Texture2D::Create("assets/textures/Checkerboard.png");
+
+			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(m_TextureShader)->Bind();
+			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(m_TextureShader)->UploadUniformInt("u_Texture", 0);
 
 		}
 
@@ -206,6 +211,7 @@ class ExampleLayer : public StarStudio::Layer
 				}
 			}*/
 
+			m_Texture->Bind();
 			StarStudio::Renderer::Submit(m_TextureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
 			//triangle
@@ -257,6 +263,8 @@ private:
 
 	StarStudio::Ref<StarStudio::Shader> m_FlatColorShader, m_TextureShader;
 	StarStudio::Ref<StarStudio::VertexArray> m_SquareVA;
+
+	StarStudio::Ref<StarStudio::Texture2D> m_Texture;
 
 	StarStudio::OrthographicCamera m_Camera;
 	glm::vec3 m_CameraPosition;
