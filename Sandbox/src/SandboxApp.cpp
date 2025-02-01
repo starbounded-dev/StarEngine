@@ -4,6 +4,8 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "glm/gtc/type_ptr.hpp"
+
 class ExampleLayer : public StarStudio::Layer
 {
 	public:
@@ -155,18 +157,22 @@ class ExampleLayer : public StarStudio::Layer
 			glm::vec4 redColor(0.8f, 0.2f, 0.3f, 1.0f);
 			glm::vec4 greenColor(0.2f, 0.8f, 0.3f, 1.0f);
 			glm::vec4 blueColor(0.2f, 0.3f, 0.8f, 1.0f);
+
 			for (int y = 0; y < 20; y++)
 			{
 				for (int x = 0; x < 20; x++)
 				{
 					glm::vec3 pos(x * 0.11f, y * 0.11f, 0.0f);
 					glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
+					/*
 					if (x % 3 == 0)
 						m_flatColorShader->UploadUniformFloat4("u_color", redColor);
 					else if (x % 3 == 1)
 						m_flatColorShader->UploadUniformFloat4("u_color", greenColor);
 					else if (x % 3 == 2)
 						m_flatColorShader->UploadUniformFloat4("u_color", blueColor);
+						*/
+					m_flatColorShader->UploadUniformFloat4("u_color", m_SquareColor);
 					StarStudio::Renderer::Submit(m_flatColorShader, m_SquareVA, transform);
 				}
 			}
@@ -178,6 +184,8 @@ class ExampleLayer : public StarStudio::Layer
 
 		virtual void OnImGuiRender() override
 		{
+
+			//Camera Info
 			ImGui::Begin("Camera Info");
 
 			ImGui::Text("Camera Position");
@@ -190,6 +198,17 @@ class ExampleLayer : public StarStudio::Layer
 			if (ImGui::Button("Reset")) {
 				m_CameraPosition = glm::vec3(0.0f);
 				m_CameraRotation = 0.0f;
+			}
+
+			ImGui::End();
+
+			//Color Picker
+			ImGui::Begin("Color Picker");
+
+			ImGui::ColorEdit4("Square Color", glm::value_ptr(m_SquareColor));
+			if (ImGui::Button("Reset"))
+			{
+				m_SquareColor = { 0.2f, 0.2f, 0.2f, 1.0f };
 			}
 
 			ImGui::End();
@@ -213,6 +232,8 @@ private:
 
 	float m_CameraRotation = 0.0f;
 	float m_CameraRotationSpeed = 180.0f;
+
+	glm::vec4 m_SquareColor = { 0.2f, 0.2f, 0.2f, 1.0f };
 };
 
 class Sandbox : public StarStudio::Application
