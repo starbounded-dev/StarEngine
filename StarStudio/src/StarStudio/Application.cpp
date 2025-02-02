@@ -24,6 +24,9 @@ namespace StarStudio
 
 		Renderer::Init();
 
+		SS_CORE_INFO("In order to use StarStudio, you need the assets folder from Sandbox, in the root folder of the .exe");
+		SS_CORE_INFO("If you don't have the assets folder, you can download it from the StarStudio repository");
+
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
 	}
