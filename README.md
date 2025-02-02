@@ -27,3 +27,15 @@ If the repository was cloned non-recursively previously, use `git submodule upda
 
 ## The Plan
 The plan for StarStudio is two-fold: to create a powerful 3D engine, but also to serve as an education tool for teaching game engine design and architecture. Because of this the development inside this repository is rather slow, since everything has to be taught and implemented by myself.
+
+### Main features to come:
+- Fast 2D rendering (UI, particles, sprites, etc.)
+- High-fidelity Physically-Based 3D rendering (this will be expanded later, 2D to come first)
+- Support for Mac, Linux, Android and iOS
+    - Native rendering API support (DirectX, Vulkan, Metal)
+- Fully featured viewer and editor applications
+- Fully scripted interaction and behavior
+- Integrated 3rd party 2D and 3D physics engine
+- Procedural terrain and world generation
+- Artificial Intelligence
+- Audio system
