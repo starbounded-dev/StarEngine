@@ -1,8 +1,8 @@
 #include "sspch.h"
 #include "OrthographicCameraController.h"
 
-#include "StarStudio/Input.h"
-#include "StarStudio/KeyCodes.h"
+#include "StarStudio/Core/Input.h"
+#include "StarStudio/Core/KeyCodes.h"
 
 namespace StarStudio {
 
