@@ -243,7 +243,7 @@ class ExampleLayer : public StarStudio::Layer
 			}
 
 			ImGui::End();
-
+			/*
 			//Color Picker
 			ImGui::Begin("Color Picker");
 
@@ -254,8 +254,8 @@ class ExampleLayer : public StarStudio::Layer
 			}
 
 			ImGui::End();
-		}
-
+			*/
+		} 
 		void OnEvent(StarStudio::Event& event) override
 		{
 
