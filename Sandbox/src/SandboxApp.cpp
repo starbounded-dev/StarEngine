@@ -92,7 +92,7 @@ class ExampleLayer : public StarStudio::Layer
 			}
 			)";
 
-			m_Shader.reset(StarStudio::Shader::Create(vertexSrc, fragmentSrc));
+			m_Shader = StarStudio::Shader::Create("VertexPosColor", vertexSrc, fragmentSrc);
 
 			std::string flatColorShaderVertexSrc = R"(
 			#version 330 core
@@ -125,17 +125,15 @@ class ExampleLayer : public StarStudio::Layer
 				color = vec4(u_Color, 1.0);
 			}
 		)";
-			m_FlatColorShader.reset(StarStudio::Shader::Create(flatColorShaderVertexSrc, flatColorShaderFragmentSrc));
+			m_FlatColorShader = StarStudio::Shader::Create("FlatColor", flatColorShaderVertexSrc, flatColorShaderFragmentSrc);
 
-
-
-			m_TextureShader.reset(StarStudio::Shader::Create("assets/shaders/Texture"".glsl"));
+			auto textureShader = m_ShaderLibrary.Load("assets/shaders/Texture.glsl");
 
 			m_Texture = StarStudio::Texture2D::Create("assets/textures/Checkerboard.png");
 			m_starLogTexture = StarStudio::Texture2D::Create("assets/textures/starLogo.png");
 
-			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(m_TextureShader)->Bind();
-			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(m_TextureShader)->UploadUniformInt("u_Texture", 0);
+			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(textureShader)->Bind();
+			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(textureShader)->UploadUniformInt("u_Texture", 0);
 
 		}
 
@@ -180,11 +178,13 @@ class ExampleLayer : public StarStudio::Layer
 				}
 			}*/
 
+			auto textureShader = m_ShaderLibrary.Get("Texture");
+
 			m_Texture->Bind();
-			StarStudio::Renderer::Submit(m_TextureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+			StarStudio::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
 			m_starLogTexture->Bind();
-			StarStudio::Renderer::Submit(m_TextureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+			StarStudio::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
 			//triangle
 			//StarStudio::Renderer::Submit(m_Shader, m_VertexArray);
@@ -230,10 +230,11 @@ class ExampleLayer : public StarStudio::Layer
 		}
 
 private:
+	StarStudio::ShaderLibrary m_ShaderLibrary;
 	StarStudio::Ref<StarStudio::Shader> m_Shader;
 	StarStudio::Ref<StarStudio::VertexArray> m_VertexArray;
 
-	StarStudio::Ref<StarStudio::Shader> m_FlatColorShader, m_TextureShader;
+	StarStudio::Ref<StarStudio::Shader> m_FlatColorShader;
 	StarStudio::Ref<StarStudio::VertexArray> m_SquareVA;
 
 	StarStudio::Ref<StarStudio::Texture2D> m_Texture, m_starLogTexture;
