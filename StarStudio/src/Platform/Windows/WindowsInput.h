@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarStudio/Input.h"
+#include "StarStudio/Core/Input.h"
 
 namespace StarStudio {
 
