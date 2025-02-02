@@ -9,6 +9,11 @@ workspace "StarStudio"
 		"Dist"
 	}
 
+	flags
+	{
+		"MultiProcessorCompile"
+	}
+
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 IncludeDir = {}
@@ -16,6 +21,7 @@ IncludeDir["GLFW"] = "StarStudio/vendor/GLFW/include"
 IncludeDir["GLAD"] = "StarStudio/vendor/GLAD/include"
 IncludeDir["imgui"] = "StarStudio/vendor/imgui"
 IncludeDir["glm"] = "StarStudio/vendor/glm"
+IncludeDir["stb_image"] = "StarStudio/vendor/stb_image"
 
 
 group "Dependencies"
@@ -41,6 +47,8 @@ project "StarStudio"
 	{
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
+		"%{prj.name}/vendor/stb_image/**.h",
+		"%{prj.name}/vendor/stb_image/**.cpp",
 		"%{prj.name}/vendor/glm/glm/**.hpp",
 		"%{prj.name}/vendor/glm/glm/**.inl"
 	}
@@ -57,7 +65,9 @@ project "StarStudio"
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.GLAD}",
 		"%{IncludeDir.imgui}",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.stb_image}"
+
 
 	}
 

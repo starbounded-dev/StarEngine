@@ -21,6 +21,7 @@
 
 #include "StarStudio/Renderer/Buffer.h"
 #include "StarStudio/Renderer/Shader.h"
+#include "StarStudio/Renderer/Texture.h"
 #include "StarStudio/Renderer/VertexArray.h"
 
 #include "StarStudio/Renderer/OrthographicCamera.h"

@@ -37,17 +37,18 @@ class ExampleLayer : public StarStudio::Layer
 
 			m_SquareVA.reset(StarStudio::VertexArray::Create());
 
-			float squareVertices[3 * 4] = {
-				-0.5f, -0.5f, 0.0f,
-				 0.5f, -0.5f, 0.0f,
-				 0.5f,  0.5f, 0.0f,
-				-0.5f,  0.5f, 0.0f
+			float squareVertices[5 * 4] = {
+				-0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 
+				 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+				 0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
+				-0.5f,  0.5f, 0.0f ,0.0f, 1.0f
 			};
 
 			StarStudio::Ref<StarStudio::VertexBuffer> squareVB;
 			squareVB.reset(StarStudio::VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
 			squareVB->SetLayout({
-				{ StarStudio::ShaderDataType::Float3, "a_Position" }
+				{ StarStudio::ShaderDataType::Float3, "a_Position" },
+				{ StarStudio::ShaderDataType::Float2, "a_TexCoord" }
 				});
 			m_SquareVA->AddVertexBuffer(squareVB);
 
@@ -74,7 +75,7 @@ class ExampleLayer : public StarStudio::Layer
 				v_Color = a_Color;
 				gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0);	
 			}
-		)";
+			)";
 
 			std::string fragmentSrc = R"(
 			#version 330 core
@@ -89,9 +90,9 @@ class ExampleLayer : public StarStudio::Layer
 				color = vec4(v_Position * 0.5 + 0.5, 1.0);
 				color = v_Color;
 			}
-		)";
+			)";
 
-			m_Shader.reset(StarStudio::Shader::Create(vertexSrc, fragmentSrc));
+			m_Shader = StarStudio::Shader::Create("VertexPosColor", vertexSrc, fragmentSrc);
 
 			std::string flatColorShaderVertexSrc = R"(
 			#version 330 core
@@ -124,8 +125,15 @@ class ExampleLayer : public StarStudio::Layer
 				color = vec4(u_Color, 1.0);
 			}
 		)";
+			m_FlatColorShader = StarStudio::Shader::Create("FlatColor", flatColorShaderVertexSrc, flatColorShaderFragmentSrc);
 
-			m_FlatColorShader.reset(StarStudio::Shader::Create(flatColorShaderVertexSrc, flatColorShaderFragmentSrc));
+			auto textureShader = m_ShaderLibrary.Load("assets/shaders/Texture.glsl");
+
+			m_Texture = StarStudio::Texture2D::Create("assets/textures/Checkerboard.png");
+			m_starLogTexture = StarStudio::Texture2D::Create("assets/textures/starLogo.png");
+
+			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(textureShader)->Bind();
+			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(textureShader)->UploadUniformInt("u_Texture", 0);
 
 		}
 
@@ -159,7 +167,7 @@ class ExampleLayer : public StarStudio::Layer
 			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(m_FlatColorShader)->Bind();
 			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(m_FlatColorShader)->UploadUniformFloat3("u_Color", m_SquareColor);
 
-			for (int y = 0; y < 20; y++)
+			/*for (int y = 0; y < 20; y++)
 			{
 				for (int x = 0; x < 20; x++)
 				{
@@ -168,9 +176,18 @@ class ExampleLayer : public StarStudio::Layer
 
 					StarStudio::Renderer::Submit(m_FlatColorShader, m_SquareVA, transform);
 				}
-			}
+			}*/
 
-			StarStudio::Renderer::Submit(m_Shader, m_VertexArray);
+			auto textureShader = m_ShaderLibrary.Get("Texture");
+
+			m_Texture->Bind();
+			StarStudio::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+
+			m_starLogTexture->Bind();
+			StarStudio::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+
+			//triangle
+			//StarStudio::Renderer::Submit(m_Shader, m_VertexArray);
 
 			StarStudio::Renderer::EndScene();
 		}
@@ -194,7 +211,7 @@ class ExampleLayer : public StarStudio::Layer
 			}
 
 			ImGui::End();
-
+			/*
 			//Color Picker
 			ImGui::Begin("Color Picker");
 
@@ -205,19 +222,22 @@ class ExampleLayer : public StarStudio::Layer
 			}
 
 			ImGui::End();
-		}
-
+			*/
+		} 
 		void OnEvent(StarStudio::Event& event) override
 		{
 
 		}
 
 private:
+	StarStudio::ShaderLibrary m_ShaderLibrary;
 	StarStudio::Ref<StarStudio::Shader> m_Shader;
 	StarStudio::Ref<StarStudio::VertexArray> m_VertexArray;
 
 	StarStudio::Ref<StarStudio::Shader> m_FlatColorShader;
 	StarStudio::Ref<StarStudio::VertexArray> m_SquareVA;
+
+	StarStudio::Ref<StarStudio::Texture2D> m_Texture, m_starLogTexture;
 
 	StarStudio::OrthographicCamera m_Camera;
 	glm::vec3 m_CameraPosition;
