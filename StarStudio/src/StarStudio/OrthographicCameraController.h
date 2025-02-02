@@ -36,7 +36,6 @@ namespace StarStudio {
 
 		float m_CameraRotation = 0.0f;
 
-		float m_CameraTranslationSpeed = 5.0f;
-		float m_CameraRotationSpeed = 90.0f;
+		float m_CameraTranslationSpeed = 5.0f, m_CameraRotationSpeed = 90.0f;
 	};
 }
