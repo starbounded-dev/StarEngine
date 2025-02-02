@@ -19,7 +19,7 @@ namespace StarStudio {
 		m_Width = width;
 		m_Height = height;
 
-		GLenum internalFormat = 0, dataFormat;
+		GLenum internalFormat = 0, dataFormat = 0;
 		if (channels == 4)
 		{
 			internalFormat = GL_RGBA8;
