@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include "glm/ext/matrix_clip_space.hpp"
+
 namespace StarStudio {
 
 	class OrthographicCamera
@@ -14,6 +16,8 @@ namespace StarStudio {
 
 		float GetRotation() const { return m_Rotation; }
 		void SetRotation(float rotation) { m_Rotation = rotation; RecalculateViewMatrix(); }
+
+		void SetProjection(float left, float right, float bottom, float top);
 
 		const glm::mat4& GetProjectionMatrix() const { return m_ProjectionMatrix; }
 		const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }

@@ -11,6 +11,7 @@
 #include "StarStudio/Input.h"
 #include "StarStudio/KeyCodes.h"
 #include "StarStudio/MouseButtonCodes.h"
+#include "StarStudio/OrthographicCameraController.h"
 // ---------------------------------
 
 #include "StarStudio/ImGui/ImGuiLayer.h"
