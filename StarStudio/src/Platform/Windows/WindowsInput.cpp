@@ -1,7 +1,7 @@
 #include "sspch.h"
 #include "WindowsInput.h"
 
-#include "StarStudio/Application.h"
+#include "StarStudio/Core/Application.h"
 #include <GLFW/glfw3.h>
 
 namespace StarStudio {

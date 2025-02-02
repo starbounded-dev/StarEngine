@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "StarStudio/Core.h"
+#include "StarStudio/Core/Core.h"
 
 namespace StarStudio{
 

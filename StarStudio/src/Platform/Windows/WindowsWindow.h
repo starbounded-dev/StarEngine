@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarStudio/Window.h"
+#include "StarStudio/Core/Window.h"
 #include "StarStudio/Renderer/GraphicsContext.h"
 
 #include <GLFW/glfw3.h>

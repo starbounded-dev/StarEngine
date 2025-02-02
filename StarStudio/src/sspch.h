@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "StarStudio/Log.h"
+#include "StarStudio/Core/Log.h"
 
 #ifdef SS_PLATFORM_WINDOWS
 	#include <Windows.h>

@@ -1,7 +1,7 @@
 #include "sspch.h"
 #include "Application.h"
 
-#include "StarStudio/Log.h"
+#include "StarStudio/Core/Log.h"
 
 #include "Input.h"
 #include "StarStudio/Renderer/Renderer.h"
