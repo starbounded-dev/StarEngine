@@ -13,6 +13,7 @@ namespace StarStudio {
 			return GL_VERTEX_SHADER;
 		if (type == "fragment" || type == "pixel")
 			return GL_FRAGMENT_SHADER;
+
 		SS_CORE_ASSERT(false, "Unknown shader type!");
 		return 0;
 	}
@@ -22,8 +23,8 @@ namespace StarStudio {
 		std::string source = ReadFile(filepath);
 		auto shaderSources = PreProcess(source);
 		Compile(shaderSources);
-
 	}
+
 	OpenGLShader::OpenGLShader(const std::string& vertexSrc, const std::string& fragmentSrc)
 	{
 		std::unordered_map<GLenum, std::string> sources;
@@ -48,8 +49,10 @@ namespace StarStudio {
 			in.seekg(0, std::ios::beg);
 			in.read(&result[0], result.size());
 			in.close();
+			;
 		}
-		else {
+		else
+		{
 			SS_CORE_ERROR("Could not open file '{0}'", filepath);
 		}
 
@@ -67,7 +70,6 @@ namespace StarStudio {
 		{
 			size_t eol = source.find_first_of("\r\n", pos);
 			SS_CORE_ASSERT(eol != std::string::npos, "Syntax error");
-
 			size_t begin = pos + typeTokenLength + 1;
 			std::string type = source.substr(begin, eol - begin);
 			SS_CORE_ASSERT(ShaderTypeFromString(type), "Invalid shader type specified");
@@ -83,9 +85,7 @@ namespace StarStudio {
 	void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& shaderSources)
 	{
 		GLuint program = glCreateProgram();
-
 		std::vector<GLenum> glShaderIDs(shaderSources.size());
-
 		for (auto& kv : shaderSources)
 		{
 			GLenum type = kv.first;
@@ -112,12 +112,14 @@ namespace StarStudio {
 
 				SS_CORE_ERROR("{0}", infoLog.data());
 				SS_CORE_ASSERT(false, "Shader compilation failure!");
-				return;
+				break;
 			}
 
-			glAttachShader(m_RendererID, shader);
+			glAttachShader(program, shader);
 			glShaderIDs.push_back(shader);
 		}
+
+		m_RendererID = program;
 
 		glLinkProgram(program);
 
@@ -133,7 +135,6 @@ namespace StarStudio {
 
 			glDeleteProgram(program);
 
-
 			for (auto id : glShaderIDs)
 				glDeleteShader(id);
 
@@ -143,11 +144,7 @@ namespace StarStudio {
 		}
 
 		for (auto id : glShaderIDs)
-		{
 			glDetachShader(program, id);
-		}
-
-		program = m_RendererID;
 	}
 
 
