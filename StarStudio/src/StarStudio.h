@@ -17,6 +17,7 @@
 
 // ---Renderer------------------------
 #include "StarStudio/Renderer/Renderer.h"
+#include "StarStudio/Renderer/Renderer2D.h"
 #include "StarStudio/Renderer/RenderCommand.h"
 
 #include "StarStudio/Renderer/Buffer.h"

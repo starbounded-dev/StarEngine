@@ -8,10 +8,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Sandbox2D.h"
-#include "StarStudio/OrthographicCameraController.h"
-#include "glm/gtc/type_ptr.hpp"
 
-#include "Sandbox2D.h"
+#include "StarStudio/Renderer/OrthographicCameraController.h"
+#include "glm/gtc/type_ptr.hpp"
 
 class ExampleLayer : public StarStudio::Layer
 {

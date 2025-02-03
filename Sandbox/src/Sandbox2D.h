@@ -1,6 +1,6 @@
 #pragma once
 #include "StarStudio.h"
-#include "StarStudio/OrthographicCameraController.h"
+#include "StarStudio/Renderer/OrthographicCameraController.h"
 
 class Sandbox2D : public StarStudio::Layer
 {
