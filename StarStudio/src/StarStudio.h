@@ -7,13 +7,13 @@
 
 #include "StarStudio/Core/Timestep.h"
 
+#include "StarStudio/ImGui/ImGuiLayer.h"
+
 // ---Input-------------------------
 #include "StarStudio/Core/Input.h"
 #include "StarStudio/Core/KeyCodes.h"
 #include "StarStudio/Core/MouseButtonCodes.h"
 // ---------------------------------
-
-#include "StarStudio/ImGui/ImGuiLayer.h"
 
 // ---Renderer------------------------
 #include "StarStudio/Renderer/Renderer.h"
