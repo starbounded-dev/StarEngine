@@ -26,7 +26,3 @@
 
 #include "StarStudio/Renderer/OrthographicCamera.h"
 // -----------------------------------
-
-// ---Entry Point---------------------
-#include "StarStudio/Core/EntryPoint.h"
-// -----------------------------------
