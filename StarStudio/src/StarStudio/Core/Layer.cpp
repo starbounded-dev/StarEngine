@@ -8,8 +8,4 @@ namespace StarStudio {
 	{
 
 	}
-	Layer::~Layer()
-	{
-
-	}
 }

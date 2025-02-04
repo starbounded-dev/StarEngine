@@ -85,7 +85,6 @@ project "StarStudio"
 
 		defines
 		{
-			"SS_PLATFORM_WINDOWS",
 			"SS_BUILD_DLL",
 			"GLFW_INCLUDE_NONE"
 		}
@@ -136,13 +135,6 @@ project "Sandbox"
 	{
 		"StarStudio"
 	}
-
-	filter "system:windows"
-		systemversion "latest"
-		defines
-		{
-			"SS_PLATFORM_WINDOWS"
-		}
 
 	filter "configurations:Debug"
 		defines "SS_DEBUG"

@@ -1,19 +1,24 @@
 #include <StarStudio.h>
+#include <StarStudio/Core/EntryPoint.h>
 
 #include "Platform/OpenGL/OpenGLShader.h"
 
 #include "imgui/imgui.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+
+#include "Sandbox2D.h"
+
+#include "StarStudio/Renderer/OrthographicCameraController.h"
 #include "glm/gtc/type_ptr.hpp"
 
 class ExampleLayer : public StarStudio::Layer
 {
 	public:
 		ExampleLayer()
-			: Layer("Example"), m_Camera(-1.6f, 1.6f, -0.9f, 0.9f), m_CameraPosition(0.0f)
+			: Layer("Example"), m_CameraController(1280.0f / 720.0f, true)
 		{
-			m_VertexArray.reset(StarStudio::VertexArray::Create());
+			m_VertexArray = StarStudio::VertexArray::Create();
 
 			float vertices[3 * 7] = {
 				-0.5f, -0.5f, 0.0f, 0.8f, 0.2f, 0.8f, 1.0f,
@@ -35,7 +40,7 @@ class ExampleLayer : public StarStudio::Layer
 			indexBuffer.reset(StarStudio::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
 			m_VertexArray->SetIndexBuffer(indexBuffer);
 
-			m_SquareVA.reset(StarStudio::VertexArray::Create());
+			m_SquareVA = StarStudio::VertexArray::Create();
 
 			float squareVertices[5 * 4] = {
 				-0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 
@@ -139,28 +144,14 @@ class ExampleLayer : public StarStudio::Layer
 
 		void OnUpdate(StarStudio::Timestep ts) override
 		{
-			if (StarStudio::Input::IsKeyPressed(SS_KEY_LEFT))
-				m_CameraPosition.x -= m_CameraMoveSpeed * ts;
-			else if (StarStudio::Input::IsKeyPressed(SS_KEY_RIGHT))
-				m_CameraPosition.x += m_CameraMoveSpeed * ts;
+			// Update
+			m_CameraController.OnUpdate(ts);
 
-			if (StarStudio::Input::IsKeyPressed(SS_KEY_UP))
-				m_CameraPosition.y += m_CameraMoveSpeed * ts;
-			else if (StarStudio::Input::IsKeyPressed(SS_KEY_DOWN))
-				m_CameraPosition.y -= m_CameraMoveSpeed * ts;
-
-			if (StarStudio::Input::IsKeyPressed(SS_KEY_A))
-				m_CameraRotation += m_CameraRotationSpeed * ts;
-			if (StarStudio::Input::IsKeyPressed(SS_KEY_D))
-				m_CameraRotation -= m_CameraRotationSpeed * ts;
-
+			// Render
 			StarStudio::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 			StarStudio::RenderCommand::Clear();
 
-			m_Camera.SetPosition(m_CameraPosition);
-			m_Camera.SetRotation(m_CameraRotation);
-
-			StarStudio::Renderer::BeginScene(m_Camera);
+			StarStudio::Renderer::BeginScene(m_CameraController.GetCamera());
 
 			glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
 
@@ -199,34 +190,31 @@ class ExampleLayer : public StarStudio::Layer
 			ImGui::Begin("Camera Info");
 
 			ImGui::Text("Camera Position");
-			ImGui::Text("X: %.2f", m_CameraPosition.x);
-			ImGui::Text("Y: %.2f", m_CameraPosition.y);
-			ImGui::Text("Z: %.2f", m_CameraPosition.z);
+			ImGui::Text("X: %.2f", m_CameraController.GetCamera().GetPosition().x);
+			ImGui::Text("Y: %.2f", m_CameraController.GetCamera().GetPosition().y);
+			ImGui::Text("Z: %.2f", m_CameraController.GetCamera().GetPosition().z);
 
-			ImGui::Text("Camera Rotation: %.2f", m_CameraRotation);
+			ImGui::Text("Camera Rotation: %.2f", m_CameraController.GetCamera().GetRotation());
 
 			if (ImGui::Button("Reset")) {
-				m_CameraPosition = glm::vec3(0.0f);
-				m_CameraRotation = 0.0f;
+				m_CameraController.GetCamera().SetPosition(glm::vec3(0.0f));
+				m_CameraController.GetCamera().SetRotation(0.0f);
 			}
 
 			ImGui::End();
-			/*
+			
 			//Color Picker
 			ImGui::Begin("Color Picker");
 
 			ImGui::ColorEdit3("Square Color", glm::value_ptr(m_SquareColor));
-			if (ImGui::Button("Reset"))
-			{
-				m_SquareColor = { 0.2f, 0.2f, 0.2f};
-			}
 
 			ImGui::End();
-			*/
-		} 
-		void OnEvent(StarStudio::Event& event) override
-		{
+			
+		}
 
+		void OnEvent(StarStudio::Event& e) override
+		{
+			m_CameraController.OnEvent(e);
 		}
 
 private:
@@ -239,12 +227,7 @@ private:
 
 	StarStudio::Ref<StarStudio::Texture2D> m_Texture, m_starLogTexture;
 
-	StarStudio::OrthographicCamera m_Camera;
-	glm::vec3 m_CameraPosition;
-	float m_CameraMoveSpeed = 5.0f;
-
-	float m_CameraRotation = 0.0f;
-	float m_CameraRotationSpeed = 180.0f;
+	StarStudio::OrthographicCameraController m_CameraController;
 
 	glm::vec3 m_SquareColor = { 0.2f, 0.2f, 0.2f};
 };
@@ -254,7 +237,8 @@ class Sandbox : public StarStudio::Application
 public:
 	Sandbox()
 	{
-		PushLayer(new ExampleLayer());
+		// PushLayer(new ExampleLayer());
+		PushLayer(new Sandbox2D());
 	}
 
 	~Sandbox()
