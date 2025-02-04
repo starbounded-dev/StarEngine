@@ -52,13 +52,15 @@ void Sandbox2D::OnImGuiRender()
 		m_CameraController.GetCamera().SetPosition(glm::vec3(0.0f));
 		m_CameraController.GetCamera().SetRotation(0.0f);
 	}
-
-	ImGui::End();
 	
 	//Color Picker
-	ImGui::Begin("Color Picker");
+	ImGui::Text("Color Picker");
 
 	ImGui::ColorEdit3("Square Color", glm::value_ptr(m_SquareColor));
+
+	ImGui::Text("Frame Counter");
+
+	ImGui::Text("FPS: %.u", ImGui::GetIO().Framerate);
 
 	ImGui::End();
 	
