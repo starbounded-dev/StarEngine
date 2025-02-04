@@ -58,10 +58,6 @@ void Sandbox2D::OnImGuiRender()
 
 	ImGui::ColorEdit3("Square Color", glm::value_ptr(m_SquareColor));
 
-	ImGui::Text("Frame Counter");
-
-	ImGui::Text("FPS: %.u", ImGui::GetIO().Framerate);
-
 	ImGui::End();
 	
 }
