@@ -17,6 +17,8 @@ public:
 private:
 	StarStudio::OrthographicCameraController m_CameraController;
 
+	bool m_VSync = true;
+
 	// Temp
 	StarStudio::Ref<StarStudio::VertexArray> m_SquareVA;
 	StarStudio::Ref<StarStudio::Shader> m_FlatColorShader;
