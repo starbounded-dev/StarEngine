@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "StarStudio/Renderer/RendererAPI.h"
 
 namespace StarStudio

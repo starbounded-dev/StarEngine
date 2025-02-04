@@ -4,7 +4,7 @@
 
 namespace StarStudio {
 
-	class STARSTUDIO_API Input
+	class Input
 	{
 	protected:
 		Input() = default;

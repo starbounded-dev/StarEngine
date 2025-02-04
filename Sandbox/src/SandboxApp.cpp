@@ -1,15 +1,12 @@
 #include <StarStudio.h>
 #include <StarStudio/Core/EntryPoint.h>
 
-#include "Platform/OpenGL/OpenGLShader.h"
-
-#include "imgui/imgui.h"
-
-#include <glm/gtc/matrix_transform.hpp>
-
+#include "StarStudio/Renderer/OrthographicCameraController.h"
 #include "Sandbox2D.h"
 
-#include "StarStudio/Renderer/OrthographicCameraController.h"
+#include <imgui/imgui.h>
+
+#include <glm/gtc/matrix_transform.hpp>
 #include "glm/gtc/type_ptr.hpp"
 
 class ExampleLayer : public StarStudio::Layer
@@ -26,8 +23,7 @@ class ExampleLayer : public StarStudio::Layer
 				 0.0f,  0.5f, 0.0f, 0.8f, 0.8f, 0.2f, 1.0f
 			};
 
-			StarStudio::Ref<StarStudio::VertexBuffer> vertexBuffer;
-			vertexBuffer.reset(StarStudio::VertexBuffer::Create(vertices, sizeof(vertices)));
+			StarStudio::Ref<StarStudio::VertexBuffer> vertexBuffer = StarStudio::VertexBuffer::Create(vertices, sizeof(vertices));
 			StarStudio::BufferLayout layout = {
 				{ StarStudio::ShaderDataType::Float3, "a_Position" },
 				{ StarStudio::ShaderDataType::Float4, "a_Color" }
@@ -36,8 +32,7 @@ class ExampleLayer : public StarStudio::Layer
 			m_VertexArray->AddVertexBuffer(vertexBuffer);
 
 			uint32_t indices[3] = { 0, 1, 2 };
-			StarStudio::Ref<StarStudio::IndexBuffer> indexBuffer;
-			indexBuffer.reset(StarStudio::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
+			StarStudio::Ref<StarStudio::IndexBuffer> indexBuffer = StarStudio::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t));
 			m_VertexArray->SetIndexBuffer(indexBuffer);
 
 			m_SquareVA = StarStudio::VertexArray::Create();
@@ -49,8 +44,7 @@ class ExampleLayer : public StarStudio::Layer
 				-0.5f,  0.5f, 0.0f ,0.0f, 1.0f
 			};
 
-			StarStudio::Ref<StarStudio::VertexBuffer> squareVB;
-			squareVB.reset(StarStudio::VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
+			StarStudio::Ref<StarStudio::VertexBuffer> squareVB = StarStudio::VertexBuffer::Create(squareVertices, sizeof(squareVertices));
 			squareVB->SetLayout({
 				{ StarStudio::ShaderDataType::Float3, "a_Position" },
 				{ StarStudio::ShaderDataType::Float2, "a_TexCoord" }
@@ -58,8 +52,7 @@ class ExampleLayer : public StarStudio::Layer
 			m_SquareVA->AddVertexBuffer(squareVB);
 
 			uint32_t squareIndices[6] = { 0, 1, 2, 2, 3, 0 };
-			StarStudio::Ref<StarStudio::IndexBuffer> squareIB;
-			squareIB.reset(StarStudio::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t)));
+			StarStudio::Ref<StarStudio::IndexBuffer> squareIB = StarStudio::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t));
 			m_SquareVA->SetIndexBuffer(squareIB);
 
 			std::string vertexSrc = R"(
@@ -137,8 +130,8 @@ class ExampleLayer : public StarStudio::Layer
 			m_Texture = StarStudio::Texture2D::Create("assets/textures/Checkerboard.png");
 			m_starLogTexture = StarStudio::Texture2D::Create("assets/textures/starLogo.png");
 
-			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(textureShader)->Bind();
-			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(textureShader)->UploadUniformInt("u_Texture", 0);
+			textureShader->Bind();
+			textureShader->SetInt("u_Texture", 0);
 
 		}
 
@@ -155,8 +148,8 @@ class ExampleLayer : public StarStudio::Layer
 
 			glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
 
-			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(m_FlatColorShader)->Bind();
-			std::dynamic_pointer_cast<StarStudio::OpenGLShader>(m_FlatColorShader)->UploadUniformFloat3("u_Color", m_SquareColor);
+			m_FlatColorShader->Bind();
+			m_FlatColorShader->SetFloat3("u_Color", m_SquareColor);
 
 			/*for (int y = 0; y < 20; y++)
 			{

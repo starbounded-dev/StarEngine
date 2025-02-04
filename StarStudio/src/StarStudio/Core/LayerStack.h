@@ -1,14 +1,14 @@
 #pragma once
 
 #include "StarStudio/Core/Core.h"
-#include "Layer.h"
+#include "StarStudio/Core/Layer.h"
 
 #include <vector>
 namespace StarStudio {
-	class STARSTUDIO_API LayerStack
+	class LayerStack
 	{
 	public:
-		LayerStack();
+		LayerStack() = default;
 		~LayerStack();
 
 		void PushLayer(Layer* layer);

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "RenderCommand.h"
-#include "RendererAPI.h"
+#include "StarStudio/Renderer/RenderCommand.h"
 
-#include "OrthographicCamera.h"
-#include "Shader.h"
+#include "StarStudio/Renderer/OrthographicCamera.h"
+#include "StarStudio/Renderer/Shader.h"
 
 namespace StarStudio {
 
@@ -12,6 +11,8 @@ namespace StarStudio {
 	{
 	public:
 		static void Init();
+		static void Shutdown();
+
 		static void OnWindowResize(uint32_t width, uint32_t height);
 
 		static void BeginScene(OrthographicCamera& camera);

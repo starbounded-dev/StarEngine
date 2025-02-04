@@ -35,7 +35,7 @@ namespace StarStudio {
 
 #define EVENT_CLASS_CATEGORY(category) virtual int GetCategoryFlags() const override { return category; }
 
-	class STARSTUDIO_API Event
+	class Event
 	{
 	public:
 		bool Handled = false;

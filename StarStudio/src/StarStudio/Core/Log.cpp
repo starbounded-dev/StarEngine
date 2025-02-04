@@ -1,7 +1,7 @@
 #include "sspch.h"
 
-#include "Log.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
+#include "StarStudio/Core/Log.h"
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 namespace StarStudio
 {

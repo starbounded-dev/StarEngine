@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Event.h"
+#include "StarStudio/Events/Event.h"
 
 namespace StarStudio {
 
-	class STARSTUDIO_API KeyEvent : public Event
+	class KeyEvent : public Event
 	{
 	public:
 		inline int GetKeyCode() const { return m_KeyCode; }
@@ -18,7 +18,7 @@ namespace StarStudio {
 		int m_KeyCode;
 	};
 
-	class STARSTUDIO_API KeyPressedEvent : public KeyEvent
+	class KeyPressedEvent : public KeyEvent
 	{
 	public:
 		KeyPressedEvent(int keycode, int repeatCount)
@@ -39,7 +39,7 @@ namespace StarStudio {
 		int m_RepeatCount;
 	};
 
-	class STARSTUDIO_API KeyReleasedEvent : public KeyEvent
+	class KeyReleasedEvent : public KeyEvent
 	{
 	public:
 		KeyReleasedEvent(int keycode)
@@ -56,7 +56,7 @@ namespace StarStudio {
 		EVENT_CLASS_TYPE(KeyReleased)
 	};
 
-	class STARSTUDIO_API KeyTypedEvent : public KeyEvent
+	class KeyTypedEvent : public KeyEvent
 	{
 	public:
 		KeyTypedEvent(int keycode)

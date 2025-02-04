@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Event.h"
+#include "StarStudio/Events/Event.h"
 
 namespace StarStudio {
 
-	class STARSTUDIO_API MouseMovedEvent : public Event
+	class MouseMovedEvent : public Event
 	{
 	public:
 		MouseMovedEvent(float x, float y)
@@ -27,7 +27,7 @@ namespace StarStudio {
 		float m_MouseX, m_MouseY;
 	};
 
-	class STARSTUDIO_API MouseScrolledEvent : public Event
+	class MouseScrolledEvent : public Event
 	{
 	public:
 		MouseScrolledEvent(float xOffset, float yOffset)
@@ -50,7 +50,7 @@ namespace StarStudio {
 		float m_XOffset, m_YOffset;
 	};
 
-	class STARSTUDIO_API MouseButtonEvent : public Event
+	class MouseButtonEvent : public Event
 	{
 	public:
 		inline int GetMouseButton() const { return m_Button; }
@@ -64,7 +64,7 @@ namespace StarStudio {
 		int m_Button;
 	};
 
-	class STARSTUDIO_API MouseButtonPressedEvent : public MouseButtonEvent
+	class MouseButtonPressedEvent : public MouseButtonEvent
 	{
 	public:
 		MouseButtonPressedEvent(int button)
@@ -81,7 +81,7 @@ namespace StarStudio {
 		EVENT_CLASS_TYPE(MouseButtonPressed)
 	};
 
-	class STARSTUDIO_API MouseButtonReleasedEvent : public MouseButtonEvent
+	class MouseButtonReleasedEvent : public MouseButtonEvent
 	{
 	public:
 		MouseButtonReleasedEvent(int button)

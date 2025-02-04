@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Core.h"
+#include "StarStudio/Core/Core.h"
 
-#include "Window.h"
+#include "StarStudio/Core/Window.h"
 #include "StarStudio/Core/LayerStack.h"
 #include "StarStudio/Events/Event.h"
 #include "StarStudio/Events/ApplicationEvent.h"
@@ -17,7 +17,7 @@ namespace StarStudio
 	{
 		public:
 			Application();
-			virtual ~Application() = default;
+			virtual ~Application();
 
 			void Run();
 

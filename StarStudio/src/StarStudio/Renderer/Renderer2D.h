@@ -1,8 +1,8 @@
 #pragma once
 
-#include "OrthographicCamera.h"
+#include "StarStudio/Renderer/OrthographicCamera.h"
 
-#include "Texture.h"
+#include "StarStudio/Renderer/Texture.h"
 
 namespace StarStudio {
 	class Renderer2D

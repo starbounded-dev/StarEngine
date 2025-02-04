@@ -43,22 +43,6 @@
 #error "Unknown platform!"
 #endif // End of platform detection
 
-
-// DLL support
-#ifdef SS_PLATFORM_WINDOWS
-#if SS_DYNAMIC_LINK
-#ifdef SS_BUILD_DLL
-#define STARSTUDIO_API __declspec(dllexport)
-#else
-#define STARSTUDIO_API __declspec(dllimport)
-#endif
-#else
-#define STARSTUDIO_API
-#endif
-#else
-#error StarStudio only supports Windows!
-#endif // End of DLL support
-
 #ifdef SS_DEBUG
 #define SS_ENABLE_ASSERTS
 #endif
