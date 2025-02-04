@@ -6,7 +6,7 @@
 	url = https://github.com/TheCherno/glfw/
 [submodule "StarStudio/vendor/imgui"]
 	path = StarStudio/vendor/imgui
-	url = https://github.com/Kartikkain/imgui/
+	url = https://github.com/starbounded-dev/imgui
 [submodule "StarStudio/vendor/glm"]
 	path = StarStudio/vendor/glm
 	url = https://github.com/g-truc/glm
