@@ -1,10 +1,11 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include "VertexArray.h"
 
-namespace StarStudio
-{
+#include "StarStudio/Renderer/VertexArray.h"
+
+namespace StarStudio {
+
 	class RendererAPI
 	{
 	public:
@@ -21,7 +22,10 @@ namespace StarStudio
 		virtual void DrawIndexed(const Ref<VertexArray>& vertexArray) = 0;
 
 		inline static API GetAPI() { return s_API; }
+		static Scope<RendererAPI> Create();
+
 	private:
 		static API s_API;
 	};
+
 }

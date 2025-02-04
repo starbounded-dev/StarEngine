@@ -1,5 +1,5 @@
 #include "sspch.h"
-#include "OrthographicCameraController.h"
+#include "StarStudio/Renderer/OrthographicCameraController.h"
 
 #include "StarStudio/Core/Input.h"
 #include "StarStudio/Core/KeyCodes.h"

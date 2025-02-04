@@ -1,7 +1,7 @@
 #include "sspch.h"
-#include "Texture.h"
+#include "StarStudio/Renderer/Texture.h"
 
-#include "Renderer.h"
+#include "StarStudio/Renderer/Renderer.h"
 #include "Platform/OpenGL/OpenGLTexture.h"
 
 namespace StarStudio

@@ -1,12 +1,7 @@
 #include "sspch.h"
-#include "LayerStack.h"
+#include "StarStudio/Core/LayerStack.h"
 
 namespace StarStudio {
-
-	LayerStack::LayerStack()
-	{
-
-	}
 
 	LayerStack::~LayerStack()
 	{

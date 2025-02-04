@@ -1,5 +1,5 @@
 #include "sspch.h"
-#include "OrthographicCamera.h"
+#include "StarStudio/Renderer/OrthographicCamera.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 

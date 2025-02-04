@@ -1,12 +1,13 @@
 #pragma once
 
 
-#include "Core.h"
+#include "StarStudio/Core/Core.h"
+
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"
 
 namespace StarStudio {
-	class STARSTUDIO_API Log
+	class Log
 	{
 	public:
 		static void Init();
