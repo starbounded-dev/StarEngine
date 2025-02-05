@@ -15,6 +15,8 @@
 
 #include "StarStudio/Core/Log.h"
 
+#include "StarStudio/Debug/Instrumentor.h"
+
 #ifdef SS_PLATFORM_WINDOWS
 	#include <Windows.h>
 #endif
