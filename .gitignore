@@ -9,3 +9,4 @@ bin-int/
 *imgui.ini
 /Sandbox/imgui.ini
 /StarStudio/vendor/GLAD/bin
+Sandbox/StarStudioProfile*.json
