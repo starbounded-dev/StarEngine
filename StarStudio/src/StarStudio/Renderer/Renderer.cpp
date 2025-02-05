@@ -9,6 +9,8 @@ namespace StarStudio {
 
 	void Renderer::Init()
 	{
+		SS_PROFILE_FUNCTION();
+
 		RenderCommand::Init();
 		Renderer2D::Init();
 	}

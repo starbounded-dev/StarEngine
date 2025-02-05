@@ -15,6 +15,8 @@ namespace StarStudio {
 
 	void OpenGLContext::Init()
 	{
+		SS_PROFILE_FUNCTION();
+
 		glfwMakeContextCurrent(m_WindowHandle);
 		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 		SS_CORE_ASSERT(status, "Failed to initialize Glad!");
@@ -35,6 +37,8 @@ namespace StarStudio {
 
 	void OpenGLContext::SwapBuffers()
 	{
+		SS_PROFILE_FUNCTION();
+
 		glfwSwapBuffers(m_WindowHandle);
 	}
 }

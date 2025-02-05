@@ -14,6 +14,7 @@ namespace StarStudio
 
 	Application::Application()
 	{
+		SS_PROFILE_FUNCTION();
 		SS_CORE_ASSERT(!s_Instance, "Application already exists!");
 		s_Instance = this;
 
@@ -27,21 +28,31 @@ namespace StarStudio
 
 	Application::~Application()
 	{
+		SS_PROFILE_FUNCTION();
+
 		Renderer::Shutdown();
 	}
 
 	void Application::PushLayer(Layer* layer)
 	{
+		SS_PROFILE_FUNCTION();
+
 		m_LayerStack.PushLayer(layer);
+		layer->OnAttach();
 	}
 
 	void Application::PushOverlay(Layer* layer)
 	{
+		SS_PROFILE_FUNCTION();
+
 		m_LayerStack.PushOverlay(layer);
+		layer->OnAttach();
 	}
 
 	void Application::OnEvent(Event& e)
 	{
+		SS_PROFILE_FUNCTION();
+
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<WindowResizeEvent>(SS_BIND_EVENT_FN(Application::OnWindowResize));
 		dispatcher.Dispatch<WindowResizeEvent>(SS_BIND_EVENT_FN(Application::OnWindowResize));
@@ -56,25 +67,35 @@ namespace StarStudio
 
 	void Application::Run()
 	{
+		SS_PROFILE_FUNCTION();
+
 		while (m_Running)
 		{
+			SS_PROFILE_SCOPE("RunLoop")
+
 			float time = (float)glfwGetTime();
 			Timestep timestep = time - m_LastFrameTime;
 			m_LastFrameTime = time;
 
 			if (!m_Minimized)
 			{
-				for (Layer* layer : m_LayerStack)
-					layer->OnUpdate(timestep);
+				{
+					SS_PROFILE_SCOPE("LayerStack OnUpdate");
+					for (Layer* layer : m_LayerStack)
+						layer->OnUpdate(timestep);
+				}
 			}
 
 			m_ImGuiLayer->Begin();
-			for (Layer* layer : m_LayerStack)
-				layer->OnImGuiRender();
+			{
+				SS_PROFILE_SCOPE("LayerStack OnImGuiRender");
+				for (Layer* layer : m_LayerStack)
+					layer->OnImGuiRender();
+			}
 			m_ImGuiLayer->End();
+		}
 
 			m_Window->OnUpdate();
-		}
 	}
 
 	bool Application::OnWindowClose(WindowCloseEvent& e)
@@ -85,6 +106,8 @@ namespace StarStudio
 
 	bool Application::OnWindowResize(WindowResizeEvent& e)
 	{
+		SS_PROFILE_FUNCTION();
+
 		if (e.GetWidth() == 0 || e.GetHeight() == 0)
 		{
 			m_Minimized = true;

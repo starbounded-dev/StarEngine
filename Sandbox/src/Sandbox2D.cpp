@@ -15,22 +15,21 @@ Sandbox2D::Sandbox2D()
 
 void Sandbox2D::OnAttach()
 {
+	SS_PROFILE_FUNCTION();
+
 	m_CheckerboardTexture = StarStudio::Texture2D::Create("assets/textures/Checkerboard.png");
 }
 
 void Sandbox2D::OnDetach()
 {
-	
+	SS_PROFILE_FUNCTION();
 }
 
 void Sandbox2D::OnUpdate(StarStudio::Timestep ts)
 {
 	SS_PROFILE_SCOPE("Sandbox2D::OnUpdate");
 	// Update
-	{
-		SS_PROFILE_SCOPE("CameraController::OnUpdate");
-		m_CameraController.OnUpdate(ts);
-	}
+	m_CameraController.OnUpdate(ts);
 	// Render
 	{
 		SS_PROFILE_SCOPE("Renderer Prep");
