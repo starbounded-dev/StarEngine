@@ -36,6 +36,7 @@ namespace StarStudio {
 			SS_PROFILE_SCOPE("stbi_load - OpenGLTexture2D::OpenGLTexture2D(const std:string&)");
 			data = stbi_load(path.c_str(), &width, &height, &channels, 0);
 		}
+
 		SS_CORE_ASSERT(data, "Failed to load image!");
 
 		m_Width = width;
@@ -73,13 +74,6 @@ namespace StarStudio {
 		stbi_image_free(data);
 	}
 
-	OpenGLTexture2D::~OpenGLTexture2D()
-	{
-		SS_PROFILE_FUNCTION();
-
-		glDeleteTextures(1, &m_RendererID);
-	}
-
 	void OpenGLTexture2D::SetData(void* data, uint32_t size)
 	{
 		SS_PROFILE_FUNCTION();
@@ -87,6 +81,13 @@ namespace StarStudio {
 		uint32_t bpp = m_DataFormat == GL_RGBA ? 4 : 3;
 		SS_CORE_ASSERT(size == m_Width * m_Height * bpp, "Data must be entire texture!");
 		glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data);
+	}
+
+	OpenGLTexture2D::~OpenGLTexture2D()
+	{
+		SS_PROFILE_FUNCTION();
+
+		glDeleteTextures(1, &m_RendererID);
 	}
 
 	void OpenGLTexture2D::Bind(uint32_t slot) const

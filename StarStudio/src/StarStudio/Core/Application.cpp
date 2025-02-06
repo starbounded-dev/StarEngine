@@ -81,6 +81,7 @@ namespace StarStudio
 			{
 				{
 					SS_PROFILE_SCOPE("LayerStack OnUpdate");
+
 					for (Layer* layer : m_LayerStack)
 						layer->OnUpdate(timestep);
 				}
@@ -89,6 +90,7 @@ namespace StarStudio
 			m_ImGuiLayer->Begin();
 			{
 				SS_PROFILE_SCOPE("LayerStack OnImGuiRender");
+
 				for (Layer* layer : m_LayerStack)
 					layer->OnImGuiRender();
 			}

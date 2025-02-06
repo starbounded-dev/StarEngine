@@ -48,7 +48,6 @@ namespace StarStudio {
 		if (s_GLFWWindowCount == 0)
 		{
 			SS_PROFILE_SCOPE("glfwInit");
-
 			int success = glfwInit();
 			SS_CORE_ASSERT(success, "Could not intialize GLFW!");
 			glfwSetErrorCallback(GLFWErrorCallback);

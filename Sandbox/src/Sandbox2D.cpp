@@ -27,7 +27,8 @@ void Sandbox2D::OnDetach()
 
 void Sandbox2D::OnUpdate(StarStudio::Timestep ts)
 {
-	SS_PROFILE_SCOPE("Sandbox2D::OnUpdate");
+	SS_PROFILE_FUNCTION();
+
 	// Update
 	m_CameraController.OnUpdate(ts);
 	// Render
