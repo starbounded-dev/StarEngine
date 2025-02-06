@@ -15,11 +15,12 @@ namespace StarStudio
 	Application::Application()
 	{
 		SS_PROFILE_FUNCTION();
+
 		SS_CORE_ASSERT(!s_Instance, "Application already exists!");
 		s_Instance = this;
-
 		m_Window = Window::Create();
 		m_Window->SetEventCallback(SS_BIND_EVENT_FN(Application::OnEvent));
+
 		Renderer::Init();
 
 		m_ImGuiLayer = new ImGuiLayer();
@@ -54,7 +55,7 @@ namespace StarStudio
 		SS_PROFILE_FUNCTION();
 
 		EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<WindowResizeEvent>(SS_BIND_EVENT_FN(Application::OnWindowResize));
+		dispatcher.Dispatch<WindowCloseEvent>(SS_BIND_EVENT_FN(Application::OnWindowClose));
 		dispatcher.Dispatch<WindowResizeEvent>(SS_BIND_EVENT_FN(Application::OnWindowResize));
 
 		for (auto it = m_LayerStack.end(); it != m_LayerStack.begin(); )
@@ -85,19 +86,19 @@ namespace StarStudio
 					for (Layer* layer : m_LayerStack)
 						layer->OnUpdate(timestep);
 				}
-			}
 
-			m_ImGuiLayer->Begin();
-			{
-				SS_PROFILE_SCOPE("LayerStack OnImGuiRender");
+				m_ImGuiLayer->Begin();
+				{
+					SS_PROFILE_SCOPE("LayerStack OnImGuiRender");
 
-				for (Layer* layer : m_LayerStack)
-					layer->OnImGuiRender();
+					for (Layer* layer : m_LayerStack)
+						layer->OnImGuiRender();
+				}
+				m_ImGuiLayer->End();
 			}
-			m_ImGuiLayer->End();
-		}
 
 			m_Window->OnUpdate();
+		}
 	}
 
 	bool Application::OnWindowClose(WindowCloseEvent& e)
@@ -115,8 +116,10 @@ namespace StarStudio
 			m_Minimized = true;
 			return false;
 		}
+
 		m_Minimized = false;
 		Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
+
 		return false;
 	}
 
