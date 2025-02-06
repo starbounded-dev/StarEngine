@@ -12,7 +12,7 @@
 // ---Input-------------------------
 #include "StarStudio/Core/Input.h"
 #include "StarStudio/Core/KeyCodes.h"
-#include "StarStudio/Core/MouseButtonCodes.h"
+#include "StarStudio/Core/MouseCodes.h"
 // ---------------------------------
 
 // ---Renderer------------------------
