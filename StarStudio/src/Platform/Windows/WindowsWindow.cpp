@@ -5,6 +5,8 @@
 #include "StarStudio/Events/MouseEvent.h"
 #include "StarStudio/Events/KeyEvent.h"
 
+#include "StarStudio/Renderer/Renderer.h"
+
 #include "Platform/OpenGL/OpenGLContext.h"
 
 namespace StarStudio {
@@ -55,6 +57,12 @@ namespace StarStudio {
 
 		{
 			SS_PROFILE_SCOPE("glfwCreateWindow");
+
+			#if defined(SS_DEBUG)
+				if (Renderer::GetAPI() == RendererAPI::API::OpenGL)
+					glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+			#endif
+
 			m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
 			++s_GLFWWindowCount;
 		}
