@@ -71,7 +71,7 @@ namespace StarStudio
 
 		while (m_Running)
 		{
-			SS_PROFILE_SCOPE("RunLoop")
+			SS_PROFILE_SCOPE("RunLoop");
 
 			float time = (float)glfwGetTime();
 			Timestep timestep = time - m_LastFrameTime;
