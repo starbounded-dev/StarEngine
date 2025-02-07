@@ -16,7 +16,7 @@ namespace StarStudio
 	{
 		switch (severity)
 		{
-		case GL_DEBUG_SEVERITY_HIGH:         SS_CORE_FATAL(message); return;
+		case GL_DEBUG_SEVERITY_HIGH:         SS_CORE_CRITICAL(message); return;
 		case GL_DEBUG_SEVERITY_MEDIUM:       SS_CORE_ERROR(message); return;
 		case GL_DEBUG_SEVERITY_LOW:          SS_CORE_WARN(message); return;
 		case GL_DEBUG_SEVERITY_NOTIFICATION: SS_CORE_TRACE(message); return;

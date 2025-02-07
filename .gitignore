@@ -2,6 +2,10 @@
 bin-int/
 .vs/
 
+# StarStudio files
+*.log
+
+
 *.user
 *.vcxproj
 *.filters
