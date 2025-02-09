@@ -158,7 +158,7 @@ namespace StarStudio {
 	};
 }
 
-#define SS_PROFILE 1
+#define SS_PROFILE 0
 #if SS_PROFILE
 // Resolve which function signature macro will be used. Note that this only
 // is resolved when the (pre)compiler starts, so the syntax highlighting
