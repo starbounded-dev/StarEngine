@@ -1,8 +1,6 @@
 #include "sspch.h"
 #include "StarStudio/Core/Input.h"
 
-#include "StarStudio/Core/Core.h"
-
 #ifdef SS_PLATFORM_WINDOWS
 #include "Platform/Windows/WindowsInput.h"
 #endif

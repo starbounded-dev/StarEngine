@@ -1,5 +1,5 @@
 #pragma once
-#include "StarStudio/Core/Core.h"
+#include "StarStudio/Core/Base.h"
 
 #ifdef SS_PLATFORM_WINDOWS
 

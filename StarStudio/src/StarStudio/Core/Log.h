@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include "StarStudio/Core/Core.h"
+#include "StarStudio/Core/Base.h"
 
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"

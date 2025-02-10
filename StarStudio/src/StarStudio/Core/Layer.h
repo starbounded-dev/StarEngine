@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarStudio/Core/Core.h"
+#include "StarStudio/Core/Base.h"
 #include "StarStudio/Core/Timestep.h"
 #include "StarStudio/Events/Event.h"
 

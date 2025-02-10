@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sspch.h"
-#include "StarStudio/Core/Core.h"
+#include "StarStudio/Core/Base.h"
 
 namespace StarStudio {
 

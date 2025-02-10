@@ -2,7 +2,7 @@
 
 #include "sspch.h"
 
-#include "StarStudio/Core/Core.h"
+#include "StarStudio/Core/Base.h"
 #include "StarStudio/Events/Event.h"
 
 namespace StarStudio {

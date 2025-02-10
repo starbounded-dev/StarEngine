@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarStudio/Core/Core.h"
+#include "StarStudio/Core/Base.h"
 #include "StarStudio/Core/Layer.h"
 
 #include <vector>
