@@ -43,13 +43,24 @@
 #error "Unknown platform!"
 #endif // End of platform detection
 
+
 #ifdef SS_DEBUG
+#if defined(SS_PLATFORM_WINDOWS)
+#define SS_DEBUGBREAK() __debugbreak()
+#elif defined(SS_PLATFORM_LINUX)
+#include <signal.h>
+#define SS_DEBUGBREAK() raise(SIGTRAP)
+#else
+#error "Platform doesn't support debugbreak yet!"
+#endif
 #define SS_ENABLE_ASSERTS
+#else
+#define SS_DEBUGBREAK()
 #endif
 
 #ifdef SS_ENABLE_ASSERTS
-#define SS_ASSERT(x, ...) { if(!(x)) { SS_ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
-#define SS_CORE_ASSERT(x, ...) { if(!(x)) { SS_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
+#define SS_ASSERT(x, ...) { if(!(x)) { SS_ERROR("Assertion Failed: {0}", __VA_ARGS__); SS_DEBUGBREAK(); } }
+#define SS_CORE_ASSERT(x, ...) { if(!(x)) { SS_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); SS_DEBUGBREAK(); } }
 #else
 #define SS_ASSERT(x, ...)
 #define SS_CORE_ASSERT(x, ...)
