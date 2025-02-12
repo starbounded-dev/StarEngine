@@ -1,9 +1,9 @@
 #pragma once
 
-#include "StarStudio/Events/Event.h"
-#include "StarStudio/Core/Input.h"
+#include "StarEngine/Events/Event.h"
+#include "StarEngine/Core/Input.h"
 
-namespace StarStudio {
+namespace StarEngine {
 
 	class KeyEvent : public Event
 	{
