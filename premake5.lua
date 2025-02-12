@@ -1,4 +1,4 @@
-workspace "StarStudio"
+workspace "StarEngine"
 	architecture "x86_64"
 	startproject "Sandbox"
 
@@ -17,21 +17,21 @@ workspace "StarStudio"
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 IncludeDir = {}
-IncludeDir["GLFW"] = "StarStudio/vendor/GLFW/include"
-IncludeDir["GLAD"] = "StarStudio/vendor/GLAD/include"
-IncludeDir["imgui"] = "StarStudio/vendor/imgui"
-IncludeDir["glm"] = "StarStudio/vendor/glm"
-IncludeDir["stb_image"] = "StarStudio/vendor/stb_image"
+IncludeDir["GLFW"] = "StarEngine/vendor/GLFW/include"
+IncludeDir["GLAD"] = "StarEngine/vendor/GLAD/include"
+IncludeDir["imgui"] = "StarEngine/vendor/imgui"
+IncludeDir["glm"] = "StarEngine/vendor/glm"
+IncludeDir["stb_image"] = "StarEngine/vendor/stb_image"
 
 
 group "Dependencies"
-	include "StarStudio/vendor/GLFW"
-	include "StarStudio/vendor/GLAD"
-	include "StarStudio/vendor/imgui"
+	include "StarEngine/vendor/GLFW"
+	include "StarEngine/vendor/GLAD"
+	include "StarEngine/vendor/imgui"
 group ""
 
-project "StarStudio"
-	location "StarStudio"
+project "StarEngine"
+	location "StarEngine"
 	kind "StaticLib"
 	language "C++"
 	cppdialect "C++17"
@@ -40,8 +40,8 @@ project "StarStudio"
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
-	pchheader "sspch.h"
-	pchsource "StarStudio/src/sspch.cpp"
+	pchheader "sepch.h"
+	pchsource "StarEngine/src/sepch.cpp"
 
 	files
 	{
@@ -90,17 +90,17 @@ project "StarStudio"
 		}
 
 	filter "configurations:Debug"
-		defines "SS_DEBUG"
+		defines "SE_DEBUG"
 		runtime "Debug"
 		symbols "on"
 
 	filter "configurations:Release"
-		defines "SS_RELEASE"
+		defines "SE_RELEASE"
 		runtime "Release"
 		optimize "on"
 
 	filter "configurations:Dist"
-		defines "SS_DIST"
+		defines "SE_DIST"
 		runtime "Release"
 		optimize "on"
 
@@ -125,29 +125,29 @@ project "Sandbox"
 
 	includedirs
 	{
-		"StarStudio/vendor/spdlog/include",
-		"StarStudio/src",
-		"StarStudio/vendor",
+		"StarEngine/vendor/spdlog/include",
+		"StarEngine/src",
+		"StarEngine/vendor",
 		"%{IncludeDir.glm}"
 	}
 
 	links
 	{
-		"StarStudio"
+		"StarEngine"
 	}
 
 	filter "configurations:Debug"
-		defines "SS_DEBUG"
+		defines "SE_DEBUG"
 		runtime "Debug"
 		symbols "on"
 
 	filter "configurations:Release"
-		defines "SS_RELEASE"
+		defines "SE_RELEASE"
 		runtime "Release"
 		optimize "on"
 
 	filter "configurations:Dist"
-		defines "SS_DIST"
+		defines "SE_DIST"
 		runtime "Release"
 		optimize "on"
 
