@@ -2,7 +2,7 @@
 bin-int/
 .vs/
 
-# StarStudio files
+# StarEngine files
 *.log
 
 
@@ -12,5 +12,5 @@ bin-int/
 *.sln
 *imgui.ini
 /Sandbox/imgui.ini
-/StarStudio/vendor/GLAD/bin
-Sandbox/StarStudioProfile*.json
+/StarEngine/vendor/*/bin
+Sandbox/StarEngineProfile*.json
