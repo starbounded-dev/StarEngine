@@ -2,7 +2,7 @@
 
 #include "StarEngine/Renderer/RendererAPI.h"
 
-namespace StarStudio
+namespace StarEngine
 {
 	class RenderCommand
 	{
