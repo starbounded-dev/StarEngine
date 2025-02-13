@@ -33,7 +33,7 @@ namespace StarEngine {
 		stbi_set_flip_vertically_on_load(1);
 		stbi_uc* data = nullptr;
 		{
-			SS_PROFILE_SCOPE("stbi_load - OpenGLTexture2D::OpenGLTexture2D(const std:string&)");
+			SE_PROFILE_SCOPE("stbi_load - OpenGLTexture2D::OpenGLTexture2D(const std:string&)");
 			data = stbi_load(path.c_str(), &width, &height, &channels, 0);
 		}
 
@@ -79,7 +79,7 @@ namespace StarEngine {
 		SE_PROFILE_FUNCTION();
 
 		uint32_t bpp = m_DataFormat == GL_RGBA ? 4 : 3;
-		SS_CORE_ASSERT(size == m_Width * m_Height * bpp, "Data must be entire texture!");
+		SE_CORE_ASSERT(size == m_Width * m_Height * bpp, "Data must be entire texture!");
 		glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data);
 	}
 
