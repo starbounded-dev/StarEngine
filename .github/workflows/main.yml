@@ -1,4 +1,4 @@
-name: Build StarStudio
+name: Build StarEngine
 
 on:
   push:
@@ -29,10 +29,10 @@ jobs:
         run: premake5 vs2022
 
       - name: Build project with MSBuild
-        run: MSBuild /m /p:Configuration=Debug StarStudio.sln
+        run: MSBuild /m /p:Configuration=Debug StarEngine.sln
 
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
-          name: StarStudio-Windows
+          name: StarEngine-Windows
           path: "bin/Debug-windows-x86_64/Sandbox/Sandbox.exe"
