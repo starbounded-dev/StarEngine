@@ -16,15 +16,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-            submodules: recursive
-            fetch-depth: = 0
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Checkout correct commit for GLFW submodule
+        run: |
+          cd StarEngine/vendor/GLFW
+          git fetch origin 9544dde61dc927b5f5d8a3b393e2ede295d3abd4
+          git checkout 9544dde61dc927b5f5d8a3b393e2ede295d3abd4
 
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v1.0.2
 
       - uses: abel0b/setup-premake@v2.4
         with:
-            version: "5.0.0-beta4"
+          version: "5.0.0-beta4"
 
       - name: Generate project files with Premake
         run: premake5 vs2022
