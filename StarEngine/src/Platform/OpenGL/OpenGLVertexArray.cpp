@@ -1,10 +1,10 @@
-#include "sspch.h"
+#include "sepch.h"
 #include "Platform/OpenGL/OpenGLVertexArray.h"
 
 
 #include <glad/glad.h>
 
-namespace StarStudio {
+namespace StarEngine {
 
 	static GLenum ShaderDataTypeToOpenGLBaseType(ShaderDataType type) {
 
@@ -22,38 +22,38 @@ namespace StarStudio {
 		case ShaderDataType::Bool:     return GL_BOOL;
 		}
 
-		SS_CORE_ASSERT(false, "Unknown ShaderDataType!");
+		SE_CORE_ASSERT(false, "Unknown ShaderDataType!");
 		return 0;
 	}
 
 	OpenGLVertexArray::OpenGLVertexArray() {
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		glCreateVertexArrays(1, &m_RendererID);
 	}
 
 	OpenGLVertexArray::~OpenGLVertexArray() {
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		glDeleteVertexArrays(1, &m_RendererID);
 	}
 
 	void OpenGLVertexArray::Bind() const {
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		glBindVertexArray(m_RendererID);
 	}
 
 	void OpenGLVertexArray::Unbind() const {
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		glBindVertexArray(0);
 	}
 
 	void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer) {
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
-		SS_CORE_ASSERT(vertexBuffer->GetLayout().GetElements().size(), "Vertex Buffer has no layout!");
+		SE_CORE_ASSERT(vertexBuffer->GetLayout().GetElements().size(), "Vertex Buffer has no layout!");
 
 		glBindVertexArray(m_RendererID);
 		vertexBuffer->Bind();
@@ -103,7 +103,7 @@ namespace StarStudio {
 				break;
 			}
 			default:
-				SS_CORE_ASSERT(false, "Unknown ShaderDataType!");
+				SE_CORE_ASSERT(false, "Unknown ShaderDataType!");
 			}
 		}
 
@@ -111,7 +111,7 @@ namespace StarStudio {
 	}
 
 	void OpenGLVertexArray::SetIndexBuffer(const Ref<IndexBuffer>& indexBuffer) {
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		glBindVertexArray(m_RendererID);
 		indexBuffer->Bind();

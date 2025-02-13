@@ -1,8 +1,8 @@
 #pragma once
 
-#include "StarStudio/Renderer/VertexArray.h"
+#include "StarEngine/Renderer/VertexArray.h"
 
-namespace StarStudio {
+namespace StarEngine {
 
 	class OpenGLVertexArray : public VertexArray
 	{

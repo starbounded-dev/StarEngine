@@ -1,8 +1,8 @@
 #pragma once
 
-#include "StarStudio/Renderer/Buffer.h"
+#include "StarEngine/Renderer/Buffer.h"
 
-namespace StarStudio {
+namespace StarEngine {
 
 	class OpenGLVertexBuffer : public VertexBuffer {
 

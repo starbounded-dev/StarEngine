@@ -1,10 +1,10 @@
 #pragma once
 
-#include "StarStudio/Renderer/GraphicsContext.h"
+#include "StarEngine/Renderer/GraphicsContext.h"
 
 struct GLFWwindow;
 
-namespace StarStudio {
+namespace StarEngine {
 
 	class OpenGLContext : public GraphicsContext
 	{

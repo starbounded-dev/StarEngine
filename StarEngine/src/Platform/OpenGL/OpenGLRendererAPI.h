@@ -1,8 +1,8 @@
 #pragma once
 
-#include "StarStudio/Renderer/RendererAPI.h"
+#include "StarEngine/Renderer/RendererAPI.h"
 
-namespace StarStudio
+namespace StarEngine
 {
 	class OpenGLRendererAPI : public RendererAPI
 	{

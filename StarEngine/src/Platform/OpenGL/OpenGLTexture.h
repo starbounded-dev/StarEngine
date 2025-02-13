@@ -1,10 +1,10 @@
 #pragma once
 
-#include "StarStudio/Renderer/Texture.h"
+#include "StarEngine/Renderer/Texture.h"
 
 #include <glad/glad.h>
 
-namespace StarStudio {
+namespace StarEngine {
 
 	class OpenGLTexture2D : public Texture2D
 	{

@@ -1,11 +1,11 @@
-#include "sspch.h"
+#include "sepch.h"
 #include "Platform/OpenGL/OpenGLShader.h"
 
 #include <fstream>
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace StarStudio {
+namespace StarEngine {
 
 	static GLenum ShaderTypeFromString(const std::string& type)
 	{
@@ -14,13 +14,13 @@ namespace StarStudio {
 		if (type == "fragment" || type == "pixel")
 			return GL_FRAGMENT_SHADER;
 
-		SS_CORE_ASSERT(false, "Unknown shader type!");
+		SE_CORE_ASSERT(false, "Unknown shader type!");
 		return 0;
 	}
 
 	OpenGLShader::OpenGLShader(const std::string& filepath)
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		std::string source = ReadFile(filepath);
 		auto shaderSources = PreProcess(source);
@@ -37,7 +37,7 @@ namespace StarStudio {
 	OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc)
 		: m_Name(name)
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		std::unordered_map<GLenum, std::string> sources;
 		sources[GL_VERTEX_SHADER] = vertexSrc;
@@ -47,14 +47,14 @@ namespace StarStudio {
 
 	OpenGLShader::~OpenGLShader()
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		glDeleteProgram(m_RendererID);
 	}
 
 	std::string OpenGLShader::ReadFile(const std::string& filepath)
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		std::string result;
 		std::ifstream in(filepath, std::ios::in | std::ios::binary);
@@ -71,12 +71,12 @@ namespace StarStudio {
 			}
 			else
 			{
-				SS_CORE_ERROR("Could not read from file '{0}'", filepath);
+				SE_CORE_ERROR("Could not read from file '{0}'", filepath);
 			}
 		}
 		else
 		{
-			SS_CORE_ERROR("Could not open file '{0}'", filepath);
+			SE_CORE_ERROR("Could not open file '{0}'", filepath);
 		}
 
 		return result;
@@ -84,7 +84,7 @@ namespace StarStudio {
 
 	std::unordered_map<GLenum, std::string> OpenGLShader::PreProcess(const std::string& source)
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		std::unordered_map<GLenum, std::string> shaderSources;
 
@@ -94,13 +94,13 @@ namespace StarStudio {
 		while (pos != std::string::npos)
 		{
 			size_t eol = source.find_first_of("\r\n", pos); //End of shader type declaration line
-			SS_CORE_ASSERT(eol != std::string::npos, "Syntax error");
+			SE_CORE_ASSERT(eol != std::string::npos, "Syntax error");
 			size_t begin = pos + typeTokenLength + 1;  //Start of shader type name (after "#type " keyword)
 			std::string type = source.substr(begin, eol - begin);
-			SS_CORE_ASSERT(ShaderTypeFromString(type), "Invalid shader type specified");
+			SE_CORE_ASSERT(ShaderTypeFromString(type), "Invalid shader type specified");
 
 			size_t nextLinePos = source.find_first_not_of("\r\n", eol); //Start of shader code after shader type declaration line
-			SS_CORE_ASSERT(nextLinePos != std::string::npos, "Syntax error");
+			SE_CORE_ASSERT(nextLinePos != std::string::npos, "Syntax error");
 			pos = source.find(typeToken, nextLinePos); //Start of next shader type declaration line
 
 			shaderSources[ShaderTypeFromString(type)] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
@@ -111,10 +111,10 @@ namespace StarStudio {
 
 	void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& shaderSources)
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		GLuint program = glCreateProgram();
-		SS_CORE_ASSERT(shaderSources.size() <= 2, "We only support 2 shaders for now");
+		SE_CORE_ASSERT(shaderSources.size() <= 2, "We only support 2 shaders for now");
 		std::array<GLenum, 2> glShaderIDs;
 		int glShaderIDIndex = 0;
 		for (auto& kv : shaderSources)
@@ -141,8 +141,8 @@ namespace StarStudio {
 
 				glDeleteShader(shader);
 
-				SS_CORE_ERROR("{0}", infoLog.data());
-				SS_CORE_ASSERT(false, "Shader compilation failure!");
+				SE_CORE_ERROR("{0}", infoLog.data());
+				SE_CORE_ASSERT(false, "Shader compilation failure!");
 				break;
 			}
 
@@ -169,8 +169,8 @@ namespace StarStudio {
 			for (auto id : glShaderIDs)
 				glDeleteShader(id);
 
-			SS_CORE_ERROR("{0}", infoLog.data());
-			SS_CORE_ASSERT(false, "Shader link failure!");
+			SE_CORE_ERROR("{0}", infoLog.data());
+			SE_CORE_ASSERT(false, "Shader link failure!");
 			return;
 		}
 
@@ -184,21 +184,21 @@ namespace StarStudio {
 
 	void OpenGLShader::Bind() const
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		glUseProgram(m_RendererID);
 	}
 
 	void OpenGLShader::Unbind() const
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		glUseProgram(0);
 	}
 
 	void OpenGLShader::SetInt(const std::string& name, int value)
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		UploadUniformInt(name, value);
 	}
@@ -210,27 +210,27 @@ namespace StarStudio {
 
 	void OpenGLShader::SetFloat(const std::string& name, float value)
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 		UploadUniformFloat(name, value);
 	}
 
 	void OpenGLShader::SetFloat3(const std::string& name, const glm::vec3& value)
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		UploadUniformFloat3(name, value);
 	}
 
 	void OpenGLShader::SetFloat4(const std::string& name, const glm::vec4& value)
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		UploadUniformFloat4(name, value);
 	}
 
 	void OpenGLShader::SetMat4(const std::string& name, const glm::mat4& value)
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		UploadUniformMat4(name, value);
 	}

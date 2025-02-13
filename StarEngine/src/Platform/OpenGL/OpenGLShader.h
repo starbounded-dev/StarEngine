@@ -1,14 +1,14 @@
 #pragma once
 
-#include "StarStudio/Renderer/Shader.h"
+#include "StaStarEnginerStudio/Renderer/Shader.h"
 #include <glm/glm.hpp>
 
 //TODO REMOVE THIS
 typedef unsigned int GLenum;
 
-namespace StarStudio {
+namespace StarEngine {
 
-	class OpenGLShader : public StarStudio::Shader
+	class OpenGLShader : public StarEngine::Shader
 	{
 
 	public:

@@ -1,9 +1,9 @@
-#include "sspch.h"
+#include "sepch.h"
 #include "Platform/OpenGL/OpenGLRendererAPI.h"
 
 #include <glad/glad.h>
 
-namespace StarStudio
+namespace StarEngine
 {
 	void OpenGLMessageCallback(
 		unsigned source,
@@ -22,14 +22,14 @@ namespace StarStudio
 		case GL_DEBUG_SEVERITY_NOTIFICATION: SS_CORE_TRACE(message); return;
 		}
 
-		SS_CORE_ASSERT(false, "Unknown severity level!");
+		SE_CORE_ASSERT(false, "Unknown severity level!");
 	}
 
 	void OpenGLRendererAPI::Init()
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
-		#ifdef SS_DEBUG
+		#ifdef SE_DEBUG
 				glEnable(GL_DEBUG_OUTPUT);
 				glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 				glDebugMessageCallback(OpenGLMessageCallback, nullptr);
