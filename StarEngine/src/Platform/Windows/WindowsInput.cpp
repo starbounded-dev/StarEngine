@@ -1,10 +1,10 @@
-#include "sspch.h"
+#include "sepch.h"
 #include "Platform/Windows/WindowsInput.h"
 
-#include "StarStudio/Core/Application.h"
+#include "StarEngine/Core/Application.h"
 #include <GLFW/glfw3.h>
 
-namespace StarStudio {
+namespace StarEngine {
 
 	bool WindowsInput::IsKeyPressedImpl(KeyCode key)
 	{

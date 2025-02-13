@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StaStarEnginerStudio/Renderer/Shader.h"
+#include "StarEngine/Renderer/Shader.h"
 #include <glm/glm.hpp>
 
 //TODO REMOVE THIS

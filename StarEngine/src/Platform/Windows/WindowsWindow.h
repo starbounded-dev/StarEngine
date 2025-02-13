@@ -1,11 +1,11 @@
 #pragma once
 
-#include "StarStudio/Core/Window.h"
-#include "StarStudio/Renderer/GraphicsContext.h"
+#include "StarEngine/Core/Window.h"
+#include "StarEngine/Renderer/GraphicsContext.h"
 
 #include <GLFW/glfw3.h>
 
-namespace StarStudio {
+namespace StarEngine {
 
 	class WindowsWindow : public Window
 	{

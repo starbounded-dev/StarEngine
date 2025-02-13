@@ -1,61 +1,61 @@
-#include "sspch.h"
+#include "sepch.h"
 #include "Platform/Windows/WindowsWindow.h"
 
-#include "StarStudio/Core/Input.h"
+#include "StarEngine/Core/Input.h"
 
-#include "StarStudio/Events/ApplicationEvent.h"
-#include "StarStudio/Events/MouseEvent.h"
-#include "StarStudio/Events/KeyEvent.h"
+#include "StarEngine/Events/ApplicationEvent.h"
+#include "StarEngine/Events/MouseEvent.h"
+#include "StarEngine/Events/KeyEvent.h"
 
-#include "StarStudio/Renderer/Renderer.h"
+#include "StarEngine/Renderer/Renderer.h"
 
 #include "Platform/OpenGL/OpenGLContext.h"
 
-namespace StarStudio {
+namespace StarEngine {
 
 	static uint8_t s_GLFWWindowCount = 0;
 
 	static void GLFWErrorCallback(int error, const char* description)
 	{
-		SS_CORE_ERROR("GLFW Error ({0}): {1}", error, description);
+		SE_CORE_ERROR("GLFW Error ({0}): {1}", error, description);
 	}
 
 	WindowsWindow::WindowsWindow(const WindowProps& props)
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		Init(props);
 	}
 
 	WindowsWindow::~WindowsWindow()
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		Shutdown();
 	}
 
 	void WindowsWindow::Init(const WindowProps& props)
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		m_Data.Title = props.Title;
 		m_Data.Width = props.Width;
 		m_Data.Height = props.Height;
 
-		SS_CORE_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
+		SE_CORE_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
 
 		if (s_GLFWWindowCount == 0)
 		{
-			SS_PROFILE_SCOPE("glfwInit");
+			SE_PROFILE_SCOPE("glfwInit");
 			int success = glfwInit();
-			SS_CORE_ASSERT(success, "Could not initialize GLFW!");
+			SE_CORE_ASSERT(success, "Could not initialize GLFW!");
 			glfwSetErrorCallback(GLFWErrorCallback);
 		}
 
 		{
-			SS_PROFILE_SCOPE("glfwCreateWindow");
+			SE_PROFILE_SCOPE("glfwCreateWindow");
 
-			#if defined(SS_DEBUG)
+			#if defined(SE_DEBUG)
 				if (Renderer::GetAPI() == RendererAPI::API::OpenGL)
 					glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 			#endif
@@ -163,7 +163,7 @@ namespace StarStudio {
 
 	void WindowsWindow::Shutdown()
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		glfwDestroyWindow(m_Window);
 		--s_GLFWWindowCount;
@@ -176,7 +176,7 @@ namespace StarStudio {
 
 	void WindowsWindow::OnUpdate()
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		glfwPollEvents();
 		m_Context->SwapBuffers();
@@ -184,7 +184,7 @@ namespace StarStudio {
 
 	void WindowsWindow::SetVSync(bool enabled)
 	{
-		SS_PROFILE_FUNCTION();
+		SE_PROFILE_FUNCTION();
 
 		if (enabled)
 			glfwSwapInterval(1);

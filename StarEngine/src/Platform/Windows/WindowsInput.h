@@ -1,8 +1,8 @@
 #pragma once
 
-#include "StarStudio/Core/Input.h"
+#include "StarEngine/Core/Input.h"
 
-namespace StarStudio {
+namespace StarEngine {
 
 	class WindowsInput : public Input {
 	protected:
