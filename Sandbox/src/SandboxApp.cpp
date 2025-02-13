@@ -1,12 +1,12 @@
-#include <StarStudio.h>
-#include <StarStudio/Core/EntryPoint.h>
+#include <StarEngine.h>
+#include <StarEngine/Core/EntryPoint.h>
 
-#include "StarStudio/Renderer/OrthographicCameraController.h"
+#include "StarEngine/Renderer/OrthographicCameraController.h"
 #include "Sandbox2D.h"
 
 #include "ExampleLayer.h"
 
-class Sandbox : public StarStudio::Application
+class Sandbox : public StarEngine::Application
 {
 public:
 	Sandbox()
@@ -22,7 +22,7 @@ public:
 
 };
 
-StarStudio::Application* StarStudio::CreateApplication()
+StarEngine::Application* StarEngine::CreateApplication()
 {
 	return new Sandbox();
 }

@@ -1,4 +1,4 @@
-name: Build StarStudio
+name: Build StarEngine
 
 on:
   push:
@@ -16,23 +16,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-            submodules: recursive
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Checkout correct commit for GLFW submodule
+        run: |
+          cd StarEngine/vendor/GLFW
+          git fetch origin 9544dde61dc927b5f5d8a3b393e2ede295d3abd4
+          git checkout 9544dde61dc927b5f5d8a3b393e2ede295d3abd4
 
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v1.0.2
 
       - uses: abel0b/setup-premake@v2.4
         with:
-            version: "5.0.0-beta4"
+          version: "5.0.0-beta4"
 
       - name: Generate project files with Premake
         run: premake5 vs2022
 
       - name: Build project with MSBuild
-        run: MSBuild /m /p:Configuration=Debug StarStudio.sln
+        run: MSBuild /m /p:Configuration=Debug StarEngine.sln
 
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
-          name: StarStudio-Windows
+          name: StarEngine-Windows
           path: "bin/Debug-windows-x86_64/Sandbox/Sandbox.exe"

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "StarStudio.h"
-#include "StarStudio/Renderer/OrthographicCameraController.h"
+#include "StarEngine.h"
+#include "StarEngine/Renderer/OrthographicCameraController.h"
 
-class ExampleLayer : public StarStudio::Layer
+class ExampleLayer : public StarEngine::Layer
 {
 
 public:
@@ -13,19 +13,19 @@ public:
 	virtual void OnAttach() override;
 	virtual void OnDetach() override;
 
-	void OnUpdate(StarStudio::Timestep ts) override;
+	void OnUpdate(StarEngine::Timestep ts) override;
 	virtual void OnImGuiRender() override;
-	void OnEvent(StarStudio::Event& e) override;
+	void OnEvent(StarEngine::Event& e) override;
 private:
-	StarStudio::ShaderLibrary m_ShaderLibrary;
-	StarStudio::Ref<StarStudio::Shader> m_Shader;
-	StarStudio::Ref<StarStudio::VertexArray> m_VertexArray;
+	StarEngine::ShaderLibrary m_ShaderLibrary;
+	StarEngine::Ref<StarEngine::Shader> m_Shader;
+	StarEngine::Ref<StarEngine::VertexArray> m_VertexArray;
 
-	StarStudio::Ref<StarStudio::Shader> m_FlatColorShader;
-	StarStudio::Ref<StarStudio::VertexArray> m_SquareVA;
+	StarEngine::Ref<StarEngine::Shader> m_FlatColorShader;
+	StarEngine::Ref<StarEngine::VertexArray> m_SquareVA;
 
-	StarStudio::Ref<StarStudio::Texture2D> m_Texture, m_starLogoTexture;
+	StarEngine::Ref<StarEngine::Texture2D> m_Texture, m_starLogoTexture;
 
-	StarStudio::OrthographicCameraController m_CameraController;
+	StarEngine::OrthographicCameraController m_CameraController;
 	glm::vec3 m_SquareColor = { 0.2f, 0.3f, 0.8f };
 };
