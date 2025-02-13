@@ -1,4 +1,4 @@
-#include "sspch.h"
+#include "sepch.h"
 #include "StarEngine/Core/Application.h"
 
 #include "StarEngine/Core/Log.h"
