@@ -1,6 +1,6 @@
 [submodule "StarEngine/vendor/GLFW"]
 	path = StarEngine/vendor/GLFW
-	url = https://github.com/TheCherno/glfw
+	url = https://github.com/starbounded-dev/glfw
 	branch = master
 [submodule "StarEngine/vendor/spdlog"]
 	path = StarEngine/vendor/spdlog
