@@ -8,7 +8,7 @@
 [submodule "StarEngine/vendor/imgui"]
 	path = StarEngine/vendor/imgui
 	url = https://github.com/starbounded-dev/imgui
-	branch = docking
+	branch = 6d276345
 [submodule "StarEngine/vendor/glm"]
 	path = StarEngine/vendor/glm
 	url = https://github.com/g-truc/glm
