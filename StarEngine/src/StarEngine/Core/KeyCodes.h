@@ -2,7 +2,7 @@
 
 namespace StarEngine
 {
-	typedef enum claSE KeyCode : uint16_t
+	typedef enum class KeyCode : uint16_t
 	{
 		// From glfw3.h
 		Space = 32,

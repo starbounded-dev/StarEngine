@@ -1,4 +1,4 @@
-#include "sspch.h"
+#include "sepch.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"

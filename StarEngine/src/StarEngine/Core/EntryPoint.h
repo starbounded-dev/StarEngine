@@ -9,7 +9,7 @@ extern StarEngine::Application* StarEngine::CreateApplication();
 		StarEngine::Log::Init();
 
 		SE_PROFILE_BEGIN_SESSION("Startup", "StarEngineProfile-Startup.json");
-		auto app = StarStudio::CreateApplication();
+		auto app = StarEngine::CreateApplication();
 		SE_PROFILE_END_SESSION();
 
 		SE_PROFILE_BEGIN_SESSION("Runtime", "StarEngineProfile-Runtime.json");

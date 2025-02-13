@@ -5,7 +5,7 @@
 
 #include "Platform/OpenGL/OpenGLBuffer.h"
 
-namespace StarStudio {
+namespace StarEngine {
 
 	Ref<VertexBuffer> VertexBuffer::Create(uint32_t size)
 	{
