@@ -10,7 +10,7 @@
 Sandbox2D::Sandbox2D()
 	:Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f, true), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f })
 {
-	
+
 }
 
 void Sandbox2D::OnAttach()
@@ -72,6 +72,13 @@ void Sandbox2D::OnImGuiRender()
 	ImGuiContext& g = *GImGui;
 	ImGuiIO& io = g.IO;
 
+	#ifdef SE_DIST
+	SE_CORE_INFO("FPS : {0}", io.Framerate);
+	#endif
+
+
+	#ifdef SE_DEBUG
+
 	//Camera Info
 	ImGui::Begin("Camera Info");
 
@@ -109,7 +116,8 @@ void Sandbox2D::OnImGuiRender()
 	ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 
 	ImGui::End();
-	
+
+	#endif
 }
 
 void Sandbox2D::OnEvent(StarEngine::Event& e)
