@@ -43,7 +43,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: StarEngine-Windows
-          path: |
-            bin/Debug-windows-x86_64/Sandbox/Sandbox.exe
-            bin/Debug-windows-x86_64/Sandbox/assets/
-          
+          path: "bin/Debug-windows-x86_64/Sandbox/Sandbox.exe"
