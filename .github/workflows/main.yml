@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - 1st-project
   pull_request:
     branches:
       - main
