@@ -18,6 +18,7 @@ void Sandbox2D::OnAttach()
 	SE_PROFILE_FUNCTION();
 
 	m_CheckerboardTexture = StarEngine::Texture2D::Create("assets/textures/Checkerboard.png");
+	m_SpriteSheet = StarEngine::Texture2D::Create("assets/game/textures/RPGpack_sheet_2X.png");
 
 	m_Particle.ColorBegin = { 254 / 255.0f, 212 / 255.0f, 123 / 255.0f, 1.0f };
 	m_Particle.ColorEnd = { 254 / 255.0f, 109 / 255.0f, 41 / 255.0f, 1.0f };
@@ -46,7 +47,7 @@ void Sandbox2D::OnUpdate(StarEngine::Timestep ts)
 		StarEngine::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		StarEngine::RenderCommand::Clear();
 	}
-	
+	/*
 	{
 		static float rotation = 0.0f;
 		rotation += ts * 50.0f;
@@ -72,7 +73,7 @@ void Sandbox2D::OnUpdate(StarEngine::Timestep ts)
 		}
 		StarEngine::Renderer2D::EndScene();
 	}
-	
+	*/
 	if (StarEngine::Input::IsMouseButtonPressed(SE_MOUSE_BUTTON_LEFT))
 	{
 		auto [x, y] = StarEngine::Input::GetMousePosition();
@@ -87,6 +88,10 @@ void Sandbox2D::OnUpdate(StarEngine::Timestep ts)
 		for (int i = 0; i < 5; i++)
 			m_ParticleSystem.Emit(m_Particle);
 	}
+
+	StarEngine::Renderer2D::BeginScene(m_CameraController.GetCamera());
+	StarEngine::Renderer2D::DrawQuad({ 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f }, m_SpriteSheet);
+	StarEngine::Renderer2D::EndScene();
 
 	m_ParticleSystem.OnUpdate(ts);
 	m_ParticleSystem.OnRender(m_CameraController.GetCamera());
