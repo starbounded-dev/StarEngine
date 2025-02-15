@@ -152,4 +152,9 @@ project "Sandbox"
 		optimize "on"
 
 	filter "action:vs2022"
-      buildoptions { "/utf-8" }
+    	buildoptions { "/utf-8" }
+
+	filter "system:windows"
+		postbuildcommands {
+			'xcopy /E /I /Y "%{prj.name}\\assets" "%{cfg.targetdir}\\assets"'
+		}
