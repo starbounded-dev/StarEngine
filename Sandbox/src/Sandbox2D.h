@@ -29,6 +29,8 @@ private:
 	StarEngine::Ref<StarEngine::Texture2D> m_CheckerboardTexture;
 	StarEngine::Ref<StarEngine::Texture2D> m_SpriteSheet;
 
+	StarEngine::Ref<StarEngine::SubTexture2D> m_TextureStairs, m_TextureBarrel, m_TextureTree;
+
 	glm::vec4 m_SquareColor = { 0.2f, 0.3f, 0.8f, 1.0f };
 
 	ParticleSystem m_ParticleSystem;

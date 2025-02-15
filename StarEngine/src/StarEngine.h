@@ -23,6 +23,7 @@
 #include "StarEngine/Renderer/Buffer.h"
 #include "StarEngine/Renderer/Shader.h"
 #include "StarEngine/Renderer/Texture.h"
+#include "StarEngine/Renderer/SubTexture2D.h"
 #include "StarEngine/Renderer/VertexArray.h"
 
 #include "StarEngine/Renderer/OrthographicCamera.h"
