@@ -7,6 +7,26 @@
 
 #include "imgui/imgui_internal.h"
 
+static const uint32_t s_MapWidth = 15;
+static const char* s_MapTiles = 
+	"WWWWWWWWWWWWWWW"
+	"WWWWWWWWWWWWWWW"
+	"WWWWWDDDWWWWWWW"
+	"WWWDDDDDDDWWWWW"
+	"WWDDDDDDDDDWWWW"
+	"WWDDDWWDDDDWWWW"
+	"WWWDDWWDDDWWWWW"
+	"WWDDDWWDDDDWWWW"
+	"WWWDDDWDDDDWWWW"
+	"WWWDDDDDDDWWWWW"
+	"WWDDDDDDDDWWWWW"
+	"WWDDDDDDDDDWWWW"
+	"WWWDDDDDDDWWWWW"
+	"WWWWWWWWWWWWWWW"
+	"WWWWWWWWWWWWWWW"
+;
+
+
 Sandbox2D::Sandbox2D()
 	:Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f, true), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f })
 {
@@ -23,6 +43,12 @@ void Sandbox2D::OnAttach()
 	m_TextureStairs = StarEngine::SubTexture2D::CreateFromCoords(m_SpriteSheet, { 7, 6 }, { 128, 128 }, { 1, 1 });
 	m_TextureBarrel = StarEngine::SubTexture2D::CreateFromCoords(m_SpriteSheet, { 8, 2 }, { 128, 128 }, { 1, 1 });
 	m_TextureTree = StarEngine::SubTexture2D::CreateFromCoords(m_SpriteSheet, { 4, 1 }, { 128, 128 }, { 1, 2 });
+
+	m_MapWidth = s_MapWidth;
+	m_MapHeight = strlen(s_MapTiles) / s_MapWidth;
+
+	s_TextureMap['W'] = StarEngine::SubTexture2D::CreateFromCoords(m_SpriteSheet, { 11, 11 }, { 128, 128 }, { 1, 1 });
+	s_TextureMap['D'] = StarEngine::SubTexture2D::CreateFromCoords(m_SpriteSheet, { 6, 11 }, { 128, 128 }, { 1, 1 });
 
 	m_Particle.ColorBegin = { 254 / 255.0f, 212 / 255.0f, 123 / 255.0f, 1.0f };
 	m_Particle.ColorEnd = { 254 / 255.0f, 109 / 255.0f, 41 / 255.0f, 1.0f };
@@ -94,6 +120,21 @@ void Sandbox2D::OnUpdate(StarEngine::Timestep ts)
 	}
 
 	StarEngine::Renderer2D::BeginScene(m_CameraController.GetCamera());
+
+	for (uint32_t y = 0; y < s_MapWidth; y++)
+	{
+		for (uint32_t x = 0; x < s_MapWidth; x++)
+		{
+			char tileType = s_MapTiles[x + y * s_MapWidth];
+			StarEngine::Ref<StarEngine::SubTexture2D> texture;
+			if (s_TextureMap.find(tileType) != s_TextureMap.end())
+				texture = s_TextureMap[tileType];
+			else
+				texture = m_TextureStairs;
+			StarEngine::Renderer2D::DrawQuad({ x - s_MapWidth / 2.0f, s_MapWidth / 2.0f - y }, { 1.0f, 1.0f }, texture);
+		}
+	}
+
 	StarEngine::Renderer2D::DrawQuad({ 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f }, m_TextureBarrel);
 	StarEngine::Renderer2D::DrawQuad({ -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f }, m_TextureStairs);
 	StarEngine::Renderer2D::DrawQuad({ 1.0f, 0.0f, 0.0f }, { 1.0f, 2.0f }, m_TextureTree);
