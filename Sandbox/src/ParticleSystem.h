@@ -2,8 +2,6 @@
 
 #include <StarEngine.h>
 
-#include "StarEngine.h"
-
 struct ParticleProps
 {
 	glm::vec2 Position;

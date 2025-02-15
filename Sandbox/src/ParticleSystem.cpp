@@ -65,7 +65,6 @@ void ParticleSystem::OnRender(StarEngine::OrthographicCamera& camera)
 		//color.a = color.a * life;
 
 		float size = glm::lerp(particle.SizeEnd, particle.SizeBegin, life);
-
 		StarEngine::Renderer2D::DrawRotatedQuad(particle.Position, { size, size }, particle.Rotation, color);
 	}
 	StarEngine::Renderer2D::EndScene();

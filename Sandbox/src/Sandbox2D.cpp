@@ -19,8 +19,6 @@ void Sandbox2D::OnAttach()
 
 	m_CheckerboardTexture = StarEngine::Texture2D::Create("assets/textures/Checkerboard.png");
 
-	m_ParticleSystem = ParticleSystem();
-
 	m_Particle.ColorBegin = { 254 / 255.0f, 212 / 255.0f, 123 / 255.0f, 1.0f };
 	m_Particle.ColorEnd = { 254 / 255.0f, 109 / 255.0f, 41 / 255.0f, 1.0f };
 	m_Particle.SizeBegin = 0.5f, m_Particle.SizeVariation = 0.3f, m_Particle.SizeEnd = 0.0f;
@@ -144,6 +142,12 @@ void Sandbox2D::OnImGuiRender()
 	ImGui::End();
 
 	#endif
+
+	ImGui::Begin("Settings");
+	ImGui::ColorEdit4("Birth Color", glm::value_ptr(m_Particle.ColorBegin));
+	ImGui::ColorEdit4("Death Color", glm::value_ptr(m_Particle.ColorEnd));
+	ImGui::DragFloat("Life Time", &m_Particle.LifeTime, 0.1f, 0.0f, 1000.0f);
+	ImGui::End();
 }
 
 void Sandbox2D::OnEvent(StarEngine::Event& e)
