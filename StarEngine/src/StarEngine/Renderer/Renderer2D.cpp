@@ -200,7 +200,7 @@ namespace StarEngine {
 	{
 		SE_PROFILE_FUNCTION();
 
-		constexpr float x = 2.0f, y = 3.0f;
+		constexpr float x = 7.0f, y = 6.0f;
 		constexpr float sheetWidth = 2560.0f, sheetHeight = 1664.0f;
 		constexpr float spriteWidth = 128.0f, spriteHeight = 128.0f;
 
