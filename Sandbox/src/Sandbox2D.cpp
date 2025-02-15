@@ -73,7 +73,12 @@ void Sandbox2D::OnImGuiRender()
 	ImGuiIO& io = g.IO;
 
 	#ifdef SE_DIST
-	SE_CORE_INFO("FPS : {0}", io.Framerate);
+	ImGui::Begin("Distribution Build");
+	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+	if (ImGui::Checkbox("VSync", &m_VSync)) {
+		StarEngine::Application::Get().GetWindow().SetVSync(m_VSync);
+	}
+	ImGui::End();
 	#endif
 
 
