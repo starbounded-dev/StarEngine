@@ -14,8 +14,8 @@ static const char* s_MapTiles =
 	"WWWWWDDDWWWWWWW"
 	"WWWDDDDDDDWWWWW"
 	"WWDDDDDDDDDWWWW"
-	"WWDDDWWDDDDWWWW"
 	"WWWDDWWDDDWWWWW"
+	"WWDDDWWDDDDWWWW"
 	"WWDDDWWDDDDWWWW"
 	"WWWDDDWDDDDWWWW"
 	"WWWDDDDDDDWWWWW"
@@ -77,33 +77,10 @@ void Sandbox2D::OnUpdate(StarEngine::Timestep ts)
 		StarEngine::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		StarEngine::RenderCommand::Clear();
 	}
-	/*
-	{
-		static float rotation = 0.0f;
-		rotation += ts * 50.0f;
-
-		SE_PROFILE_SCOPE("Renderer Draw");
-		StarEngine::Renderer2D::BeginScene(m_CameraController.GetCamera());
-		StarEngine::Renderer2D::DrawRotatedQuad({ 1.0f, 0.0f }, { 0.8f, 0.8f }, glm::radians(-45.0f), { 0.8f, 0.2f, 0.3f, 1.0f });
-		StarEngine::Renderer2D::DrawQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, { 0.8f, 0.2f, 0.3f, 1.0f });
-		StarEngine::Renderer2D::DrawQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, m_SquareColor);
-		StarEngine::Renderer2D::DrawQuad({ 0.0f, 0.0f, -0.1f }, { 20.0f, 20.0f }, m_CheckerboardTexture, 10.0f);
-		StarEngine::Renderer2D::DrawRotatedQuad({ -2.0f, 0.0f, 0.0f }, { 1.0f, 1.0f }, glm::radians(rotation), m_CheckerboardTexture, 20.0f);
-		StarEngine::Renderer2D::EndScene();
-
-
-		StarEngine::Renderer2D::BeginScene(m_CameraController.GetCamera());
-		for (float y = -5.0f; y < 5.0f; y += 0.5f)
-		{
-			for (float x = -5.0f; x < 5.0f; x += 0.5f)
-			{
-				glm::vec4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.7f };
-				StarEngine::Renderer2D::DrawQuad({ x, y }, { 0.45f, 0.45f }, color);
-			}
-		}
-		StarEngine::Renderer2D::EndScene();
-	}
-	*/
+	
+	{ 
+		SE_PROFILE_SCOPE("Renderer Draw"); 
+	
 	if (StarEngine::Input::IsMouseButtonPressed(SE_MOUSE_BUTTON_LEFT))
 	{
 		auto [x, y] = StarEngine::Input::GetMousePosition();
@@ -119,29 +96,9 @@ void Sandbox2D::OnUpdate(StarEngine::Timestep ts)
 			m_ParticleSystem.Emit(m_Particle);
 	}
 
-	StarEngine::Renderer2D::BeginScene(m_CameraController.GetCamera());
-
-	for (uint32_t y = 0; y < s_MapWidth; y++)
-	{
-		for (uint32_t x = 0; x < s_MapWidth; x++)
-		{
-			char tileType = s_MapTiles[x + y * s_MapWidth];
-			StarEngine::Ref<StarEngine::SubTexture2D> texture;
-			if (s_TextureMap.find(tileType) != s_TextureMap.end())
-				texture = s_TextureMap[tileType];
-			else
-				texture = m_TextureStairs;
-			StarEngine::Renderer2D::DrawQuad({ x - s_MapWidth / 2.0f, s_MapWidth / 2.0f - y }, { 1.0f, 1.0f }, texture);
-		}
-	}
-
-	StarEngine::Renderer2D::DrawQuad({ 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f }, m_TextureBarrel);
-	StarEngine::Renderer2D::DrawQuad({ -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f }, m_TextureStairs);
-	StarEngine::Renderer2D::DrawQuad({ 1.0f, 0.0f, 0.0f }, { 1.0f, 2.0f }, m_TextureTree);
-	StarEngine::Renderer2D::EndScene();
-
 	m_ParticleSystem.OnUpdate(ts);
 	m_ParticleSystem.OnRender(m_CameraController.GetCamera());
+	}
 }
 
 void Sandbox2D::OnImGuiRender()
@@ -151,41 +108,59 @@ void Sandbox2D::OnImGuiRender()
 	ImGuiContext& g = *GImGui;
 	ImGuiIO& io = g.IO;
 
-#ifdef SE_DIST
-	SE_CORE_INFO("FPS : {0}", io.Framerate);
-#endif
+	static bool dockspaceOpen = true;
+	static bool opt_fullscreen = true;
+	static bool opt_padding = false;
+	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	if (opt_fullscreen)
+	{
+		const ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->WorkPos);
+		ImGui::SetNextWindowSize(viewport->WorkSize);
+		ImGui::SetNextWindowViewport(viewport->ID);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+	}
+	else
+	{
+		dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
+	}
 
-#ifdef SE_DEBUG
+	if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+		window_flags |= ImGuiWindowFlags_NoBackground;
+
+	if (!opt_padding)
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
+	if (!opt_padding)
+		ImGui::PopStyleVar();
+
+	if (opt_fullscreen)
+		ImGui::PopStyleVar(2);
+
+	// Submit the DockSpace
+	if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+	{
+		ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+	}
+
+	if (ImGui::BeginMenuBar())
+	{
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::MenuItem("Exit")) StarEngine::Application::Get().Close();
+			ImGui::EndMenu();
+		}
+		ImGui::EndMenuBar();
+	}
 
 	//Camera Info
 	ImGui::Begin("Camera Info");
-
-	ImGui::Text("Camera Position");
-	ImGui::Text("X: %.2f", m_CameraController.GetCamera().GetPosition().x);
-	ImGui::Text("Y: %.2f", m_CameraController.GetCamera().GetPosition().y);
-	ImGui::Text("Z: %.2f", m_CameraController.GetCamera().GetPosition().z);
-
-	ImGui::Text("Camera Rotation: %.2f", m_CameraController.GetCamera().GetRotation());
-
-	if (ImGui::Button("Reset")) {
-		m_CameraController.GetCamera().SetPosition(glm::vec3(0.0f));
-		m_CameraController.GetCamera().SetRotation(0.0f);
-	}
-
-	//Color Picker
-	ImGui::Text("Color Picker");
-
-	ImGui::ColorEdit3("Square Color", glm::value_ptr(m_SquareColor));
-
-	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-
-	if (ImGui::Checkbox("VSync", &m_VSync)) {
-		// Toggle VSync when the checkbox is clicked
-		StarEngine::Application::Get().GetWindow().SetVSync(m_VSync);
-	}
-
-	ImGui::Text("Settings");
 
 	auto stats = StarEngine::Renderer2D::GetStats();
 	ImGui::Text("Renderer2D Stats:");
@@ -194,14 +169,26 @@ void Sandbox2D::OnImGuiRender()
 	ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
 	ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 
-	ImGui::End();
+	ImGui::Separator();
 
-#endif
+	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+
+	if (ImGui::Checkbox("VSync", &m_VSync)) {
+		// Toggle VSync when the checkbox is clicked
+		StarEngine::Application::Get().GetWindow().SetVSync(m_VSync);
+	}
+
+	ImGui::Image(m_CheckerboardTexture->GetRendererID(), ImVec2{ 256.0f, 256.0f });
+
+	ImGui::End();
 
 	ImGui::Begin("Settings");
 	ImGui::ColorEdit4("Birth Color", glm::value_ptr(m_Particle.ColorBegin));
 	ImGui::ColorEdit4("Death Color", glm::value_ptr(m_Particle.ColorEnd));
 	ImGui::DragFloat("Life Time", &m_Particle.LifeTime, 0.1f, 0.0f, 1000.0f);
+	ImGui::End();
+
+
 	ImGui::End();
 }
 

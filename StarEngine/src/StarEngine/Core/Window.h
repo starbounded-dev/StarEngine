@@ -13,7 +13,7 @@ namespace StarEngine {
 		unsigned int Width;
 		unsigned int Height;
 
-		WindowProps(const std::string& title = "StarEngine Engine",
+		WindowProps(const std::string& title = "StarEngine",
 			unsigned int width = 1280,
 			unsigned int height = 720)
 			: Title(title), Width(width), Height(height)

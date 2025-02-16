@@ -50,6 +50,11 @@ namespace StarEngine
 		layer->OnAttach();
 	}
 
+	void Application::Close()
+	{
+		m_Running = false;
+	}
+
 	void Application::OnEvent(Event& e)
 	{
 		SE_PROFILE_FUNCTION();
