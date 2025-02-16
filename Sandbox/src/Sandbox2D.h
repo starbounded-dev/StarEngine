@@ -25,17 +25,9 @@ private:
 	// Temp
 	StarEngine::Ref<StarEngine::VertexArray> m_SquareVA;
 	StarEngine::Ref<StarEngine::Shader> m_FlatColorShader;
+	StarEngine::Ref<StarEngine::Framebuffer> m_Framebuffer;
 
 	StarEngine::Ref<StarEngine::Texture2D> m_CheckerboardTexture;
-	StarEngine::Ref<StarEngine::Texture2D> m_SpriteSheet;
-
-	StarEngine::Ref<StarEngine::SubTexture2D> m_TextureStairs, m_TextureBarrel, m_TextureTree;
 
 	glm::vec4 m_SquareColor = { 0.2f, 0.3f, 0.8f, 1.0f };
-
-	ParticleSystem m_ParticleSystem;
-	ParticleProps m_Particle;
-
-	uint32_t m_MapWidth, m_MapHeight;
-	std::unordered_map<char, StarEngine::Ref<StarEngine::SubTexture2D>> s_TextureMap;
 };

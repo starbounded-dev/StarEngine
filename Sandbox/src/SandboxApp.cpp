@@ -11,7 +11,7 @@ class Sandbox : public StarEngine::Application
 public:
 	Sandbox()
 	{
-		// PushLayer(new ExampleLayer());
+		//PushLayer(new ExampleLayer());
 		PushLayer(new Sandbox2D());
 	}
 
