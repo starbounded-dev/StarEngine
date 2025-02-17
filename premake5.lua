@@ -1,6 +1,6 @@
 workspace "StarEngine"
 	architecture "x86_64"
-	startproject "Sandbox"
+	startproject "StarEditor"
 
 	configurations
 	{
