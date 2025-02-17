@@ -153,3 +153,50 @@ project "Sandbox"
 
 	filter "action:vs2022"
       buildoptions { "/utf-8" }
+
+project "StarEditor"
+	location "StarEditor"
+	kind "ConsoleApp"
+	language "C++"
+	cppdialect "C++17"
+	staticruntime "on"
+
+	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+
+	files
+	{
+		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.cpp"
+	}
+
+	includedirs
+	{
+		"StarEngine/vendor/spdlog/include",
+		"StarEngine/src",
+		"StarEngine/vendor",
+		"%{IncludeDir.glm}"
+	}
+
+	links
+	{
+		"StarEngine"
+	}
+
+	filter "configurations:Debug"
+		defines "SE_DEBUG"
+		runtime "Debug"
+		symbols "on"
+
+	filter "configurations:Release"
+		defines "SE_RELEASE"
+		runtime "Release"
+		optimize "on"
+
+	filter "configurations:Dist"
+		defines "SE_DIST"
+		runtime "Release"
+		optimize "on"
+
+	filter "action:vs2022"
+      buildoptions { "/utf-8" }

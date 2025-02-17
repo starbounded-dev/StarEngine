@@ -3,8 +3,6 @@
 #include "StarEngine.h"
 #include "StarEngine/Renderer/OrthographicCameraController.h"
 
-#include "ParticleSystem.h"
-
 class Sandbox2D : public StarEngine::Layer
 {
 public:

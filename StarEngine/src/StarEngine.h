@@ -28,4 +28,5 @@
 #include "StarEngine/Renderer/VertexArray.h"
 
 #include "StarEngine/Renderer/OrthographicCamera.h"
+#include "StarEngine/Renderer/OrthographicCameraController.h"
 // -----------------------------------
