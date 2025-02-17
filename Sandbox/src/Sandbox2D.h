@@ -23,7 +23,6 @@ private:
 	// Temp
 	StarEngine::Ref<StarEngine::VertexArray> m_SquareVA;
 	StarEngine::Ref<StarEngine::Shader> m_FlatColorShader;
-	StarEngine::Ref<StarEngine::Framebuffer> m_Framebuffer;
 
 	StarEngine::Ref<StarEngine::Texture2D> m_CheckerboardTexture;
 
