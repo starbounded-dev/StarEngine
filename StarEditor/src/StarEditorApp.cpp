@@ -10,6 +10,7 @@ namespace StarEngine {
 	{
 	public:
 		StarEditor()
+			: Application("StarEditor")
 		{
 			PushLayer(new EditorLayer());
 		}

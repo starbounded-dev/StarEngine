@@ -18,7 +18,7 @@ namespace StarEngine
 	class Application
 	{
 		public:
-			Application();
+			Application(const std::string& name = "StarEngine");
 			virtual ~Application();
 
 			void OnEvent(Event& e);
