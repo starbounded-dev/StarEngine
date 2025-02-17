@@ -140,7 +140,7 @@ namespace StarEngine {
 			}
 
 			uint32_t textureID = m_Framebuffer->GetColorAttachmentRendererID();
-			ImGui::Image(textureID, ImVec2{ 1280, 720 });
+			ImGui::Image(textureID, ImVec2{ 1280, 720 }, ImVec2{0,1}, ImVec2{1,0});
 
 			ImGui::End();
 
