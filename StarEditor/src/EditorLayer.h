@@ -21,6 +21,7 @@ namespace StarEngine
 		OrthographicCameraController m_CameraController;
 
 		bool m_VSync = true;
+		bool m_ViewportFocused = false, m_ViewportHovered = false;
 
 		// Temp
 		Ref<VertexArray> m_SquareVA;
