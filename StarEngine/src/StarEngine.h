@@ -20,6 +20,9 @@
 #include "StarEngine/Renderer/Renderer2D.h"
 #include "StarEngine/Renderer/RenderCommand.h"
 
+#include "StarEngine/Scene/Scene.h"
+#include "StarEngine/Scene/Components.h"
+
 #include "StarEngine/Renderer/Buffer.h"
 #include "StarEngine/Renderer/Shader.h"
 #include "StarEngine/Renderer/Texture.h"

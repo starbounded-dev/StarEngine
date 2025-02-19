@@ -22,6 +22,7 @@ IncludeDir["GLAD"] = "StarEngine/vendor/GLAD/include"
 IncludeDir["imgui"] = "StarEngine/vendor/imgui"
 IncludeDir["glm"] = "StarEngine/vendor/glm"
 IncludeDir["stb_image"] = "StarEngine/vendor/stb_image"
+IncludeDir["entt"] = "StarEngine/vendor/entt/include"
 
 
 group "Dependencies"
@@ -67,7 +68,8 @@ project "StarEngine"
 		"%{IncludeDir.GLAD}",
 		"%{IncludeDir.imgui}",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.stb_image}"
+		"%{IncludeDir.stb_image}",
+		"%{IncludeDir.entt}"
 
 
 	}
@@ -128,7 +130,8 @@ project "Sandbox"
 		"StarEngine/vendor/spdlog/include",
 		"StarEngine/src",
 		"StarEngine/vendor",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.entt}"
 	}
 
 	links
@@ -175,7 +178,8 @@ project "StarEditor"
 		"StarEngine/vendor/spdlog/include",
 		"StarEngine/src",
 		"StarEngine/vendor",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.entt}"
 	}
 
 	links

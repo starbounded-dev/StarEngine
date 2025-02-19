@@ -2,6 +2,8 @@
 
 #include "StarEngine.h"
 
+#include "entt.hpp"
+
 namespace StarEngine
 {
 	class EditorLayer : public Layer
@@ -27,6 +29,9 @@ namespace StarEngine
 		Ref<VertexArray> m_SquareVA;
 		Ref<Shader> m_FlatColorShader;
 		Ref<Framebuffer> m_Framebuffer;
+
+		Ref<Scene> m_ActiveScene;
+		entt::entity m_SquareEntity;
 
 		Ref<Texture2D> m_CheckerboardTexture;
 
