@@ -14,3 +14,4 @@ bin-int/
 /Sandbox/imgui.ini
 /StarEngine/vendor/*/bin
 Sandbox/StarEngineProfile*.json
+/StarEngine/vendor/GLAD/bin**
