@@ -4,6 +4,17 @@
 
 namespace StarEngine {
 
+	struct TagComponent
+	{
+		std::string Tag;
+
+		TagComponent() = default;
+		TagComponent(const TagComponent&) = default;
+		TagComponent(const std::string& tag)
+			: Tag(tag) {
+		}
+	};
+
 	struct TransformComponent
 	{
 		glm::mat4 Transform{ 1.0f };
@@ -12,7 +23,6 @@ namespace StarEngine {
 		TransformComponent(const TransformComponent&) = default;
 		TransformComponent(const glm::mat4& transform)
 			: Transform(transform) {
-
 		}
 
 		operator glm::mat4& () { return Transform; }
@@ -27,7 +37,7 @@ namespace StarEngine {
 		SpriteRendererComponent(const SpriteRendererComponent&) = default;
 		SpriteRendererComponent(const glm::vec4& color)
 			: Color(color) {
-
 		}
 	};
+
 }
