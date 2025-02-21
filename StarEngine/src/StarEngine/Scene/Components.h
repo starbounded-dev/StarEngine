@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include "StarEngine/Renderer/Camera.h"
+
 namespace StarEngine {
 
 	struct TagComponent
@@ -37,6 +39,19 @@ namespace StarEngine {
 		SpriteRendererComponent(const SpriteRendererComponent&) = default;
 		SpriteRendererComponent(const glm::vec4& color)
 			: Color(color) {
+		}
+	};
+
+	struct CameraComponent
+	{
+		StarEngine::Camera Camera;
+		bool Primary = true; // TODO: Move to Scene
+
+		CameraComponent() = default;
+		CameraComponent(const CameraComponent&) = default;
+
+		CameraComponent(const glm::mat4& projection)
+			: Camera(projection) {
 		}
 	};
 
