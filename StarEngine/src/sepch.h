@@ -13,6 +13,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "StarEngine/Core/Base.h"
+
 #include "StarEngine/Core/Log.h"
 
 #include "StarEngine/Debug/Instrumentor.h"

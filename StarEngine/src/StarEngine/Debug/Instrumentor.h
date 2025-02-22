@@ -7,6 +7,11 @@
 #include <string>
 #include <thread>
 
+#include <mutex>
+#include <sstream>
+
+#include "StarEngine/Core/Log.h"
+
 namespace StarEngine {
 
 	using FloatingPointMicroseconds = std::chrono::duration<double, std::micro>;

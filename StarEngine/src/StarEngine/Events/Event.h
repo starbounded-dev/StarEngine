@@ -1,6 +1,8 @@
 #pragma once
 
-#include "sepch.h"
+#include <functional>
+
+#include "StarEngine/Debug/Instrumentor.h"
 #include "StarEngine/Core/Base.h"
 
 namespace StarEngine {

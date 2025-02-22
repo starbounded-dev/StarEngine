@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sepch.h"
+#include <sstream>
 
 #include "StarEngine/Core/Base.h"
 #include "StarEngine/Events/Event.h"
