@@ -7,18 +7,19 @@
 #include "StarEngine/Scene/Entity.h"
 
 namespace StarEngine {
-    class SceneHierarchyPanel {
-        public:
-            SceneHierarchyPanel() = default;
-            SceneHierarchyPanel(const Ref<Scene>& scene);
+    class SceneHierarchyPanel
+	{
+	public:
+		SceneHierarchyPanel() = default;
+		SceneHierarchyPanel(const Ref<Scene>& scene);
 
-            void SetContext(const Ref<Scene>& scene);
+		void SetContext(const Ref<Scene>& scene);
 
-            void OnImGuiRender();
-        private:
-            DrawEntityNode(Entity entity);
-        private:
-            Ref<Scene> m_Context;
-            Entity m_SelectionContext;
-    };
+		void OnImGuiRender();
+	private:
+		void DrawEntityNode(Entity entity);
+	private:
+		Ref<Scene> m_Context;
+		Entity m_SelectionContext;
+	};
 }
