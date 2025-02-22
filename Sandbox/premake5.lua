@@ -27,10 +27,8 @@ project "Sandbox"
 		"StarEngine"
 	}
 
-	defines
-	{
-		"_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING"
-	}
+	filter "system:windows" 
+		systemversion "latest"
 
 	filter "configurations:Debug"
 		defines "SE_DEBUG"

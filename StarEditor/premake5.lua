@@ -27,10 +27,8 @@ project "StarEditor"
 		"StarEngine"
 	}
 
-	defines 
-	{
-		"_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING"
-	}
+	filter "system:windows" 
+		systemversion "latest"
 
 	filter "configurations:Debug"
 		defines "SE_DEBUG"
@@ -48,4 +46,4 @@ project "StarEditor"
 		optimize "on"
 
 	filter "action:vs2022"
-      buildoptions { "/utf-8" }
+    	buildoptions { "/utf-8" }
