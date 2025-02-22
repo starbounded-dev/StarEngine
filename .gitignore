@@ -1,17 +1,15 @@
-/bin/
+# Binaries
+**/bin/
+!vendor/premake/bin/
 bin-int/
-.vs/
 
 # StarEngine files
 *.log
-
-
-*.user
-*.vcxproj
-*.filters
-*.sln
 *imgui.ini
-/Sandbox/imgui.ini
-/StarEngine/vendor/*/bin
-Sandbox/StarEngineProfile*.json
-/StarEngine/vendor/GLAD/bin**
+
+# Visual Studio files and folder
+.vs/
+**.sln
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user
