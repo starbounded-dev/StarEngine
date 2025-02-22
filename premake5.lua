@@ -57,7 +57,8 @@ project "StarEngine"
 	defines
 	{
 		"_CRT_SECURE_NO_WARNINGS",
-		"GLFW_INCLUDE_NONE"
+		"GLFW_INCLUDE_NONE",
+		"_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING"
 	}
 
 	includedirs
@@ -139,6 +140,11 @@ project "Sandbox"
 		"StarEngine"
 	}
 
+	defines
+	{
+		"_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING"
+	}
+
 	filter "configurations:Debug"
 		defines "SE_DEBUG"
 		runtime "Debug"
@@ -185,6 +191,11 @@ project "StarEditor"
 	links
 	{
 		"StarEngine"
+	}
+
+	defines 
+	{
+		"_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING"
 	}
 
 	filter "configurations:Debug"
