@@ -39,6 +39,37 @@ namespace StarEngine {
 		m_SecondCamera = m_ActiveScene->CreateEntity("Clip-Space Entity");
 		auto& cc = m_SecondCamera.AddComponent<CameraComponent>();
 		cc.Primary = false;
+
+		class CameraController : public ScriptableEntity
+		{
+		public:
+			void OnCreate()
+			{
+
+			}
+
+			void OnDestroy()
+			{
+
+			}
+
+			void OnUpdate(Timestep ts)
+			{
+				auto& transform = GetComponent<TransformComponent>().Transform;
+				float speed = 5.0f;
+
+				if (Input::IsKeyPressed(SE_KEY_A))
+					transform[3][0] -= speed * ts;
+				if (Input::IsKeyPressed(SE_KEY_D))
+					transform[3][0] += speed * ts;
+				if (Input::IsKeyPressed(SE_KEY_W))
+					transform[3][1] += speed * ts;
+				if (Input::IsKeyPressed(SE_KEY_S))
+					transform[3][1] -= speed * ts;
+			}
+		};
+
+		m_CameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 	}
 
 	void EditorLayer::OnDetach()
