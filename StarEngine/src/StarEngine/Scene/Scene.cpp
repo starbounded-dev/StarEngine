@@ -1,18 +1,15 @@
 #include "sepch.h"
-
 #include "Scene.h"
 
 #include "Components.h"
 #include "StarEngine/Renderer/Renderer2D.h"
 
-#include "glm/glm.hpp"
+#include <glm/glm.hpp>
 
-#include "entt.hpp"
+#include "Entity.h"
 
-#include "StarEngine/Scene/Entity.h"
+namespace StarEngine {
 
-namespace StarEngine
-{
 	static void DoMath(const glm::mat4& transform)
 	{
 
@@ -69,10 +66,10 @@ namespace StarEngine
 		Camera* mainCamera = nullptr;
 		glm::mat4* cameraTransform = nullptr;
 		{
-			auto group = m_Registry.view<TransformComponent, CameraComponent>();
-			for (auto entity : group)
+			auto view = m_Registry.view<TransformComponent, CameraComponent>();
+			for (auto entity : view)
 			{
-				auto& [transform, camera] = group.get<TransformComponent, CameraComponent>(entity);
+				auto& [transform, camera] = view.get<TransformComponent, CameraComponent>(entity);
 
 				if (camera.Primary)
 				{
@@ -92,11 +89,28 @@ namespace StarEngine
 			{
 				auto& [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
 
-				Renderer2D::DrawQuad(transform.Transform, sprite.Color);
+				Renderer2D::DrawQuad(transform, sprite.Color);
 			}
 
 			Renderer2D::EndScene();
 		}
+
+	}
+
+	void Scene::OnViewportResize(uint32_t width, uint32_t height)
+	{
+		m_ViewportWidth = width;
+		m_ViewportHeight = height;
+
+		// Resize our non-FixedAspectRatio cameras
+		auto view = m_Registry.view<CameraComponent>();
+		for (auto entity : view)
+		{
+			auto& cameraComponent = view.get<CameraComponent>(entity);
+			if (!cameraComponent.FixedAspectRatio)
+				cameraComponent.Camera.SetViewportSize(width, height);
+		}
+
 	}
 
 }

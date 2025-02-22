@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include "StarEngine/Renderer/Camera.h"
+#include "SceneCamera.h"
 
 namespace StarEngine {
 
@@ -44,15 +44,12 @@ namespace StarEngine {
 
 	struct CameraComponent
 	{
-		StarEngine::Camera Camera;
+		SceneCamera Camera;
 		bool Primary = true; // TODO: Move to Scene
+		bool FixedAspectRatio = false;
 
 		CameraComponent() = default;
 		CameraComponent(const CameraComponent&) = default;
-
-		CameraComponent(const glm::mat4& projection)
-			: Camera(projection) {
-		}
 	};
 
 }
