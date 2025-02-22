@@ -21,7 +21,10 @@
 #include "StarEngine/Renderer/RenderCommand.h"
 
 #include "StarEngine/Scene/Scene.h"
+#include "StarEngine/Scene/Entity.h"
 #include "StarEngine/Scene/Components.h"
+#include "StarEngine/Scene/ScriptableEntity.h"
+
 
 #include "StarEngine/Renderer/Buffer.h"
 #include "StarEngine/Renderer/Shader.h"
