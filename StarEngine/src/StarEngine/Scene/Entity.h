@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Scene.h"
+#include "StarEngine/Scene/Scene.h"
 
 #include "entt.hpp"
 

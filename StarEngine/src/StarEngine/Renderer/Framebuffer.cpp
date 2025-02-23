@@ -1,7 +1,7 @@
 #include "sepch.h"
-#include "Framebuffer.h"
+#include "StarEngine/Renderer/Framebuffer.h"
 
-#include "Renderer.h"
+#include "StarEngine/Renderer/Renderer.h"
 #include "Platform/OpenGL/OpenGLFramebuffer.h"
 
 namespace StarEngine

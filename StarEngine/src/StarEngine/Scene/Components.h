@@ -2,8 +2,8 @@
 
 #include <glm/glm.hpp>
 
-#include "SceneCamera.h"
-#include "ScriptableEntity.h"
+#include "StarEngine/Scene/SceneCamera.h"
+#include "StarEngine/Scene/ScriptableEntity.h"
 
 namespace StarEngine {
 

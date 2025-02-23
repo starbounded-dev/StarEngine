@@ -1,12 +1,12 @@
 #include "sepch.h"
-#include "Scene.h"
+#include "StarEngine/Scene/Scene.h"
 
-#include "Components.h"
+#include "StarEngine/Scene/Components.h"
 #include "StarEngine/Renderer/Renderer2D.h"
 
 #include <glm/glm.hpp>
 
-#include "Entity.h"
+#include "StarEngine/Scene/Entity.h"
 
 namespace StarEngine {
 	Scene::Scene()

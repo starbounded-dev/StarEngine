@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Entity.h"
+#include "StarEngine/Scene/Entity.h"
 
 namespace StarEngine
 {

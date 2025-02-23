@@ -1,5 +1,5 @@
 #include "sepch.h"
-#include "SceneCamera.h"
+#include "StarEngine/Scene/SceneCamera.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
