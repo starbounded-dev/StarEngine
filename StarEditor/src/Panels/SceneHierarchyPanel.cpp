@@ -20,11 +20,12 @@ namespace StarEngine{
 	{
 		ImGui::Begin("Scene Hierarchy");
 
-		m_Context->m_Registry.each([&](auto entityID)
+		auto view = m_Context->m_Registry.view<entt::entity>();
+		for (auto entityID : view)
 		{
 			Entity entity{ entityID , m_Context.get() };
 			DrawEntityNode(entity);
-		});
+		}
 
 		ImGui::End();
 	}
