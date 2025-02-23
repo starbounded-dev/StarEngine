@@ -4,6 +4,7 @@
 #include "StarEngine/Core/Application.h"
 #include "StarEngine/Core/Layer.h"
 #include "StarEngine/Core/Log.h"
+#include "StarEngine/Core/Assert.h"
 
 #include "StarEngine/Core/Timestep.h"
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "StarEngine/Core/Base.h"
-#include "StarEngine/Core/Log.h"
 
 #include "StarEngine/Scene/Scene.h"
 #include "StarEngine/Scene/Entity.h"

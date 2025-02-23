@@ -19,14 +19,8 @@
 #define SE_DEBUGBREAK()
 #endif
 
-// TODO: Make this macro able to take in no arguments except condition
-#ifdef SE_ENABLE_ASSERTS
-#define SE_ASSERT(x, ...) { if(!(x)) { SE_ERROR("Assertion Failed: {0}", __VA_ARGS__); SE_DEBUGBREAK(); } }
-#define SE_CORE_ASSERT(x, ...) { if(!(x)) { SE_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); SE_DEBUGBREAK(); } }
-#else
-#define SE_ASSERT(x, ...)
-#define SE_CORE_ASSERT(x, ...)
-#endif
+#define HZ_EXPAND_MACRO(x) x
+#define HZ_STRINGIFY_MACRO(x) #x
 
 #define BIT(x) (1 << x)
 
@@ -51,3 +45,7 @@ namespace StarEngine {
 	}
 
 }
+
+
+#include "StarEngine/Core/Log.h"
+#include "StarEngine/Core/Assert.h"
