@@ -51,13 +51,15 @@ namespace StarEngine {
 		s_Data.QuadVertexArray = VertexArray::Create();
 
 		s_Data.QuadVertexBuffer = VertexBuffer::Create(s_Data.MaxVertices * sizeof(QuadVertex));
+
 		s_Data.QuadVertexBuffer->SetLayout({
 			{ ShaderDataType::Float3, "a_Position" },
 			{ ShaderDataType::Float4, "a_Color" },
 			{ ShaderDataType::Float2, "a_TexCoord" },
 			{ ShaderDataType::Float, "a_TexIndex" },
 			{ ShaderDataType::Float, "a_TilingFactor" }
-			});
+		});
+
 		s_Data.QuadVertexArray->AddVertexBuffer(s_Data.QuadVertexBuffer);
 
 		s_Data.QuadVertexBufferBase = new QuadVertex[s_Data.MaxVertices];
