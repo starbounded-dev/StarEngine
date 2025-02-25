@@ -6,6 +6,8 @@
 
 #include "imgui/imgui_internal.h"
 
+#include "StarEngine/Scene/SceneSerializer.h"
+
 namespace StarEngine {
 
 	EditorLayer::EditorLayer()
@@ -26,6 +28,8 @@ namespace StarEngine {
 		m_Framebuffer = Framebuffer::Create(fbSpec);
 
 		m_ActiveScene = CreateRef<Scene>();
+
+#if 0
 
 		// Entity
 		auto greenSquare = m_ActiveScene->CreateEntity("Green Square");
@@ -78,6 +82,8 @@ namespace StarEngine {
 
 		m_CameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 		m_SecondCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
+
+#endif
 	
 		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 	}
@@ -178,6 +184,18 @@ namespace StarEngine {
 		{
 			if (ImGui::BeginMenu("File"))
 			{
+				if (ImGui::MenuItem("Serialize"))
+				{
+					SceneSerializer serializer(m_ActiveScene);
+					serializer.Serialize("assets/scenes/Example.starengine");
+				}
+
+				if (ImGui::MenuItem("Deserialize"))
+				{
+					SceneSerializer serializer(m_ActiveScene);
+					serializer.Deserialize("assets/scenes/Example.starengine");
+				}
+
 				if (ImGui::MenuItem("Exit")) Application::Get().Close();
 				ImGui::EndMenu();
 			}

@@ -11,3 +11,6 @@
 [submodule "StarEngine/vendor/glm"]
 	path = StarEngine/vendor/glm
 	url = ../../g-truc/glm.git
+[submodule "StarEngine/vendor/yaml-cpp"]
+	path = StarEngine/vendor/yaml-cpp
+	url = ../../sheazywi/yaml-cpp.git

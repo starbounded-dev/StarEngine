@@ -35,9 +35,8 @@ project "StarEngine"
 		"%{IncludeDir.imgui}",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.stb_image}",
-		"%{IncludeDir.entt}"
-
-
+		"%{IncludeDir.entt}",
+		"%{IncludeDir.yaml_cpp}"
 	}
 
 	links
@@ -46,6 +45,7 @@ project "StarEngine"
 		"GLAD",
 		"imgui",
 		"opengl32.lib",
+		"yaml-cpp",
 		"dwmapi.lib"
 	}
 

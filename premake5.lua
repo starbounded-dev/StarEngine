@@ -31,6 +31,7 @@ IncludeDir["imgui"] = "%{wks.location}/StarEngine/vendor/imgui"
 IncludeDir["glm"] = "%{wks.location}/StarEngine/vendor/glm"
 IncludeDir["stb_image"] = "%{wks.location}/StarEngine/vendor/stb_image"
 IncludeDir["entt"] = "%{wks.location}/StarEngine/vendor/entt/include"
+IncludeDir["yaml_cpp"] = "%{wks.location}/StarEngine/vendor/yaml-cpp/include"
 
 
 group "Dependencies"
@@ -38,6 +39,7 @@ group "Dependencies"
 	include "StarEngine/vendor/GLFW"
 	include "StarEngine/vendor/GLAD"
 	include "StarEngine/vendor/imgui"
+	include "StarEngine/vendor/yaml-cpp"
 group ""
 
 include "StarEngine"
