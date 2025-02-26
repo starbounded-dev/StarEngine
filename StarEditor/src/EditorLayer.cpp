@@ -318,7 +318,7 @@ namespace StarEngine {
 
 	void EditorLayer::SaveSceneAs()
 	{
-		std::string filepath = FileDialogs::SaveFile("Hazel Scene (*.hazel)\0*.hazel\0");
+		std::string filepath = FileDialogs::SaveFile("StarStudio Scene (*.starscene)\0*.starscene\0");
 		if (!filepath.empty())
 		{
 			SceneSerializer serializer(m_ActiveScene);
