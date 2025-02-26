@@ -9,9 +9,9 @@
 #include "StarEngine/Scene/Entity.h"
 
 namespace StarEngine {
+
 	Scene::Scene()
 	{
-
 	}
 
 	Scene::~Scene()
@@ -34,7 +34,7 @@ namespace StarEngine {
 
 	void Scene::OnUpdate(Timestep ts)
 	{
-		// Update Scripts
+		// Update scripts
 		{
 			m_Registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc)
 				{
@@ -43,7 +43,6 @@ namespace StarEngine {
 					{
 						nsc.Instance = nsc.InstantiateScript();
 						nsc.Instance->m_Entity = Entity{ entity, this };
-
 						nsc.Instance->OnCreate();
 					}
 
@@ -111,7 +110,6 @@ namespace StarEngine {
 	template<>
 	void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component)
 	{
-
 	}
 
 	template<>
@@ -123,19 +121,17 @@ namespace StarEngine {
 	template<>
 	void Scene::OnComponentAdded<SpriteRendererComponent>(Entity entity, SpriteRendererComponent& component)
 	{
-
 	}
 
 	template<>
 	void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent& component)
 	{
-		
 	}
 
 	template<>
 	void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component)
 	{
-		
 	}
+
 
 }

@@ -6,6 +6,7 @@
 #include "StarEngine/Scene/SceneCamera.h"
 #include "StarEngine/Scene/ScriptableEntity.h"
 
+
 namespace StarEngine {
 
 	struct TagComponent
@@ -21,9 +22,9 @@ namespace StarEngine {
 
 	struct TransformComponent
 	{
-		glm::vec3 Translation{ 0.0f, 0.0f, 0.0f };
-		glm::vec3 Rotation{ 0.0f, 0.0f, 0.0f };
-		glm::vec3 Scale{ 1.0f, 1.0f, 1.0f };
+		glm::vec3 Translation = { 0.0f, 0.0f, 0.0f };
+		glm::vec3 Rotation = { 0.0f, 0.0f, 0.0f };
+		glm::vec3 Scale = { 1.0f, 1.0f, 1.0f };
 
 		TransformComponent() = default;
 		TransformComponent(const TransformComponent&) = default;
@@ -57,7 +58,7 @@ namespace StarEngine {
 	struct CameraComponent
 	{
 		SceneCamera Camera;
-		bool Primary = true; // TODO: Move to Scene
+		bool Primary = true; // TODO: think about moving to Scene
 		bool FixedAspectRatio = false;
 
 		CameraComponent() = default;
