@@ -1,12 +1,12 @@
 #include "sepch.h"
-#include "StarEngine/Scene/SceneSerializer.h"
+#include "SceneSerializer.h"
 
-#include "StarEngine/Scene/Entity.h"
-#include "StarEngine/Scene/Components.h"
-
-#include <yaml-cpp/yaml.h>
+#include "Entity.h"
+#include "Components.h"
 
 #include <fstream>
+
+#include <yaml-cpp/yaml.h>
 
 namespace YAML {
 
@@ -156,7 +156,6 @@ namespace StarEngine {
 		out << YAML::BeginMap;
 		out << YAML::Key << "Scene" << YAML::Value << "Untitled";
 		out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-
 		auto view = m_Scene->m_Registry.view<entt::entity>();
 		for (auto entityID : view)
 		{
