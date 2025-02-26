@@ -7,6 +7,15 @@
 
 #include "StarEngine/Scene/Components.h"
 
+#include <cstring>
+
+/* The Microsoft C++ compiler is non-compliant with the C++ standard and needs
+ * the following definition to disable a security warning on std::strncpy().
+ */
+#ifdef _MSVC_LANG
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 namespace StarEngine{
     
 	SceneHierarchyPanel::SceneHierarchyPanel(const Ref<Scene>& context)
@@ -207,7 +216,7 @@ namespace StarEngine{
 
 			char buffer[256];
 			memset(buffer, 0, sizeof(buffer));
-			strcpy_s(buffer, sizeof(buffer), tag.c_str());
+			strncpy_s(buffer, sizeof(buffer), tag.c_str(), _TRUNCATE);
 			if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
 			{
 				tag = std::string(buffer);
