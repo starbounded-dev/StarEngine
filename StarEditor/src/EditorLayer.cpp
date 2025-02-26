@@ -86,7 +86,7 @@ namespace StarEngine {
 		m_SecondCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 
 #endif
-	
+
 		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 	}
 
@@ -304,26 +304,23 @@ namespace StarEngine {
 
 	void EditorLayer::OpenScene()
 	{
-		std::string filepath = FileDialogs::OpenFile("StarStudio Scene (*.starscene)\0*.starscene\0");
-		if (!filepath.empty())
-		{
+		std::optional<std::string> filepath = FileDialogs::OpenFile("StarStudio Scene (*.starscene)\0*.starscene\0");
+		if (filepath.has_value()) {
 			m_ActiveScene = CreateRef<Scene>();
 			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 			m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 
 			SceneSerializer serializer(m_ActiveScene);
-			serializer.Deserialize(filepath);
+			serializer.Deserialize(filepath.value());
 		}
 	}
 
 	void EditorLayer::SaveSceneAs()
 	{
-		std::string filepath = FileDialogs::SaveFile("StarStudio Scene (*.starscene)\0*.starscene\0");
-		if (!filepath.empty())
-		{
+		std::optional<std::string> filepath = FileDialogs::SaveFile("StarStudio Scene (*.starscene)\0*.starscene\0");
+		if (filepath.has_value()) {
 			SceneSerializer serializer(m_ActiveScene);
-			serializer.Serialize(filepath);
+			serializer.Serialize(filepath.value());
 		}
 	}
-
 }
