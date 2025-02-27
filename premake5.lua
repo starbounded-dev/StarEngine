@@ -32,6 +32,7 @@ IncludeDir["glm"] = "%{wks.location}/StarEngine/vendor/glm"
 IncludeDir["stb_image"] = "%{wks.location}/StarEngine/vendor/stb_image"
 IncludeDir["entt"] = "%{wks.location}/StarEngine/vendor/entt/include"
 IncludeDir["yaml_cpp"] = "%{wks.location}/StarEngine/vendor/yaml-cpp/include"
+IncludeDir["imguizmo"] = "%{wks.location}/StarEngine/vendor/imguizmo"
 
 
 group "Dependencies"

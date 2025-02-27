@@ -17,7 +17,10 @@ project "StarEngine"
 		"vendor/stb_image/**.h",
 		"vendor/stb_image/**.cpp",
 		"vendor/glm/glm/**.hpp",
-		"vendor/glm/glm/**.inl"
+		"vendor/glm/glm/**.inl",
+
+		"vendor/imguizmo/ImGuizmo.h",
+		"vendor/imguizmo/ImGuizmo.cpp"
 	}
 
 	defines
@@ -36,7 +39,8 @@ project "StarEngine"
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.stb_image}",
 		"%{IncludeDir.entt}",
-		"%{IncludeDir.yaml_cpp}"
+		"%{IncludeDir.yaml_cpp}",
+		"%{IncludeDir.imguizmo}"
 	}
 
 	links
@@ -48,6 +52,9 @@ project "StarEngine"
 		"yaml-cpp",
 		"dwmapi.lib"
 	}
+
+	filter "files:vendor/imguizmo/**.cpp"
+	flags { "NoPCH" }
 
 	filter "system:windows"
 		systemversion "latest"
