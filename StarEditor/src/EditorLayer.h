@@ -4,6 +4,8 @@
 #include "Panels/SceneHierarchyPanel.h"
 #include "StarEngine/Scene/Entity.h"
 
+#include "StarEngine/Renderer/EditorCamera.h"
+
 #include "entt.hpp"
 
 namespace StarEngine
@@ -43,6 +45,8 @@ namespace StarEngine
 		Entity m_SecondCamera;
 
 		bool m_PrimaryCamera = true;
+
+		EditorCamera m_EditorCamera;
 
 		Ref<Texture2D> m_CheckerboardTexture;
 
