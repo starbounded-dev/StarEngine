@@ -5,9 +5,10 @@
 
 namespace StarEngine {
 
-	static GLenum ShaderDataTypeToOpenGLBaseType(ShaderDataType type) {
-
-		switch (type) {
+	static GLenum ShaderDataTypeToOpenGLBaseType(ShaderDataType type)
+	{
+		switch (type)
+		{
 		case ShaderDataType::Float:    return GL_FLOAT;
 		case ShaderDataType::Float2:   return GL_FLOAT;
 		case ShaderDataType::Float3:   return GL_FLOAT;
@@ -25,31 +26,36 @@ namespace StarEngine {
 		return 0;
 	}
 
-	OpenGLVertexArray::OpenGLVertexArray() {
+	OpenGLVertexArray::OpenGLVertexArray()
+	{
 		SE_PROFILE_FUNCTION();
 
 		glCreateVertexArrays(1, &m_RendererID);
 	}
 
-	OpenGLVertexArray::~OpenGLVertexArray() {
+	OpenGLVertexArray::~OpenGLVertexArray()
+	{
 		SE_PROFILE_FUNCTION();
 
 		glDeleteVertexArrays(1, &m_RendererID);
 	}
 
-	void OpenGLVertexArray::Bind() const {
+	void OpenGLVertexArray::Bind() const
+	{
 		SE_PROFILE_FUNCTION();
 
 		glBindVertexArray(m_RendererID);
 	}
 
-	void OpenGLVertexArray::Unbind() const {
+	void OpenGLVertexArray::Unbind() const
+	{
 		SE_PROFILE_FUNCTION();
 
 		glBindVertexArray(0);
 	}
 
-	void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer) {
+	void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer)
+	{
 		SE_PROFILE_FUNCTION();
 
 		SE_CORE_ASSERT(vertexBuffer->GetLayout().GetElements().size(), "Vertex Buffer has no layout!");
@@ -57,7 +63,6 @@ namespace StarEngine {
 		glBindVertexArray(m_RendererID);
 		vertexBuffer->Bind();
 
-		uint32_t index = 0;
 		const auto& layout = vertexBuffer->GetLayout();
 		for (const auto& element : layout)
 		{
@@ -67,15 +72,17 @@ namespace StarEngine {
 			case ShaderDataType::Float2:
 			case ShaderDataType::Float3:
 			case ShaderDataType::Float4:
-				{
-					glEnableVertexAttribArray(m_VertexBufferIndex);
-					glVertexAttribPointer(m_VertexBufferIndex,
-						element.GetComponentCount(),
-						ShaderDataTypeToOpenGLBaseType(element.Type),
-						element.Normalized ? GL_TRUE : GL_FALSE,
-						layout.GetStride(),
-						(const void*)element.Offset);
-				}
+			{
+				glEnableVertexAttribArray(m_VertexBufferIndex);
+				glVertexAttribPointer(m_VertexBufferIndex,
+					element.GetComponentCount(),
+					ShaderDataTypeToOpenGLBaseType(element.Type),
+					element.Normalized ? GL_TRUE : GL_FALSE,
+					layout.GetStride(),
+					(const void*)element.Offset);
+				m_VertexBufferIndex++;
+				break;
+			}
 			case ShaderDataType::Int:
 			case ShaderDataType::Int2:
 			case ShaderDataType::Int3:
@@ -117,7 +124,8 @@ namespace StarEngine {
 		m_VertexBuffers.push_back(vertexBuffer);
 	}
 
-	void OpenGLVertexArray::SetIndexBuffer(const Ref<IndexBuffer>& indexBuffer) {
+	void OpenGLVertexArray::SetIndexBuffer(const Ref<IndexBuffer>& indexBuffer)
+	{
 		SE_PROFILE_FUNCTION();
 
 		glBindVertexArray(m_RendererID);
