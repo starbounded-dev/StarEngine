@@ -82,7 +82,7 @@ namespace StarEngine
 			switch (format)
 			{
 				case FramebufferTextureFormat::RGBA8: return GL_RGBA8;
-				case FramebufferTextureFormat::RED_INTEGER: return GL_R32I;
+				case FramebufferTextureFormat::RED_INTEGER: return GL_RED_INTEGER;
 			}
 
 			SE_CORE_ASSERT(false);
