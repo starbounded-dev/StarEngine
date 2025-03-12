@@ -22,7 +22,7 @@ public:
 
 };
 
-StarEngine::Application* StarEngine::CreateApplication()
+StarEngine::Application* StarEngine::CreateApplication(ApplicationCommandLineArgs args)
 {
 	return new Sandbox();
 }

@@ -9,8 +9,8 @@ namespace StarEngine {
 	class StarEditor : public Application
 	{
 	public:
-		StarEditor()
-			: Application("StarEditor")
+		StarEditor(ApplicationCommandLineArgs args)
+			: Application("Hazelnut", args)
 		{
 			PushLayer(new EditorLayer());
 		}
@@ -20,8 +20,8 @@ namespace StarEngine {
 		}
 	};
 
-	Application* CreateApplication()
+	Application* CreateApplication(ApplicationCommandLineArgs args)
 	{
-		return new StarEditor();
+		return new StarEditor(args);
 	}
 }

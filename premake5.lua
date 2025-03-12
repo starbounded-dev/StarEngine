@@ -1,4 +1,5 @@
 include "./vendor/premake/premake_customization/solution_items.lua"
+include "Dependencies.lua"
 
 workspace "StarEngine"
 	architecture "x86_64"
@@ -22,18 +23,6 @@ workspace "StarEngine"
 	}
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
-
--- Include directories relative to root folder (solution directory)
-IncludeDir = {}
-IncludeDir["GLFW"] = "%{wks.location}/StarEngine/vendor/GLFW/include"
-IncludeDir["GLAD"] = "%{wks.location}/StarEngine/vendor/GLAD/include"
-IncludeDir["imgui"] = "%{wks.location}/StarEngine/vendor/imgui"
-IncludeDir["glm"] = "%{wks.location}/StarEngine/vendor/glm"
-IncludeDir["stb_image"] = "%{wks.location}/StarEngine/vendor/stb_image"
-IncludeDir["entt"] = "%{wks.location}/StarEngine/vendor/entt/include"
-IncludeDir["yaml_cpp"] = "%{wks.location}/StarEngine/vendor/yaml-cpp/include"
-IncludeDir["imguizmo"] = "%{wks.location}/StarEngine/vendor/imguizmo"
-
 
 group "Dependencies"
 	include "vendor/premake"

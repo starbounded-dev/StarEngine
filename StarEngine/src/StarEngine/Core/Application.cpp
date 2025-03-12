@@ -12,7 +12,8 @@ namespace StarEngine
 {
 	Application* Application::s_Instance = nullptr;
 
-	Application::Application(const std::string& name)
+	Application::Application(const std::string& name, ApplicationCommandLineArgs args)
+		: m_CommandLineArgs(args)
 	{
 		SE_PROFILE_FUNCTION();
 
