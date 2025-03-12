@@ -7,6 +7,7 @@
 #include "ImGuizmo.h"
 
 #include "imgui/imgui_internal.h"
+#include "imguizmo/ImGuizmo.h"
 
 #include "StarEngine/Scene/SceneSerializer.h"
 
