@@ -44,6 +44,18 @@ jobs:
         with:
           version: "5.0.0-beta4"
 
+      - name: Fetch Vulkan SDK version spec
+        shell: bash
+        run: |
+          curl -o vulkan-sdk-config.json https://vulkan.lunarg.com/sdk/config/1.4.304.1/windows/config.json
+      
+      - name: Configure Vulkan SDK using the downloaded spec
+        uses: humbletim/setup-vulkan-sdk@v1.2.1
+        with:
+          vulkan-config-file: vulkan-sdk-config.json
+          vulkan-components: Vulkan-Headers, Vulkan-Loader, SPIRV-Cross, SPIRV-Tools, SPIRV-Headers
+          vulkan-use-cache: true
+
       - name: Generate project files with Premake
         run: premake5 vs2022
 
