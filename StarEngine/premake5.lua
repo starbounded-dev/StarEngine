@@ -99,3 +99,6 @@ project "StarEngine"
 			"%{Library.SPIRV_Cross_Release}",
 			"%{Library.SPIRV_Cross_GLSL_Release}"
 		}
+
+	filter "action:vs2022"
+		buildoptions { "/utf-8" }

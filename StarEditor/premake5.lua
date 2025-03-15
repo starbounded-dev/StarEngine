@@ -20,7 +20,7 @@ project "StarEditor"
 		"%{wks.location}/StarEngine/vendor",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.entt}",
-		"%{IncludeDir.imguizmo}"
+		"%{IncludeDir.ImGuizmo}"
 	}
 
 	links
