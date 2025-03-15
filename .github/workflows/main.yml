@@ -25,6 +25,18 @@ jobs:
           git fetch origin f48003349257c49ddc0e3d8a31d1f2d25d1585f7
           git checkout f48003349257c49ddc0e3d8a31d1f2d25d1585f7
 
+      - name: Checkout correct commit for ImGui submodule
+        run: |
+          cd StarEngine/vendor/imgui
+          git fetch origin 0cfb1e23348b1fd480714eed212c21d913fee27c
+          git checkout 0cfb1e23348b1fd480714eed212c21d913fee27c
+
+      - name: Checkout correct commit for yaml-cpp submodule
+        run: |
+          cd StarEngine/vendor/yaml-cpp
+          git fetch origin ceb728371d88def1b26a03d8e15cba42c9509d4f
+          git checkout ceb728371d88def1b26a03d8e15cba42c9509d4f
+
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v1.0.2
 
