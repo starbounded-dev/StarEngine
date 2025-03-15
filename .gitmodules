@@ -16,4 +16,4 @@
 	url = ../../sheazywi/yaml-cpp.git
 [submodule "StarEngine/vendor/imguizmo"]
 	path = StarEngine/vendor/imguizmo
-	url = https://github.com/sheazywi/imguizmo.git
+	url = ../../sheazywi/imguizmo.git
