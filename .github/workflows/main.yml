@@ -22,8 +22,8 @@ jobs:
       - name: Checkout correct commit for GLFW submodule
         run: |
           cd StarEngine/vendor/GLFW
-          git fetch origin 9544dde61dc927b5f5d8a3b393e2ede295d3abd4
-          git checkout 9544dde61dc927b5f5d8a3b393e2ede295d3abd4
+          git fetch origin f48003349257c49ddc0e3d8a31d1f2d25d1585f7
+          git checkout f48003349257c49ddc0e3d8a31d1f2d25d1585f7
 
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v1.0.2
