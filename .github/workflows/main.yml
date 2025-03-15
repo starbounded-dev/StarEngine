@@ -47,7 +47,7 @@ jobs:
       - name: Fetch Vulkan SDK version spec
         shell: bash
         run: |
-          curl -o vulkan-sdk-config.json https://vulkan.lunarg.com/sdk/config/1.4.304.1/windows/config.json
+          curl -o vulkan-sdk-config.json https://vulkan.lunarg.com/sdk/config/1.4.304.0/windows/config.json
       
       - name: Configure Vulkan SDK using the downloaded spec
         uses: humbletim/setup-vulkan-sdk@v1.2.1

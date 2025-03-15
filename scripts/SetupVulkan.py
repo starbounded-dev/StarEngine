@@ -10,7 +10,7 @@ from urllib.request import urlopen
 
 class VulkanConfiguration:
     requiredVulkanVersion = "1.4."
-    installVulkanVersion = "1.4.304.1"
+    installVulkanVersion = "1.4.304.0"
     vulkanDirectory = "StarEngine/vendor/VulkanSDK"
 
     @classmethod
