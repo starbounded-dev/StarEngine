@@ -44,12 +44,6 @@ jobs:
         with:
           version: "5.0.0-beta4"
 
-      - name: Install Vulkan SDK
-        uses: humbletim/install-vulkan-sdk@v1.2
-        with:
-          version: 1.4.304.0
-          cache: true
-
       - name: Generate project files with Premake
         run: premake5 vs2022
 
