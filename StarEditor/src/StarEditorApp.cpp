@@ -10,7 +10,7 @@ namespace StarEngine {
 	{
 	public:
 		StarEditor(ApplicationCommandLineArgs args)
-			: Application("Hazelnut", args)
+			: Application("StarEditor", args)
 		{
 			PushLayer(new EditorLayer());
 		}
