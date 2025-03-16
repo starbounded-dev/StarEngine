@@ -9,7 +9,7 @@
 class Sandbox : public StarEngine::Application
 {
 public:
-	Sandbox()
+	Sandbox(StarEngine::ApplicationCommandLineArgs args)
 	{
 		//PushLayer(new ExampleLayer());
 		PushLayer(new Sandbox2D());
@@ -22,7 +22,7 @@ public:
 
 };
 
-StarEngine::Application* StarEngine::CreateApplication(ApplicationCommandLineArgs args)
+StarEngine::Application* StarEngine::CreateApplication(StarEngine::ApplicationCommandLineArgs args)
 {
-	return new Sandbox();
+	return new Sandbox(args);
 }
