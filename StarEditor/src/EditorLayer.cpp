@@ -244,6 +244,7 @@ namespace StarEngine {
 		}
 
 		m_SceneHierarchyPanel.OnImGuiRender();
+		m_ContentBrowserPanel.OnImGuiRender();
 
 		//Camera Info
 		ImGui::Begin("Stats");
