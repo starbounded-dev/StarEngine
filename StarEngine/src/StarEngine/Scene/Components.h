@@ -5,11 +5,11 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 
-
 #include "glm/gtx/quaternion.hpp"
+
 #include "StarEngine/Scene/SceneCamera.h"
 #include "StarEngine/Scene/ScriptableEntity.h"
-
+#include "StarEngine/Renderer/Texture.h"
 
 namespace StarEngine {
 
@@ -48,6 +48,9 @@ namespace StarEngine {
 
 	struct SpriteRendererComponent
 	{
+		Ref<Texture2D> Texture;
+		float TilingFactor = 1.0f;
+
 		glm::vec4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 		SpriteRendererComponent() = default;
