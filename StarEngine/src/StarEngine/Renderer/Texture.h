@@ -28,4 +28,5 @@ namespace StarEngine {
 		static Ref<Texture2D> Create(uint32_t width, uint32_t height);
 		static Ref<Texture2D> Create(const std::string& path);
 	};
+
 }

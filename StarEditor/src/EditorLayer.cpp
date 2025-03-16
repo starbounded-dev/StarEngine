@@ -450,9 +450,8 @@ namespace StarEngine {
 	void EditorLayer::OpenScene()
 	{
 		std::string filepath = FileDialogs::OpenFile("StarStudio Scene (*.starscene)\0*.starscene\0");
-		if (!filepath.empty()) {
+		if (!filepath.empty()) 
 			OpenScene(filepath);
-		}
 	}
 
 	void EditorLayer::OpenScene(const std::filesystem::path& path)
