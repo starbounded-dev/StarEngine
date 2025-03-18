@@ -17,3 +17,6 @@
 [submodule "StarEngine/vendor/imguizmo"]
 	path = StarEngine/vendor/imguizmo
 	url = ../../sheazywi/imguizmo.git
+[submodule "StarEngine/vendor/Box2D"]
+	path = StarEngine/vendor/Box2D
+	url = https://github.com/sheazywi/box2d
