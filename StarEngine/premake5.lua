@@ -52,6 +52,7 @@ project "StarEngine"
 		"imgui",
 		"opengl32.lib",
 		"yaml-cpp",
+		"Box2D",
 		"dwmapi.lib"
 	}
 
