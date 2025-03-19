@@ -113,6 +113,27 @@ namespace StarEngine {
 				});
 		}
 
+		// Physics
+		{
+			const int32_t velocityIteration = 6;
+			const int32_t positionIteration = 2;
+			m_PhysicsWorld->Step(ts, velocityIteration, positionIteration);
+
+			// Retrieve transforms from Box2D
+			auto view = m_Registry.view<TransformComponent, RigidBody2DComponent>();
+			for (auto e : view)
+			{
+				Entity entity = { e, this };
+				auto& transform = entity.GetComponent<TransformComponent>();
+				auto& rb2d = entity.GetComponent<RigidBody2DComponent>();
+
+				b2Body* body = (b2Body*)rb2d.RuntimeBody;
+				const auto& position = body->GetPosition();
+				transform.Translation = { position.x, position.y, transform.Translation.z };
+				transform.Rotation.z = body->GetAngle();
+			}
+		}
+
 		// Render 2D
 		Camera* mainCamera = nullptr;
 		glm::mat4 cameraTransform;
@@ -212,17 +233,31 @@ namespace StarEngine {
 	template<>
 	void Scene::OnComponentAdded<SpriteRendererComponent>(Entity entity, SpriteRendererComponent& component)
 	{
+
 	}
 
 	template<>
 	void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent& component)
 	{
+
 	}
 
 	template<>
 	void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component)
 	{
+
 	}
 
+	template<>
+	void Scene::OnComponentAdded<RigidBody2DComponent>(Entity entity, RigidBody2DComponent& component)
+	{
+
+	}
+
+	template<>
+	void Scene::OnComponentAdded<BoxCollider2DComponent>(Entity entity, BoxCollider2DComponent& component)
+	{
+
+	}
 
 }
