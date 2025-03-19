@@ -35,6 +35,7 @@ project "StarEngine"
 		"vendor/spdlog/include",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.GLAD}",
+		"%{IncludeDir.Box2D}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.stb_image}",
@@ -51,6 +52,7 @@ project "StarEngine"
 		"imgui",
 		"opengl32.lib",
 		"yaml-cpp",
+		"Box2D",
 		"dwmapi.lib"
 	}
 
