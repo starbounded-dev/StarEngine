@@ -1,5 +1,9 @@
 #pragma once
 
+#include "SceneCamera.h"
+#include "StarEngine/Core/UUID.h"
+#include "StarEngine/Renderer/Texture.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -7,11 +11,15 @@
 
 #include "glm/gtx/quaternion.hpp"
 
-#include "StarEngine/Scene/SceneCamera.h"
-#include "StarEngine/Scene/ScriptableEntity.h"
-#include "StarEngine/Renderer/Texture.h"
-
 namespace StarEngine {
+
+	struct IDComponent
+	{
+		UUID ID;
+
+		IDComponent() = default;
+		IDComponent(const IDComponent&) = default;
+	};
 
 	struct TagComponent
 	{
@@ -69,6 +77,9 @@ namespace StarEngine {
 		CameraComponent() = default;
 		CameraComponent(const CameraComponent&) = default;
 	};
+
+	// Forward declaration
+	class ScriptableEntity;
 
 	struct NativeScriptComponent
 	{

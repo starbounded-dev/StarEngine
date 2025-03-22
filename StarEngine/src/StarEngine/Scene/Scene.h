@@ -1,7 +1,7 @@
 #pragma once
 
 #include "StarEngine/Core/Timestep.h"
-
+#include "StarEngine/Core/UUID.h"
 #include "StarEngine/Renderer/EditorCamera.h"
 
 #include "entt.hpp"
@@ -19,6 +19,7 @@ namespace StarEngine
 		~Scene();
 
 		Entity CreateEntity(const std::string& name = std::string());
+		Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());
 		void DestroyEntity(Entity entity);
 
 		void OnRuntimeStart();
