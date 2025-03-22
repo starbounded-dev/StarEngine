@@ -39,11 +39,11 @@ namespace StarEngine
 		if (m_Context)
 		{
 			auto view = m_Context->m_Registry.view<entt::entity>();
-			view.each([&](auto entityID)
-				{
-					Entity entity{ entityID , m_Context.get() };
-					DrawEntityNode(entity);
-				});
+			for (auto entityID : view)
+			{
+				Entity entity{ entityID , m_Context.get() };
+				DrawEntityNode(entity);
+			}
 
 			if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
 				m_SelectionContext = {};
