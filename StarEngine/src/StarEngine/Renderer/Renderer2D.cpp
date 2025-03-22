@@ -378,15 +378,15 @@ namespace StarEngine {
 		DrawQuad(transform, texture, tilingFactor, tintColor);
 	}
 
-	void Renderer2D::DrawCircle(const glm::mat4& transform, const glm::vec4& color, float thickness, float fade, int entityID)
+	void Renderer2D::DrawCircle(const glm::mat4& transform, const glm::vec4& color, float thickness /*= 1.0f*/, float fade /*= 0.005f*/, int entityID /*= -1*/)
 	{
-		SE_PROFILE_FUNCTION()
+		SE_PROFILE_FUNCTION();
 
-			//TODO: implement for circles
-			// if (s_Data.CircleIndexCount >= Renderer2DData::MaxIndices)
-			// 	NextBatch();
+		// TODO: implement for circles
+		// if (s_Data.QuadIndexCount >= Renderer2DData::MaxIndices)
+		// 	NextBatch();
 
-		for (size_t i =0; i < 4; i++)
+		for (size_t i = 0; i < 4; i++)
 		{
 			s_Data.CircleVertexBufferPtr->WorldPosition = transform * s_Data.QuadVertexPositions[i];
 			s_Data.CircleVertexBufferPtr->LocalPosition = s_Data.QuadVertexPositions[i] * 2.0f;
@@ -397,6 +397,9 @@ namespace StarEngine {
 			s_Data.CircleVertexBufferPtr++;
 		}
 
+		s_Data.CircleIndexCount += 6;
+
+		s_Data.Stats.QuadCount++;
 	}
 
 	void Renderer2D::DrawSprite(const glm::mat4& transform, SpriteRendererComponent& src, int entityID)
