@@ -259,6 +259,15 @@ namespace StarEngine
 				}
 			}
 
+			if (!m_SelectionContext.HasComponent<CircleRendererComponent>())
+			{
+				if (ImGui::MenuItem("Circle Renderer"))
+				{
+					m_SelectionContext.AddComponent<CircleRendererComponent>();
+					ImGui::CloseCurrentPopup();
+				}
+			}
+
 			if (!m_SelectionContext.HasComponent<RigidBody2DComponent>())
 			{
 				if (ImGui::MenuItem("Rigidbody 2D"))
@@ -371,6 +380,13 @@ namespace StarEngine
 				}
 
 				ImGui::DragFloat("Tiling Factor", &component.TilingFactor, 0.1f, 0.0f, 100.0f);
+			});
+
+		DrawComponent<CircleRendererComponent>("Circle Renderer", entity, [](auto& component)
+			{
+				ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
+				ImGui::DragFloat("Thickness", &component.Thickness, 0.01f, 0.0f);
+				ImGui::DragFloat("Fade", &component.Fade, 0.001f, 0.0f);
 			});
 
 		DrawComponent<RigidBody2DComponent>("Rigidbody 2D", entity, [](auto& component)
