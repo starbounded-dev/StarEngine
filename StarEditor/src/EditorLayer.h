@@ -1,11 +1,11 @@
 #pragma once
 
 #include "StarEngine.h"
+
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/ContentBrowserPanel.h"
 
 #include "StarEngine/Scene/Entity.h"
-
 #include "StarEngine/Renderer/EditorCamera.h"
 
 #include "entt.hpp"

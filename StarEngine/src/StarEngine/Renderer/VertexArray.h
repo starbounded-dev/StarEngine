@@ -1,7 +1,8 @@
 #pragma once
 
-#include <memory>
 #include "StarEngine/Renderer/Buffer.h"
+
+#include <memory>
 
 namespace StarEngine {
 

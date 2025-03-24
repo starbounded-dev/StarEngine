@@ -3,12 +3,9 @@
 #include "StarEngine/Core/Base.h"
 #include "StarEngine/Core/Log.h"
 
-
 #include <filesystem>
 
 #ifdef SE_ENABLE_ASSERTS
-
-
 
 // Alteratively we could use the same "default" message for both "WITH_MSG" and "NO_MSG" and
 // provide support for custom formatting by concatenating the formatting string instead of having the format inside the default message

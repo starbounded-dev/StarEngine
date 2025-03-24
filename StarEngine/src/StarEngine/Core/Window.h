@@ -1,9 +1,9 @@
 #pragma once
 
-#include <sstream>
-
 #include "StarEngine/Core/Base.h"
 #include "StarEngine/Events/Event.h"
+
+#include <sstream>
 
 namespace StarEngine {
 

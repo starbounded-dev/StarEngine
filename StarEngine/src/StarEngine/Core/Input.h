@@ -1,9 +1,9 @@
 #pragma once
 
-#include <glm/glm.hpp>
-
 #include "StarEngine/Core/KeyCodes.h"
 #include "StarEngine/Core/MouseCodes.h"
+
+#include <glm/glm.hpp>
 
 namespace StarEngine {
 

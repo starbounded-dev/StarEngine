@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string>
-
 #include "StarEngine/Core/Base.h"
+
+#include <string>
 
 namespace StarEngine {
 

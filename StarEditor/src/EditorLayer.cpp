@@ -1,17 +1,17 @@
 #include "EditorLayer.h"
-#include <imgui/imgui.h>
+
+#include "StarEngine/Scene/SceneSerializer.h"
+#include "StarEngine/Utils/PlatformUtils.h"
+#include "StarEngine/Math/Math.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include "ImGuizmo.h"
+#include <imgui/imgui.h>
 #include "imgui/imgui_internal.h"
 
-#include "StarEngine/Scene/SceneSerializer.h"
 
-#include "StarEngine/Utils/PlatformUtils.h"
-
-#include "StarEngine/Math/Math.h"
 
 namespace StarEngine {
 

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <functional>
-
 #include "StarEngine/Debug/Instrumentor.h"
 #include "StarEngine/Core/Base.h"
+
+#include <functional>
 
 namespace StarEngine {
 

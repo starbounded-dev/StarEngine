@@ -1,8 +1,8 @@
 #pragma once
 
-#include <glm/glm.hpp>
-
 #include "Texture.h"
+
+#include <glm/glm.hpp>
 
 namespace StarEngine
 {

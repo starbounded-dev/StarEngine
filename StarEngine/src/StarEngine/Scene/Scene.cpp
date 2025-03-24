@@ -5,9 +5,9 @@
 #include "StarEngine/Scene/ScriptableEntity.h"
 #include "StarEngine/Renderer/Renderer2D.h"
 
-#include <glm/glm.hpp>
-
 #include "StarEngine/Scene/Entity.h"
+
+#include <glm/glm.hpp>
 
 // Box2D
 #include "box2d/b2_world.h"

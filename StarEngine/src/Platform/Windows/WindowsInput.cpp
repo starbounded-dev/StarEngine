@@ -1,7 +1,7 @@
 #include "sepch.h"
 #include "StarEngine/Core/Input.h"
-
 #include "StarEngine/Core/Application.h"
+
 #include <GLFW/glfw3.h>
 
 namespace StarEngine {

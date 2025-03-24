@@ -1,5 +1,7 @@
 #pragma once
 
+#include "StarEngine/Core/Log.h"
+
 #include <algorithm>
 #include <chrono>
 #include <fstream>
@@ -9,8 +11,6 @@
 
 #include <mutex>
 #include <sstream>
-
-#include "StarEngine/Core/Log.h"
 
 namespace StarEngine {
 

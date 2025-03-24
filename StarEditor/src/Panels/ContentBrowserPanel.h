@@ -1,8 +1,8 @@
 #pragma once
 
-#include <filesystem>
-
 #include "StarEngine/Renderer/Texture.h"
+
+#include <filesystem>
 
 namespace StarEngine
 {
