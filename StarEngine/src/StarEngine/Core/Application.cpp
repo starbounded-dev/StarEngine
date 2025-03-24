@@ -6,7 +6,7 @@
 #include "StarEngine/Core/Input.h"
 #include "StarEngine/Renderer/Renderer.h"
 
-#include <GLFW/glfw3.h>
+#include "StarEngine/Utils/PlatformUtils.h"
 
 namespace StarEngine
 {
@@ -80,7 +80,7 @@ namespace StarEngine
 		{
 			SE_PROFILE_SCOPE("RunLoop");
 
-			float time = (float)glfwGetTime();
+			float time = Time::GetTime();
 			Timestep timestep = time - m_LastFrameTime;
 			m_LastFrameTime = time;
 
