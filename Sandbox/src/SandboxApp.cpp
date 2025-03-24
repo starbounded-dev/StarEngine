@@ -9,7 +9,8 @@
 class Sandbox : public StarEngine::Application
 {
 public:
-	Sandbox(StarEngine::ApplicationCommandLineArgs args)
+	Sandbox(const StarEngine::ApplicationSpecification& specification)
+		: StarEngine::Application(specification)
 	{
 		//PushLayer(new ExampleLayer());
 		PushLayer(new Sandbox2D());
@@ -24,5 +25,10 @@ public:
 
 StarEngine::Application* StarEngine::CreateApplication(StarEngine::ApplicationCommandLineArgs args)
 {
-	return new Sandbox(args);
+	ApplicationSpecification spec;
+	spec.Name = "Sandbox";
+	spec.WorkingDirectory = "../StarEditor";
+	spec.CommandLineArgs = args;
+
+	return new Sandbox(spec);
 }
