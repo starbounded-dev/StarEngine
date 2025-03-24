@@ -303,6 +303,7 @@ namespace StarEngine {
 		}
 		catch (YAML::ParserException e)
 		{
+			SE_CORE_ERROR("Failed to load .starscene file '{0}'\n     {1}", filepath, e.what());
 			return false;
 		}
 
