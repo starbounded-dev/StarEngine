@@ -108,7 +108,7 @@ namespace StarEngine {
 				{
 				case GLFW_PRESS:
 				{
-					KeyPressedEvent event(key, 0);
+					KeyPressedEvent event(key, true);
 					data.EventCallback(event);
 					break;
 				}
