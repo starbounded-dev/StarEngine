@@ -42,6 +42,7 @@ project "StarEngine"
 		"%{IncludeDir.entt}",
 		"%{IncludeDir.yaml_cpp}",
 		"%{IncludeDir.ImGuizmo}",
+		"%{IncludeDir.FMODAudio}",
 		"%{IncludeDir.VulkanSDK}"
 	}
 
@@ -53,6 +54,7 @@ project "StarEngine"
 		"opengl32.lib",
 		"yaml-cpp",
 		"Box2D",
+		"FMODAudioEngine",
 		"dwmapi.lib"
 	}
 
@@ -64,6 +66,7 @@ project "StarEngine"
 
 		defines
 		{
+
 		}
 
 	filter "configurations:Debug"

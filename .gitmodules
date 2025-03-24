@@ -20,3 +20,6 @@
 [submodule "StarEngine/vendor/Box2D"]
 	path = StarEngine/vendor/Box2D
 	url = https://github.com/sheazywi/box2d
+[submodule "StarEngine/vendor/FMOD-Audio"]
+	path = StarEngine/vendor/FMOD-Audio
+	url = https://github.com/sheazywi/FMOD-Audio-Engine
