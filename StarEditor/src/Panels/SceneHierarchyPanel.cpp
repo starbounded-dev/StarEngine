@@ -244,7 +244,7 @@ namespace StarEngine
 			DisplayAddComponentEntry<CameraComponent>("Camera");
 			DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
 			DisplayAddComponentEntry<CircleRendererComponent>("Circle Renderer");
-			DisplayAddComponentEntry<RigidBody2DComponent>("Rigidbody 2D");
+			DisplayAddComponentEntry<RigidBody2DComponent>("Rigid Body 2D");
 			DisplayAddComponentEntry<BoxCollider2DComponent>("Box Collider 2D");
 			DisplayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
 
@@ -351,7 +351,7 @@ namespace StarEngine
 				ImGui::DragFloat("Fade", &component.Fade, 0.001f, 0.0f);
 			});
 
-		DrawComponent<RigidBody2DComponent>("Rigidbody 2D", entity, [](auto& component)
+		DrawComponent<RigidBody2DComponent>("Rigid Body 2D", entity, [](auto& component)
 			{
 				const char* bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic" };
 				const char* currentBodyTypeString = bodyTypeStrings[(int)component.Type];
