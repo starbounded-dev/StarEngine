@@ -48,6 +48,7 @@ project "StarEditor"
 
 		postbuildcommands {
 			"{COPYDIR} %{wks.location}/StarEditor/assets %{wks.location}/bin/" .. outputdir .. "/StarEditor/assets",
+			"{COPYDIR} %{wks.location}/StarEditor/Resources %{wks.location}/bin/" .. outputdir .. "/StarEditor/Resources",
 			"{COPY} %{wks.location}/StarEditor/imgui.ini %{wks.location}/bin/" .. outputdir .. "/StarEditor/imgui.ini"
 		}
 

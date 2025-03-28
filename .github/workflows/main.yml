@@ -71,4 +71,5 @@ jobs:
           path: |
             bin/Dist-windows-x86_64/**/**.exe
             bin/Dist-windows-x86_64/**/assets
+            bin/Dist-windows-x86_64/**/Resources
             bin/Dist-windows-x86_64/**/imgui.ini
