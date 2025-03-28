@@ -64,12 +64,30 @@ jobs:
       - name: Build project with MSBuild
         run: MSBuild /m /p:Configuration=Dist StarEngine.sln
 
+      - name: Copy Assets
+        uses: canastro/copy-file-action@master
+        with:
+          source: "/StarEditor/Assets"
+          target: "bin/Dist-windows-x86_64/StarEditor/Assets"
+
+      - name: Copy Ressources
+        uses: canastro/copy-file-action@master
+        with:
+          source: "/StarEditor/Ressources"
+          target: "bin/Dist-windows-x86_64/StarEditor/Ressources"
+
+      - name: Copy ImGui.ini
+        uses: canastro/copy-file-action@master
+        with:
+          source: "/StarEditor/imgui.ini"
+          target: "bin/Dist-windows-x86_64/StarEditor/imgui.ini"
+
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
           name: StarEngine-Windows
           path: |
-            bin/Dist-windows-x86_64/**/**.exe
-            bin/Dist-windows-x86_64/**/assets
-            bin/Dist-windows-x86_64/**/Resources
-            bin/Dist-windows-x86_64/**/imgui.ini
+            bin/Dist-windows-x86_64/StarEditor/StarEditor.exe
+            bin/Dist-windows-x86_64/StarEditor/assets
+            bin/Dist-windows-x86_64/StarEditor/Resources
+            bin/Dist-windows-x86_64/StarEditor/imgui.ini
