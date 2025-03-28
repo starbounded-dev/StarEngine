@@ -1,6 +1,7 @@
 # Binaries
 **/bin/
 bin-int/
+Intermediates/
 
 # StarEngine files
 *.log
@@ -14,6 +15,7 @@ bin-int/
 **.vcxproj
 **.vcxproj.filters
 **.vcxproj.user
+**.csproj
 
 # Directories
 StarEngine/vendor/VulkanSDK
