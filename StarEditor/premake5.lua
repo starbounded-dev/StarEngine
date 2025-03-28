@@ -47,7 +47,8 @@ project "StarEditor"
 		optimize "on"
 
 		postbuildcommands {
-			"{COPYDIR} %{wks.location}/StarEditor/assets %{wks.location}/bin/" .. outputdir .. "/StarEditor/assets"
+			"{COPYDIR} %{wks.location}/StarEditor/assets %{wks.location}/bin/" .. outputdir .. "/StarEditor/assets",
+			"{COPYDIR} %{wks.location}/StarEditor/imgui.ini %{wks.location}/bin/" .. outputdir .. "/StarEditor/imgui.ini"
 		}
 
 	filter "action:vs2022"
