@@ -37,12 +37,19 @@ jobs:
           git fetch origin ceb728371d88def1b26a03d8e15cba42c9509d4f
           git checkout ceb728371d88def1b26a03d8e15cba42c9509d4f
 
-      - name: Prepare Vulkan SDK
-        uses: humbletim/setup-vulkan-sdk@v1.2.1
+      - name: Install Vulkan SDK
+        uses: jakoch/install-vulkan-sdk-action@v1.2.0
         with:
-          vulkan-query-version: 1.3.204.1
-          vulkan-components: Vulkan-Headers, Vulkan-Loader, SPIRV-Cross, SPIRV-Tools, SPIRV-Reflect, SPIRV-Headers
-          vulkan-use-cache: true
+          # You can set the Vulkan SDK version to download.
+          # Defaults to latest version, if version not set.
+          vulkan_version: 1.3.296.0
+          optional_components: com.lunarg.vulkan.vma
+          install_runtime: true
+          cache: true
+          stripdown: true
+          
+          install_swiftshader: false
+          install_lavapipe: false
 
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v1.0.2
