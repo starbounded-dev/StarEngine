@@ -46,5 +46,17 @@ project "StarEditor"
 		runtime "Release"
 		optimize "on"
 
+		postbuildcommands {
+			"{COPYDIR} %{wks.location}/StarEditor/assets %{wks.location}/bin/" .. outputdir .. "/StarEditor/assets"
+		}
+
+		postbuildcommands {
+			"{COPYDIR} %{wks.location}/StarEditor/Resources %{wks.location}/bin/" .. outputdir .. "/StarEditor/Resources"
+		}
+
+		postbuildcommands {
+			"{COPY} %{wks.location}/StarEditor/imgui.ini %{wks.location}/bin/" .. outputdir .. "/StarEditor/imgui.ini"
+		}
+
 	filter "action:vs2022"
     	buildoptions { "/utf-8" }
