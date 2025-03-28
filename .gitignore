@@ -6,6 +6,8 @@ bin-int/
 *.log
 *imgui.ini
 
+!StarEditor/imgui.ini
+
 # Visual Studio files and folder
 .vs/
 **.sln
