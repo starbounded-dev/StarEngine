@@ -24,3 +24,5 @@ scripts/__pycache__
 
 StarEngine/vendor/VulkanSDK/VulkanSDK-1.2.170.0-Installer.exe
 vendor/premake/bin/
+StarEditor/Resources/Scripts/StarEngine-ScriptCore.dll
+StarEditor/Resources/Scripts/StarEngine-ScriptCore.pdb
