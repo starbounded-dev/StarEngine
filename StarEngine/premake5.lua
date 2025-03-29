@@ -42,6 +42,8 @@ project "StarEngine"
 		"%{IncludeDir.entt}",
 		"%{IncludeDir.yaml_cpp}",
 		"%{IncludeDir.ImGuizmo}",
+		"%{IncludeDir.FMODCore}",
+		"%{IncludeDir.FMODEngine}",
 		"%{IncludeDir.VulkanSDK}"
 	}
 
@@ -64,6 +66,7 @@ project "StarEngine"
 
 		defines
 		{
+
 		}
 
 	filter "configurations:Debug"
