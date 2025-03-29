@@ -33,6 +33,15 @@ group "Dependencies"
 	include "StarEngine/vendor/yaml-cpp"
 group ""
 
-include "StarEngine"
-include "Sandbox"
-include "StarEditor"
+group "Core"
+	include "StarEngine"
+	include "StarEngine-ScriptCore"
+group ""
+
+group "Tools"
+	include "StarEditor"
+group ""
+
+group "Misc"
+	include "Sandbox"
+group ""

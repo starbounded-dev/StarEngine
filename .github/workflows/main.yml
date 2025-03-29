@@ -62,14 +62,14 @@ jobs:
         run: premake5 vs2022
 
       - name: Build project with MSBuild
-        run: MSBuild /m /p:Configuration=Dist StarEngine.sln
+        run: MSBuild /m /p:Configuration=Release StarEngine.sln
 
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
           name: StarEngine-Windows
           path: |
-            bin/Dist-windows-x86_64/StarEditor/StarEditor.exe
-            bin/Dist-windows-x86_64/StarEditor/assets
-            bin/Dist-windows-x86_64/StarEditor/Resources
-            bin/Dist-windows-x86_64/StarEditor/imgui.ini
+            bin/Release-windows-x86_64/StarEditor/StarEditor.exe
+            bin/Release-windows-x86_64/StarEditor/assets
+            bin/Release-windows-x86_64/StarEditor/Resources
+            bin/Release-windows-x86_64/StarEditor/imgui.ini

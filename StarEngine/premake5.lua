@@ -42,7 +42,9 @@ project "StarEngine"
 		"%{IncludeDir.entt}",
 		"%{IncludeDir.yaml_cpp}",
 		"%{IncludeDir.ImGuizmo}",
-		"%{IncludeDir.VulkanSDK}"
+		"%{IncludeDir.VulkanSDK}",
+
+		"%{IncludeDir.mono}",
 	}
 
 	links
@@ -51,6 +53,7 @@ project "StarEngine"
 		"GLAD",
 		"imgui",
 		"opengl32.lib",
+		"%{Library.mono}",
 		"yaml-cpp",
 		"Box2D",
 		"dwmapi.lib"
@@ -64,6 +67,15 @@ project "StarEngine"
 
 		defines
 		{
+
+		}
+
+		links 
+		{
+			"%{Library.WinSock}",
+			"%{Library.WinMM}",
+			"%{Library.WinVersion}",
+			"%{Library.BCrypt}",
 		}
 
 	filter "configurations:Debug"
