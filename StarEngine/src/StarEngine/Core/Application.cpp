@@ -26,6 +26,10 @@ namespace StarEngine
 		m_Window = Window::Create(WindowProps(m_Specification.Name));
 		m_Window->SetEventCallback(SE_BIND_EVENT_FN(Application::OnEvent));
 
+		m_AudioEngine = new AudioEngine();
+
+		m_AudioEngine->Init();
+
 		Renderer::Init();
 
 		m_ImGuiLayer = new ImGuiLayer();
@@ -35,6 +39,10 @@ namespace StarEngine
 	Application::~Application()
 	{
 		SE_PROFILE_FUNCTION();
+
+		m_AudioEngine->Terminate();
+		m_AudioEngine = nullptr;
+		delete m_AudioEngine;
 
 		Renderer::Shutdown();
 	}
@@ -106,6 +114,8 @@ namespace StarEngine
 				}
 				m_ImGuiLayer->End();
 			}
+
+			m_AudioEngine->Update();
 
 			m_Window->OnUpdate();
 		}
