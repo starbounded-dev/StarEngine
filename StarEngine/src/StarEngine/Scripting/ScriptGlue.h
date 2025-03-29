@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Hazel {
+namespace StarEngine {
 
 	class ScriptGlue
 	{
