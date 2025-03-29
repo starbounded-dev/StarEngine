@@ -1,8 +1,8 @@
 using System;
+using System.Runtime.CompilerServices;
 
 namespace StarEngine
 {
-
 	public class Main
 	{
 
@@ -11,6 +11,9 @@ namespace StarEngine
 		public Main()
 		{
 			Console.WriteLine("Main constructor!");
+
+			// Call a C++ function
+			NativeLog("Yan Chernikov", 8053);
 		}
 
 		public void PrintMessage()
@@ -32,6 +35,9 @@ namespace StarEngine
 		{
 			Console.WriteLine($"C# says: {message}");
 		}
+
+		[MethodImpl(MethodImplOptions.InternalCall)]
+		extern static void NativeLog(string text, int parameter);
 
 	}
 

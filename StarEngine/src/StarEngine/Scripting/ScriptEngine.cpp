@@ -101,6 +101,14 @@ namespace StarEngine {
 		}
 	}
 
+	static void NativeLog(MonoString* string, int parameter)
+	{
+		char* cString = mono_string_to_utf8(string);
+		std::string str(cString);
+
+		SE_CORE_TRACE("{0}, {1}", str, parameter);
+	};
+
 	void ScriptEngine::InitMono()
 	{
 		mono_set_assemblies_path("mono/lib");
@@ -114,6 +122,8 @@ namespace StarEngine {
 		// Create an App Domain
 		s_Data->AppDomain = mono_domain_create_appdomain("StarEngineScriptRuntime", nullptr);
 		mono_domain_set(s_Data->AppDomain, true);
+
+		mono_add_internal_call("StarEngine.Main::NativeLog", NativeLog);
 
 		// Move this maybe
 		s_Data->CoreAssembly = LoadCSharpAssembly("Resources/Scripts/StarEngine-ScriptCore.dll");
