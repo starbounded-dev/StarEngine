@@ -88,6 +88,14 @@ namespace StarEngine {
 		CameraComponent(const CameraComponent&) = default;
 	};
 
+	struct ScriptComponent
+	{
+		std::string ClassName;
+
+		ScriptComponent() = default;
+		ScriptComponent(const ScriptComponent&) = default;
+	};
+
 	// Forward declaration
 	class ScriptableEntity;
 
@@ -165,5 +173,5 @@ namespace StarEngine {
 	template<typename... Component>
 	struct ComponentGroup {};
 
-	using AllComponents = ComponentGroup<TransformComponent, SpriteRendererComponent, CircleRendererComponent, CameraComponent, NativeScriptComponent, RigidBody2DComponent, BoxCollider2DComponent, CircleCollider2DComponent>;
+	using AllComponents = ComponentGroup<TransformComponent, SpriteRendererComponent, CircleRendererComponent, CameraComponent, ScriptComponent, NativeScriptComponent, RigidBody2DComponent, BoxCollider2DComponent, CircleCollider2DComponent>;
 }
