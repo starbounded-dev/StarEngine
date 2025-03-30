@@ -39,7 +39,6 @@ namespace StarEngine {
 	Scene::~Scene()
 	{
 		delete m_PhysicsWorld;
-		m_PhysicsWorld = nullptr;
 	}
 
 	template<typename... Component>
@@ -111,7 +110,7 @@ namespace StarEngine {
 		return CreateEntityWithUUID(UUID(), name);
 	}
 
-	Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string & name)
+	Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string& name)
 	{
 		Entity entity = { m_Registry.create(), this };
 		entity.AddComponent<IDComponent>(uuid);
@@ -192,12 +191,12 @@ namespace StarEngine {
 
 		// Physics
 		{
-			const int32_t velocityIteration = 6;
-			const int32_t positionIteration = 2;
-			m_PhysicsWorld->Step(ts, velocityIteration, positionIteration);
+			const int32_t velocityIterations = 6;
+			const int32_t positionIterations = 2;
+			m_PhysicsWorld->Step(ts, velocityIterations, positionIterations);
 
-			// Retrieve transforms from Box2D
-			auto view = m_Registry.view<TransformComponent, RigidBody2DComponent>();
+			// Retrieve transform from Box2D
+			auto view = m_Registry.view<RigidBody2DComponent>();
 			for (auto e : view)
 			{
 				Entity entity = { e, this };
@@ -205,8 +204,10 @@ namespace StarEngine {
 				auto& rb2d = entity.GetComponent<RigidBody2DComponent>();
 
 				b2Body* body = (b2Body*)rb2d.RuntimeBody;
+
 				const auto& position = body->GetPosition();
-				transform.Translation = { position.x, position.y, transform.Translation.z };
+				transform.Translation.x = position.x;
+				transform.Translation.y = position.y;
 				transform.Rotation.z = body->GetAngle();
 			}
 		}
@@ -278,7 +279,8 @@ namespace StarEngine {
 
 				b2Body* body = (b2Body*)rb2d.RuntimeBody;
 				const auto& position = body->GetPosition();
-				transform.Translation = { position.x, position.y, transform.Translation.z };
+				transform.Translation.x = position.x;
+				transform.Translation.y = position.y;
 				transform.Rotation.z = body->GetAngle();
 			}
 		}
@@ -319,6 +321,20 @@ namespace StarEngine {
 			if (camera.Primary)
 				return Entity{ entity, this };
 		}
+		return {};
+	}
+
+	void Scene::DuplicateEntity(Entity entity)
+	{
+		Entity newEntity = CreateEntity(entity.GetName());
+		CopyComponentIfExists(AllComponents{}, newEntity, entity);
+	}
+
+	Entity Scene::GetEntityByUUID(UUID uuid)
+	{
+		if (m_EntityMap.find(uuid) != m_EntityMap.end())
+			return { m_EntityMap.at(uuid), this };
+
 		return {};
 	}
 
@@ -364,7 +380,7 @@ namespace StarEngine {
 
 				b2CircleShape circleShape;
 				circleShape.m_p.Set(cc2d.Offset.x, cc2d.Offset.y);
-				circleShape.m_radius = cc2d.Radius * transform.Scale.x;
+				circleShape.m_radius = transform.Scale.x * cc2d.Radius;
 
 				b2FixtureDef fixtureDef;
 				fixtureDef.shape = &circleShape;
@@ -408,21 +424,6 @@ namespace StarEngine {
 		}
 
 		Renderer2D::EndScene();
-	}
-
-	void Scene::DuplicateEntity(Entity entity)
-	{
-		Entity newEntity = CreateEntity(entity.GetName());
-		CopyComponentIfExists(AllComponents{}, newEntity, entity);
-	}
-
-	Entity Scene::GetEntityByUUID(UUID uuid)
-	{
-		// TODO: Maybe should be assert
-		if (m_EntityMap.find(uuid) != m_EntityMap.end())
-			return { m_EntityMap.at(uuid), this };
-
-		return {};
 	}
 
 	template<typename T>

@@ -8,8 +8,8 @@
 
 class b2World;
 
-namespace StarEngine
-{
+namespace StarEngine {
+
 	class Entity;
 
 	class Scene
@@ -60,7 +60,7 @@ namespace StarEngine
 
 		b2World* m_PhysicsWorld = nullptr;
 
-		std::unordered_map<UUID, Entity> m_EntityMap;
+		std::unordered_map<UUID, entt::entity> m_EntityMap;
 
 		friend class Entity;
 		friend class SceneSerializer;
