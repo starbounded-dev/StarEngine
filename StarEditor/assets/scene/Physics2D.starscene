@@ -18,6 +18,8 @@ Entities:
         OrthographicFar: 1
       Primary: true
       FixedAspectRatio: false
+    ScriptComponent:
+      ClassName: Sandbox.Player
   - Entity: 16059016071823036758
     TagComponent:
       Tag: Cube
@@ -27,6 +29,7 @@ Entities:
       Scale: [1, 1, 1]
     SpriteRendererComponent:
       Color: [1, 1, 1, 1]
+      TilingFactor: 1
     Rigidbody2DComponent:
       BodyType: Dynamic
       FixedRotation: false
@@ -46,6 +49,7 @@ Entities:
       Scale: [10, 1, 1]
     SpriteRendererComponent:
       Color: [1, 1, 1, 1]
+      TilingFactor: 1
     Rigidbody2DComponent:
       BodyType: Static
       FixedRotation: false
