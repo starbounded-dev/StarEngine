@@ -235,14 +235,14 @@ namespace StarEngine {
 
 		if (entity.HasComponent<RigidBody2DComponent>())
 		{
-			out << YAML::Key << "Rigidbody2DComponent";
-			out << YAML::BeginMap; // Rigidbody2DComponent
+			out << YAML::Key << "RigidBody2DComponent";
+			out << YAML::BeginMap; // RigidBody2DComponent
 
 			auto& rb2dComponent = entity.GetComponent<RigidBody2DComponent>();
 			out << YAML::Key << "BodyType" << YAML::Value << RigidBody2DBodyTypeToString(rb2dComponent.Type);
 			out << YAML::Key << "FixedRotation" << YAML::Value << rb2dComponent.FixedRotation;
 
-			out << YAML::EndMap; // Rigidbody2DComponent
+			out << YAML::EndMap; // RigidBody2DComponent
 		}
 
 		if (entity.HasComponent<BoxCollider2DComponent>())
@@ -403,12 +403,12 @@ namespace StarEngine {
 					crc.Fade = circleRendererComponent["Fade"].as<float>();
 				}
 
-				auto rigidbody2DComponent = entity["Rigidbody2DComponent"];
-				if (rigidbody2DComponent)
+				auto rigidBody2DComponent = entity["RigidBody2DComponent"];
+				if (rigidBody2DComponent)
 				{
 					auto& rb2d = deserializedEntity.AddComponent<RigidBody2DComponent>();
-					rb2d.Type = RigidBody2DBodyTypeFromString(rigidbody2DComponent["BodyType"].as<std::string>());
-					rb2d.FixedRotation = rigidbody2DComponent["FixedRotation"].as<bool>();
+					rb2d.Type = RigidBody2DBodyTypeFromString(rigidBody2DComponent["BodyType"].as<std::string>());
+					rb2d.FixedRotation = rigidBody2DComponent["FixedRotation"].as<bool>();
 				}
 
 				auto boxCollider2DComponent = entity["BoxCollider2DComponent"];

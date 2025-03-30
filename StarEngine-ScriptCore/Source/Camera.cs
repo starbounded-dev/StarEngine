@@ -16,14 +16,14 @@ namespace Sandbox
 			Vector3 velocity = Vector3.Zero;
 
 			if (Input.IsKeyDown(KeyCode.Up))
-				velocity.y = 1.0f;
+				velocity.Y = 1.0f;
 			else if (Input.IsKeyDown(KeyCode.Down))
-				velocity.y = -1.0f;
+				velocity.Y = -1.0f;
 
 			if (Input.IsKeyDown(KeyCode.Left))
-				velocity.x = -1.0f;
+				velocity.X = -1.0f;
 			else if (Input.IsKeyDown(KeyCode.Right))
-				velocity.x = 1.0f;
+				velocity.X = 1.0f;
 
 			velocity *= speed;
 
@@ -31,5 +31,6 @@ namespace Sandbox
 			translation += velocity * ts;
 			Translation = translation;
 		}
+
 	}
 }

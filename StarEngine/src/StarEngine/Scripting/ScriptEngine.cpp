@@ -79,7 +79,6 @@ namespace StarEngine {
 
 				const char* nameSpace = mono_metadata_string_heap(image, cols[MONO_TYPEDEF_NAMESPACE]);
 				const char* name = mono_metadata_string_heap(image, cols[MONO_TYPEDEF_NAME]);
-
 				SE_CORE_TRACE("{}.{}", nameSpace, name);
 			}
 		}
@@ -111,20 +110,17 @@ namespace StarEngine {
 
 		InitMono();
 		LoadAssembly("Resources/Scripts/StarEngine-ScriptCore.dll");
-
 		LoadAssemblyClasses(s_Data->CoreAssembly);
 
 		ScriptGlue::RegisterComponents();
-		
 		ScriptGlue::RegisterFunctions();
 
 		// Retrieve and instantiate class
 		s_Data->EntityClass = ScriptClass("StarEngine", "Entity");
-
 #if 0
-	
+
 		MonoObject* instance = s_Data->EntityClass.Instantiate();
-	
+
 		// Call method
 		MonoMethod* printMessageFunc = s_Data->EntityClass.GetMethod("PrintMessage", 0);
 		s_Data->EntityClass.InvokeMethod(instance, printMessageFunc);
@@ -161,7 +157,6 @@ namespace StarEngine {
 		delete s_Data;
 	}
 
-	
 	void ScriptEngine::InitMono()
 	{
 		mono_set_assemblies_path("mono/lib");

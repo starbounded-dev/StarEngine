@@ -19,7 +19,7 @@ namespace StarEngine {
 
 	static std::unordered_map<MonoType*, std::function<bool(Entity)>> s_EntityHasComponentFuncs;
 
-	#define SE_ADD_INTERNAL_CALL(Name) mono_add_internal_call("StarEngine.InternalCalls::" #Name, Name)
+#define SE_ADD_INTERNAL_CALL(Name) mono_add_internal_call("StarEngine.InternalCalls::" #Name, Name)
 
 	static void NativeLog(MonoString* string, int parameter)
 	{

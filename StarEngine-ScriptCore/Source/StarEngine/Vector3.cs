@@ -2,42 +2,45 @@
 {
 	public struct Vector3
 	{
-		public float x, y, z;
+		public float X, Y, Z;
 
 		public static Vector3 Zero => new Vector3(0.0f);
 
 		public Vector3(float scalar)
 		{
-			x = scalar;
-			y = scalar;
-			z = scalar;
+			X = scalar;
+			Y = scalar;
+			Z = scalar;
 		}
 
 		public Vector3(float x, float y, float z)
 		{
-			this.x = x;
-			this.y = y;
-			this.z = z;
+			X = x;
+			Y = y;
+			Z = z;
 		}
+
 
 		public Vector2 XY
 		{
-			get => new Vector2(x, y);
+			get => new Vector2(X, Y);
 			set
 			{
-				x = value.x;
-				y = value.y;
+				X = value.X;
+				Y = value.Y;
 			}
 		}
 
-		public static Vector3 operator +(Vector3 left, Vector3 right)
+		public static Vector3 operator +(Vector3 a, Vector3 b)
 		{
-			return new Vector3(left.x + right.x, left.y + right.y, left.z + right.z);
+			return new Vector3(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
 		}
 
-		public static Vector3 operator *(Vector3 left, float right)
+		public static Vector3 operator *(Vector3 vector, float scalar)
 		{
-			return new Vector3(left.x * right, left.y * right, left.z * right);
+			return new Vector3(vector.X * scalar, vector.Y * scalar, vector.Z * scalar);
 		}
+
 	}
+
 }

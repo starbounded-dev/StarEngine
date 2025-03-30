@@ -23,24 +23,29 @@ namespace Sandbox
 
 		void OnUpdate(float ts)
 		{
-			// Console.WriteLine($"Player.OnUpdate - {ID}");
+			// Console.WriteLine($"Player.OnUpdate: {ts}");
 
 			float speed = 0.01f;
 			Vector3 velocity = Vector3.Zero;
 
 			if (Input.IsKeyDown(KeyCode.W))
-				velocity.y = 1.0f;
+				velocity.Y = 1.0f;
 			else if (Input.IsKeyDown(KeyCode.S))
-				velocity.y = -1.0f;
+				velocity.Y = -1.0f;
 
 			if (Input.IsKeyDown(KeyCode.A))
-				velocity.x = -1.0f;
+				velocity.X = -1.0f;
 			else if (Input.IsKeyDown(KeyCode.D))
-				velocity.x = 1.0f;
+				velocity.X = 1.0f;
 
 			velocity *= speed;
 
 			m_RigidBody.ApplyLinearImpulse(velocity.XY, Vector2.Zero, true);
+
+			//Vector3 translation = m_Transform.Translation;
+			//translation += velocity * ts;
+			//m_Transform.Translation = translation;
 		}
+
 	}
 }

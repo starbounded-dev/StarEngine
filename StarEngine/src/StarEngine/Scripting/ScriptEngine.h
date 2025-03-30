@@ -10,8 +10,8 @@ extern "C" {
 	typedef struct _MonoClass MonoClass;
 	typedef struct _MonoObject MonoObject;
 	typedef struct _MonoMethod MonoMethod;
-	typedef struct _MonoImage MonoImage;
 	typedef struct _MonoAssembly MonoAssembly;
+	typedef struct _MonoImage MonoImage;
 }
 
 namespace StarEngine {
@@ -43,11 +43,9 @@ namespace StarEngine {
 		Ref<ScriptClass> m_ScriptClass;
 
 		MonoObject* m_Instance = nullptr;
-
 		MonoMethod* m_Constructor = nullptr;
 		MonoMethod* m_OnCreateMethod = nullptr;
 		MonoMethod* m_OnUpdateMethod = nullptr;
-
 	};
 
 	class ScriptEngine
