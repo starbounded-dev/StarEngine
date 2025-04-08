@@ -3,8 +3,8 @@ project "StarEngine-ScriptCore"
 	language "C#"
 	dotnetframework "4.7.2"
 
-	targetdir ("%{wks.location}/StarEditor/Resources/Scripts")
-	objdir ("%{wks.location}/StarEditor/Resources/Scripts/Intermediates")
+	targetdir ("../StarEditor/Resources/Scripts")
+	objdir ("../StarEditor/Resources/Scripts/Intermediates")
 
 	files 
 	{
