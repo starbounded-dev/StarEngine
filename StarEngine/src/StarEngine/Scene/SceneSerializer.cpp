@@ -286,7 +286,8 @@ namespace StarEngine {
 		out << YAML::BeginMap;
 		out << YAML::Key << "Scene" << YAML::Value << "Untitled";
 		out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-		auto view = m_Scene->m_Registry.view<entt::entity>();
+
+		auto view = m_Scene->m_Registry.view<IDComponent>();
 		for (auto entityID : view)
 		{
 			Entity entity = { entityID, m_Scene.get() };
