@@ -56,10 +56,9 @@ namespace StarEngine {
 
 	struct SpriteRendererComponent
 	{
+		glm::vec4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
 		Ref<Texture2D> Texture;
 		float TilingFactor = 1.0f;
-
-		glm::vec4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 		SpriteRendererComponent() = default;
 		SpriteRendererComponent(const SpriteRendererComponent&) = default;
@@ -88,6 +87,14 @@ namespace StarEngine {
 		CameraComponent(const CameraComponent&) = default;
 	};
 
+	struct ScriptComponent
+	{
+		std::string ClassName;
+
+		ScriptComponent() = default;
+		ScriptComponent(const ScriptComponent&) = default;
+	};
+
 	// Forward declaration
 	class ScriptableEntity;
 
@@ -95,7 +102,7 @@ namespace StarEngine {
 	{
 		ScriptableEntity* Instance = nullptr;
 
-		ScriptableEntity* (*InstantiateScript)();
+		ScriptableEntity*(*InstantiateScript)();
 		void (*DestroyScript)(NativeScriptComponent*);
 
 		template<typename T>
@@ -127,9 +134,8 @@ namespace StarEngine {
 
 	struct BoxCollider2DComponent
 	{
-		glm::vec2 Size = { 0.5f, 0.5f };
 		glm::vec2 Offset = { 0.0f, 0.0f };
-
+		glm::vec2 Size = { 0.5f, 0.5f };
 
 		// TODO: move into physics material (maybe)
 		float Density = 1.0f;
@@ -163,7 +169,14 @@ namespace StarEngine {
 	};
 
 	template<typename... Component>
-	struct ComponentGroup {};
+	struct ComponentGroup
+	{
+	};
 
-	using AllComponents = ComponentGroup<TransformComponent, SpriteRendererComponent, CircleRendererComponent, CameraComponent, NativeScriptComponent, RigidBody2DComponent, BoxCollider2DComponent, CircleCollider2DComponent>;
+	using AllComponents =
+		ComponentGroup<TransformComponent, SpriteRendererComponent,
+		CircleRendererComponent, CameraComponent, ScriptComponent,
+		NativeScriptComponent, RigidBody2DComponent, BoxCollider2DComponent,
+		CircleCollider2DComponent>;
+
 }

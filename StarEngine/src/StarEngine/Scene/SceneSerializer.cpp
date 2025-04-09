@@ -194,6 +194,16 @@ namespace StarEngine {
 			out << YAML::EndMap; // CameraComponent
 		}
 
+		if (entity.HasComponent<ScriptComponent>())
+		{
+			auto& scriptComponent = entity.GetComponent<ScriptComponent>();
+
+			out << YAML::Key << "ScriptComponent";
+			out << YAML::BeginMap; // ScriptComponent
+			out << YAML::Key << "ClassName" << YAML::Value << scriptComponent.ClassName;
+			out << YAML::EndMap; // ScriptComponent
+		}
+
 		if (entity.HasComponent<SpriteRendererComponent>())
 		{
 			out << YAML::Key << "SpriteRendererComponent";
@@ -225,14 +235,14 @@ namespace StarEngine {
 
 		if (entity.HasComponent<RigidBody2DComponent>())
 		{
-			out << YAML::Key << "Rigidbody2DComponent";
-			out << YAML::BeginMap; // Rigidbody2DComponent
+			out << YAML::Key << "RigidBody2DComponent";
+			out << YAML::BeginMap; // RigidBody2DComponent
 
 			auto& rb2dComponent = entity.GetComponent<RigidBody2DComponent>();
 			out << YAML::Key << "BodyType" << YAML::Value << RigidBody2DBodyTypeToString(rb2dComponent.Type);
 			out << YAML::Key << "FixedRotation" << YAML::Value << rb2dComponent.FixedRotation;
 
-			out << YAML::EndMap; // Rigidbody2DComponent
+			out << YAML::EndMap; // RigidBody2DComponent
 		}
 
 		if (entity.HasComponent<BoxCollider2DComponent>())
@@ -276,7 +286,8 @@ namespace StarEngine {
 		out << YAML::BeginMap;
 		out << YAML::Key << "Scene" << YAML::Value << "Untitled";
 		out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-		auto view = m_Scene->m_Registry.view<entt::entity>();
+
+		auto view = m_Scene->m_Registry.view<IDComponent>();
 		for (auto entityID : view)
 		{
 			Entity entity = { entityID, m_Scene.get() };
@@ -364,6 +375,13 @@ namespace StarEngine {
 					cc.FixedAspectRatio = cameraComponent["FixedAspectRatio"].as<bool>();
 				}
 
+				auto scriptComponent = entity["ScriptComponent"];
+				if (scriptComponent)
+				{
+					auto& sc = deserializedEntity.AddComponent<ScriptComponent>();
+					sc.ClassName = scriptComponent["ClassName"].as<std::string>();
+				}
+
 				auto spriteRendererComponent = entity["SpriteRendererComponent"];
 				if (spriteRendererComponent)
 				{
@@ -386,12 +404,12 @@ namespace StarEngine {
 					crc.Fade = circleRendererComponent["Fade"].as<float>();
 				}
 
-				auto rigidbody2DComponent = entity["Rigidbody2DComponent"];
-				if (rigidbody2DComponent)
+				auto rigidBody2DComponent = entity["RigidBody2DComponent"];
+				if (rigidBody2DComponent)
 				{
 					auto& rb2d = deserializedEntity.AddComponent<RigidBody2DComponent>();
-					rb2d.Type = RigidBody2DBodyTypeFromString(rigidbody2DComponent["BodyType"].as<std::string>());
-					rb2d.FixedRotation = rigidbody2DComponent["FixedRotation"].as<bool>();
+					rb2d.Type = RigidBody2DBodyTypeFromString(rigidBody2DComponent["BodyType"].as<std::string>());
+					rb2d.FixedRotation = rigidBody2DComponent["FixedRotation"].as<bool>();
 				}
 
 				auto boxCollider2DComponent = entity["BoxCollider2DComponent"];
