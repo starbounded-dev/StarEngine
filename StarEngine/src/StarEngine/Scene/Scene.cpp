@@ -46,13 +46,14 @@ namespace StarEngine {
 	{
 		([&]()
 		{
-				auto view = src.view<Component>();
-				for (auto srcEntity : view)
-				{
-					entt::entity dstEntity = enttMap.at(src.get<IDComponent>(srcEntity).ID);
-					auto& srcComponent = src.get<Component>(srcEntity);
-					dst.emplace_or_replace<Component>(dstEntity, srcComponent);
-				}
+			auto view = src.view<Component>();
+			for (auto srcEntity : view)
+			{
+				entt::entity dstEntity = enttMap.at(src.get<IDComponent>(srcEntity).ID);
+
+				auto& srcComponent = src.get<Component>(srcEntity);
+				dst.emplace_or_replace<Component>(dstEntity, srcComponent);
+			}
 		}(), ...);
 	}
 
@@ -66,10 +67,10 @@ namespace StarEngine {
 	static void CopyComponentIfExists(Entity dst, Entity src)
 	{
 		([&]()
-			{
-				if (src.HasComponent<Component>())
-					dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
-			}(), ...);
+		{
+			if (src.HasComponent<Component>())
+				dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
+		}(), ...);
 	}
 
 	template<typename... Component>
@@ -176,17 +177,17 @@ namespace StarEngine {
 			}
 
 			m_Registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc)
+			{
+				// TODO: Move to Scene::OnScenePlay
+				if (!nsc.Instance)
 				{
-					// TODO: Move to Scene::OnScenePlay
-					if (!nsc.Instance)
-					{
-						nsc.Instance = nsc.InstantiateScript();
-						nsc.Instance->m_Entity = Entity{ entity, this };
-						nsc.Instance->OnCreate();
-					}
+					nsc.Instance = nsc.InstantiateScript();
+					nsc.Instance->m_Entity = Entity{ entity, this };
+					nsc.Instance->OnCreate();
+				}
 
-					nsc.Instance->OnUpdate(ts);
-				});
+				nsc.Instance->OnUpdate(ts);
+			});
 		}
 
 		// Physics

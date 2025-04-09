@@ -298,10 +298,11 @@ namespace StarEngine {
 		return s_Data->SceneContext;
 	}
 
-	Ref<ScriptInstance> ScriptEngine::GetEntityScriptInstance(UUID entityID) {
+	Ref<ScriptInstance> ScriptEngine::GetEntityScriptInstance(UUID entityID)
+	{
 		auto it = s_Data->EntityInstances.find(entityID);
-		if (it != s_Data->EntityInstances.end())
-			return it->second;
+		if (it == s_Data->EntityInstances.end())
+			return nullptr;
 
 		return it->second;
 	}
@@ -442,6 +443,31 @@ namespace StarEngine {
 			void* param = &ts;
 			m_ScriptClass->InvokeMethod(m_Instance, m_OnUpdateMethod, &param);
 		}
+	}
+
+
+	bool ScriptInstance::GetFieldValueInternal(const std::string& name, void* buffer)
+	{
+		const auto& fields = m_ScriptClass->GetFields();
+		auto it = fields.find(name);
+		if (it == fields.end())
+			return false;
+
+		const ScriptField& field = it->second;
+		mono_field_get_value(m_Instance, field.ClassField, buffer);
+		return true;
+	}
+
+	bool ScriptInstance::SetFieldValueInternal(const std::string& name, const void* value)
+	{
+		const auto& fields = m_ScriptClass->GetFields();
+		auto it = fields.find(name);
+		if (it == fields.end())
+			return false;
+
+		const ScriptField& field = it->second;
+		mono_field_set_value(m_Instance, field.ClassField, (void*)value);
+		return true;
 	}
 
 }
