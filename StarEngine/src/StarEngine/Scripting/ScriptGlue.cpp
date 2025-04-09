@@ -9,25 +9,22 @@
 #include "StarEngine/Scene/Scene.h"
 #include "StarEngine/Scene/Entity.h"
 
-
 #include "mono/metadata/object.h"
 #include "mono/metadata/reflection.h"
 
 #include "box2d/b2_body.h"
 
-namespace StarEngine {
+template<>
+struct fmt::formatter<glm::vec3> {
+	constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 
-	namespace Utils {
-
-		std::string MonoStringToString(MonoString* string)
-		{
-			char* cStr = mono_string_to_utf8(string);
-			std::string str(cStr);
-			mono_free(cStr);
-			return str;
-		}
-
+	template<typename FormatContext>
+	auto format(const glm::vec3& vec, FormatContext& ctx) const { // Marked as const
+		return format_to(ctx.out(), "({}, {}, {})", vec.x, vec.y, vec.z);
 	}
+};
+
+namespace StarEngine {
 
 	static std::unordered_map<MonoType*, std::function<bool(Entity)>> s_EntityHasComponentFuncs;
 
@@ -35,19 +32,21 @@ namespace StarEngine {
 
 	static void NativeLog(MonoString* string, int parameter)
 	{
-		std::string str = Utils::MonoStringToString(string);
+		char* cStr = mono_string_to_utf8(string);
+		std::string str(cStr);
+		mono_free(cStr);
 		std::cout << str << ", " << parameter << std::endl;
 	}
 
 	static void NativeLog_Vector(glm::vec3* parameter, glm::vec3* outResult)
 	{
-		SE_CORE_WARN("Value: {0}", *parameter);
+		SE_CORE_WARN("Value: {}", *parameter);
 		*outResult = glm::normalize(*parameter);
 	}
 
 	static float NativeLog_VectorDot(glm::vec3* parameter)
 	{
-		SE_CORE_WARN("Value: {0}", *parameter);
+		SE_CORE_WARN("Value: {}", *parameter);
 		return glm::dot(*parameter, *parameter);
 	}
 
