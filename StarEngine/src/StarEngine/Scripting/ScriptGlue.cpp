@@ -17,15 +17,25 @@
 
 namespace StarEngine {
 
+	namespace Utils {
+
+		std::string MonoStringToString(MonoString* string)
+		{
+			char* cStr = mono_string_to_utf8(string);
+			std::string str(cStr);
+			mono_free(cStr);
+			return str;
+		}
+
+	}
+
 	static std::unordered_map<MonoType*, std::function<bool(Entity)>> s_EntityHasComponentFuncs;
 
 #define SE_ADD_INTERNAL_CALL(Name) mono_add_internal_call("StarEngine.InternalCalls::" #Name, Name)
 
 	static void NativeLog(MonoString* string, int parameter)
 	{
-		char* cStr = mono_string_to_utf8(string);
-		std::string str(cStr);
-		mono_free(cStr);
+		std::string str = Utils::MonoStringToString(string);
 		std::cout << str << ", " << parameter << std::endl;
 	}
 
@@ -130,6 +140,7 @@ namespace StarEngine {
 
 	void ScriptGlue::RegisterComponents()
 	{
+		s_EntityHasComponentFuncs.clear();
 		RegisterComponent(AllComponents{});
 	}
 
