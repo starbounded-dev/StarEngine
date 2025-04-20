@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using StarEngine;
+using System.Runtime.CompilerServices;
 
 namespace StarEngine
 {
 	public class Entity
 	{
-		protected Entity()
-		{
-			ID = 0;
-		}
+		protected Entity() { ID = 0; }
 
 		internal Entity(ulong id)
 		{
@@ -40,12 +36,12 @@ namespace StarEngine
 		public T GetComponent<T>() where T : Component, new()
 		{
 			if (!HasComponent<T>())
-			{
 				return null;
-			}
 
 			T component = new T() { Entity = this };
 			return component;
 		}
+
 	}
+
 }
