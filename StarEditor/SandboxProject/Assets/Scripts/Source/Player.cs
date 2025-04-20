@@ -11,7 +11,7 @@ namespace Sandbox
 	public class Player : Entity
 	{
 		private TransformComponent m_Transform;
-		private RigidBody2DComponent m_Rigidbody;
+		private RigidBody2DComponent m_RigidBody;
 
 		public float Speed;
 		public float Time = 0.0f;
@@ -21,7 +21,7 @@ namespace Sandbox
 			Console.WriteLine($"Player.OnCreate - {ID}");
 
 			m_Transform = GetComponent<TransformComponent>();
-			m_Rigidbody = GetComponent<RigidBody2DComponent>();
+			m_RigidBody = GetComponent<RigidBody2DComponent>();
 		}
 
 		void OnUpdate(float ts)
@@ -44,7 +44,7 @@ namespace Sandbox
 
 			velocity *= speed * ts;
 
-			m_Rigidbody.ApplyLinearImpulse(velocity.XY, true);
+			m_RigidBody.ApplyLinearImpulse(velocity.XY, true);
 
 			//Vector3 translation = m_Transform.Translation;
 			//translation += velocity * ts;

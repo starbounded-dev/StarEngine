@@ -15,10 +15,10 @@ namespace StarEngine
 		internal extern static void TransformComponent_SetTranslation(ulong entityID, ref Vector3 translation);
 
 		[MethodImplAttribute(MethodImplOptions.InternalCall)]
-		internal extern static void Rigidbody2DComponent_ApplyLinearImpulse(ulong entityID, ref Vector2 impulse, ref Vector2 point, bool wake);
+		internal extern static void RigidBody2DComponent_ApplyLinearImpulse(ulong entityID, ref Vector2 impulse, ref Vector2 point, bool wake);
 
 		[MethodImplAttribute(MethodImplOptions.InternalCall)]
-		internal extern static void Rigidbody2DComponent_ApplyLinearImpulseToCenter(ulong entityID, ref Vector2 impulse, bool wake);
+		internal extern static void RigidBody2DComponent_ApplyLinearImpulseToCenter(ulong entityID, ref Vector2 impulse, bool wake);
 		[MethodImplAttribute(MethodImplOptions.InternalCall)]
 		internal extern static bool Input_IsKeyDown(KeyCode keycode);
 	}

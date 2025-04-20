@@ -118,30 +118,6 @@ namespace StarEngine {
 			return it->second;
 		}
 
-		const char* ScriptFieldTypeToString(ScriptFieldType type)
-		{
-			switch (type)
-			{
-			case ScriptFieldType::Float:   return "Float";
-			case ScriptFieldType::Double:  return "Double";
-			case ScriptFieldType::Bool:    return "Bool";
-			case ScriptFieldType::Char:    return "Char";
-			case ScriptFieldType::Byte:    return "Byte";
-			case ScriptFieldType::Short:   return "Short";
-			case ScriptFieldType::Int:     return "Int";
-			case ScriptFieldType::Long:    return "Long";
-			case ScriptFieldType::UByte:   return "UByte";
-			case ScriptFieldType::UShort:  return "UShort";
-			case ScriptFieldType::UInt:    return "UInt";
-			case ScriptFieldType::ULong:   return "ULong";
-			case ScriptFieldType::Vector2: return "Vector2";
-			case ScriptFieldType::Vector3: return "Vector3";
-			case ScriptFieldType::Vector4: return "Vector4";
-			case ScriptFieldType::Entity:  return "Entity";
-			}
-			return "<Invalid>";
-		}
-
 	}
 
 	struct ScriptEngineData
@@ -180,7 +156,7 @@ namespace StarEngine {
 		ScriptGlue::RegisterFunctions();
 
 		// Retrieve and instantiate class
-		s_Data->EntityClass = ScriptClass("Hazel", "Entity", true);
+		s_Data->EntityClass = ScriptClass("StarEngine", "Entity", true);
 #if 0
 
 		MonoObject* instance = s_Data->EntityClass.Instantiate();
