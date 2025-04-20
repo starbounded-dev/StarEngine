@@ -50,6 +50,11 @@ namespace StarEngine {
 		return glm::dot(*parameter, *parameter);
 	}
 
+	static MonoObject* GetScriptInstance(UUID entityID)
+	{
+		return ScriptEngine::GetManagedInstance(entityID);
+	}
+
 	static bool Entity_HasComponent(UUID entityID, MonoReflectionType* componentType)
 	{
 		Scene* scene = ScriptEngine::GetSceneContext();
@@ -60,6 +65,21 @@ namespace StarEngine {
 		MonoType* managedType = mono_reflection_type_get_type(componentType);
 		SE_CORE_ASSERT(s_EntityHasComponentFuncs.find(managedType) != s_EntityHasComponentFuncs.end());
 		return s_EntityHasComponentFuncs.at(managedType)(entity);
+	}
+
+	static uint64_t Entity_FindEntityByName(MonoString* name)
+	{
+		char* nameCStr = mono_string_to_utf8(name);
+
+		Scene* scene = ScriptEngine::GetSceneContext();
+		SE_CORE_ASSERT(scene);
+		Entity entity = scene->FindEntityByName(nameCStr);
+		mono_free(nameCStr);
+
+		if (!entity)
+			return 0;
+
+		return entity.GetUUID();
 	}
 
 	static void TransformComponent_GetTranslation(UUID entityID, glm::vec3* outTranslation)
@@ -148,7 +168,11 @@ namespace StarEngine {
 		SE_ADD_INTERNAL_CALL(NativeLog_Vector);
 		SE_ADD_INTERNAL_CALL(NativeLog_VectorDot);
 
+		SE_ADD_INTERNAL_CALL(GetScriptInstance);
+
 		SE_ADD_INTERNAL_CALL(Entity_HasComponent);
+		SE_ADD_INTERNAL_CALL(Entity_FindEntityByName);
+
 		SE_ADD_INTERNAL_CALL(TransformComponent_GetTranslation);
 		SE_ADD_INTERNAL_CALL(TransformComponent_SetTranslation);
 
