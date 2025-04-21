@@ -40,6 +40,8 @@ namespace StarEngine {
 		Entity FindEntityByName(std::string_view name);
 		Entity GetEntityByUUID(UUID uuid);
 
+		Entity GetPrimaryCameraEntity();
+
 		bool IsRunning() const { return m_IsRunning; }
 
 		template<typename... Components>
