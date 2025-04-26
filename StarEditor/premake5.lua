@@ -18,6 +18,7 @@ project "StarEditor"
 		"%{wks.location}/StarEngine/vendor/spdlog/include",
 		"%{wks.location}/StarEngine/src",
 		"%{wks.location}/StarEngine/vendor",
+		"%{IncludeDir.filewatch}",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.entt}",
 		"%{IncludeDir.ImGuizmo}"
