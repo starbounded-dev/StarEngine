@@ -379,7 +379,7 @@ namespace StarEngine {
 		if (hasPlayButton)
 		{
 			Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate) ? m_IconPlay : m_IconStop;
-			if (ImGui::ImageButton("##play", (ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1))) {
+			if (ImGui::ImageButton("##play", (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1))) {
 				if (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate)
 					OnScenePlay();
 				else if (m_SceneState == SceneState::Play)
@@ -395,7 +395,7 @@ namespace StarEngine {
 			Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play) ? m_IconSimulate : m_IconStop;		//ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
 
 
-			if (ImGui::ImageButton("##simulate", (ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1)))
+			if (ImGui::ImageButton("##simulate", (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1)))
 			{
 				if (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play)
 					OnSceneSimulate();
@@ -410,7 +410,7 @@ namespace StarEngine {
 			ImGui::SameLine();
 			{
 				Ref<Texture2D> icon = m_IconPause;
-				if (ImGui::ImageButton("##pause", (ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1)) && toolbarEnabled)
+				if (ImGui::ImageButton("##pause", (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1)) && toolbarEnabled)
 				{
 					m_ActiveScene->SetPaused(!isPaused);
 				}
@@ -424,7 +424,7 @@ namespace StarEngine {
 				{
 					Ref<Texture2D> icon = m_IconStep;
 					bool isPaused = m_ActiveScene->IsPaused();
-					if (ImGui::ImageButton("##step", (ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1)) && toolbarEnabled)
+					if (ImGui::ImageButton("##step", (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1)) && toolbarEnabled)
 
 					{
 						m_ActiveScene->Step();
@@ -539,6 +539,8 @@ namespace StarEngine {
 			default:
 				break;
 		}
+
+		return false;
 	}
 
 	bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
