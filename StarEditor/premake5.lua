@@ -31,6 +31,11 @@ project "StarEditor"
 
 	filter "system:windows" 
 		systemversion "latest"
+		postbuildcommands {
+			"{COPYDIR} %{wks.location}/StarEditor/assets %{wks.location}/bin/" .. outputdir .. "/StarEditor/assets",
+			"{COPYDIR} %{wks.location}/StarEditor/Resources %{wks.location}/bin/" .. outputdir .. "/StarEditor/Resources",
+			"{COPYFILE} %{wks.location}/StarEditor/imgui.ini %{wks.location}/bin/" .. outputdir .. "/StarEditor/imgui.ini",
+		}
 
 	filter "configurations:Debug"
 		defines "SE_DEBUG"
@@ -46,12 +51,6 @@ project "StarEditor"
 		defines "SE_DIST"
 		runtime "Release"
 		optimize "on"
-
-		postbuildcommands {
-			"{COPYDIR} %{wks.location}/StarEditor/assets %{wks.location}/bin/" .. outputdir .. "/StarEditor/assets",
-			"{COPYDIR} %{wks.location}/StarEditor/Resources %{wks.location}/bin/" .. outputdir .. "/StarEditor/Resources",
-			"{COPYFILE} %{wks.location}/StarEditor/imgui.ini %{wks.location}/bin/" .. outputdir .. "/StarEditor/imgui.ini",
-		}
 
 	filter "action:vs2022"
     	buildoptions { "/utf-8" }
