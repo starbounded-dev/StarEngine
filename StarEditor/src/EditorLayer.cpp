@@ -51,7 +51,12 @@ namespace StarEngine {
 		else
 		{
 			// TODO: prompt the user to select a directory
-			NewProject();
+			// NewProject();
+
+			if (!OpenProject())
+			{
+				Application::Get().Close();
+			}
 		}
 
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
@@ -195,27 +200,21 @@ namespace StarEngine {
 		{
 			if (ImGui::BeginMenu("File"))
 			{
-				// Disabling fullscreen would allow the window to be moved to the front of other windows, 
-				// which we can't undo at the moment without finer window depth/z control.
-				//ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);1
+				if (ImGui::MenuItem("Open Project...", "Ctrl+O"))
+					OpenProject();
 
-				if (ImGui::MenuItem("New", "Ctrl+N"))
-				{
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("New Scene", "Ctrl+N"))
 					NewScene();
-				}
 
-				if (ImGui::MenuItem("Open...", "Ctrl+O"))
-				{
-					OpenScene();
-				}
-
-				if (ImGui::MenuItem("Save", "Ctrl+S"))
+				if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
 					SaveScene();
 
-				if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S"))
-				{
+				if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
 					SaveSceneAs();
-				}
+
+				ImGui::Separator();
 
 				if (ImGui::MenuItem("Exit"))
 					Application::Get().Close();
@@ -479,7 +478,7 @@ namespace StarEngine {
 			case Key::O:
 			{
 				if (control)
-					OpenScene();
+					OpenProject();
 
 				break;
 			}
@@ -630,6 +629,16 @@ namespace StarEngine {
 			OpenScene(startScenePath);
 			m_ContentBrowserPanel = CreateScope<ContentBrowserPanel>();
 		}
+	}
+
+	bool EditorLayer::OpenProject()
+	{
+		std::string filepath = FileDialogs::OpenFile("Star Project (*.starproj)\0*.starproj\0");
+		if (filepath.empty())
+			return false;
+
+		OpenProject(filepath);
+		return true;
 	}
 
 	void EditorLayer::SaveProject()
