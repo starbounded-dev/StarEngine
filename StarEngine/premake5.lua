@@ -26,7 +26,8 @@ project "StarEngine"
 	defines
 	{
 		"_CRT_SECURE_NO_WARNINGS",
-		"GLFW_INCLUDE_NONE"
+		"GLFW_INCLUDE_NONE",
+		"YAML_CPP_STATIC_DEFINE"
 	}
 
 	includedirs
@@ -53,7 +54,7 @@ project "StarEngine"
 		"GLFW",
 		"GLAD",
 		"imgui",
-		"opengl32.lib",
+		"opengl32",
 		"%{Library.mono}",
 		"yaml-cpp",
 		"Box2D",

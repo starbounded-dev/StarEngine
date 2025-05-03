@@ -5,6 +5,7 @@
 #include "StarEngine/Scene/ScriptableEntity.h"
 #include "StarEngine/Scripting/ScriptEngine.h"
 #include "StarEngine/Renderer/Renderer2D.h"
+#include "StarEngine/Physics/Physics2D.h"
 
 #include "StarEngine/Scene/Entity.h"
 
@@ -18,19 +19,6 @@
 #include "box2d/b2_circle_shape.h"
 
 namespace StarEngine {
-
-	static b2BodyType RigidBody2DTypeToBox2DBody(RigidBody2DComponent::BodyType type)
-	{
-		switch (type)
-		{
-			case RigidBody2DComponent::BodyType::Static: return b2_staticBody;
-			case RigidBody2DComponent::BodyType::Dynamic: return b2_dynamicBody;
-			case RigidBody2DComponent::BodyType::Kinematic: return b2_kinematicBody;
-		}
-
-		SE_CORE_ASSERT(false, "Unknown RigidBody2DComponent::BodyType!");
-		return b2_staticBody;
-	}
 
 	Scene::Scene()
 	{
@@ -125,8 +113,8 @@ namespace StarEngine {
 
 	void Scene::DestroyEntity(Entity entity)
 	{
-		m_Registry.destroy(entity);
 		m_EntityMap.erase(entity.GetUUID());
+		m_Registry.destroy(entity);
 	}
 
 	void Scene::OnRuntimeStart()
@@ -174,7 +162,6 @@ namespace StarEngine {
 		{
 			// Update scripts
 			{
-				// C# Entity OnUpdate
 				auto view = m_Registry.view<ScriptComponent>();
 				for (auto e : view)
 				{
@@ -343,10 +330,13 @@ namespace StarEngine {
 		m_StepFrames = frames;
 	}
 
-	void Scene::DuplicateEntity(Entity entity)
+	Entity Scene::DuplicateEntity(Entity entity)
 	{
-		Entity newEntity = CreateEntity(entity.GetName());
+		// Copy name because we're going to modify component data structure
+		std::string name = entity.GetName();
+		Entity newEntity = CreateEntity(name);
 		CopyComponentIfExists(AllComponents{}, newEntity, entity);
+		return newEntity;
 	}
 
 	Entity Scene::FindEntityByName(std::string_view name)
@@ -381,7 +371,7 @@ namespace StarEngine {
 			auto& rb2d = entity.GetComponent<RigidBody2DComponent>();
 
 			b2BodyDef bodyDef;
-			bodyDef.type = RigidBody2DTypeToBox2DBody(rb2d.Type);
+			bodyDef.type = Utils::RigidBody2DTypeToBox2DBody(rb2d.Type);
 			bodyDef.position.Set(transform.Translation.x, transform.Translation.y);
 			bodyDef.angle = transform.Rotation.z;
 

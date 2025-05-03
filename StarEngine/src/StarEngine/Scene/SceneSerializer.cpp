@@ -6,6 +6,8 @@
 #include "StarEngine/Scripting/ScriptEngine.h"
 #include "StarEngine/Core/UUID.h"
 
+#include "StarEngine/Project/Project.h"
+
 #include <fstream>
 
 #include <yaml-cpp/yaml.h>
@@ -106,6 +108,7 @@ namespace YAML {
 	};
 
 }
+
 namespace StarEngine {
 
 	#define WRITE_SCRIPT_FIELD(FieldType, Type)           \
@@ -516,7 +519,11 @@ namespace StarEngine {
 					src.Color = spriteRendererComponent["Color"].as<glm::vec4>();
 
 					if (spriteRendererComponent["TexturePath"])
-						src.Texture = Texture2D::Create(spriteRendererComponent["TexturePath"].as<std::string>());
+					{
+						std::string texturePath = spriteRendererComponent["TexturePath"].as<std::string>();
+						auto path = Project::GetAssetFileSystemPath(texturePath);
+						src.Texture = Texture2D::Create(path.string());
+					}
 
 					if (spriteRendererComponent["TilingFactor"])
 						src.TilingFactor = spriteRendererComponent["TilingFactor"].as<float>();
