@@ -128,7 +128,7 @@ namespace StarEngine {
 		body->ApplyLinearImpulseToCenter(b2Vec2(impulse->x, impulse->y), wake);
 	}
 
-	static void Rigidbody2DComponent_GetLinearVelocity(UUID entityID, glm::vec2* outLinearVelocity)
+	static void RigidBody2DComponent_GetLinearVelocity(UUID entityID, glm::vec2* outLinearVelocity)
 	{
 		Scene* scene = ScriptEngine::GetSceneContext();
 		SE_CORE_ASSERT(scene);
@@ -141,7 +141,7 @@ namespace StarEngine {
 		*outLinearVelocity = glm::vec2(linearVelocity.x, linearVelocity.y);
 	}
 
-	static RigidBody2DComponent::BodyType Rigidbody2DComponent_GetType(UUID entityID)
+	static RigidBody2DComponent::BodyType RigidBody2DComponent_GetType(UUID entityID)
 	{
 		Scene* scene = ScriptEngine::GetSceneContext();
 		SE_CORE_ASSERT(scene);
@@ -153,7 +153,7 @@ namespace StarEngine {
 		return Utils::RigidBody2DTypeFromBox2DBody(body->GetType());
 	}
 
-	static void Rigidbody2DComponent_SetType(UUID entityID, RigidBody2DComponent::BodyType bodyType)
+	static void RigidBody2DComponent_SetType(UUID entityID, RigidBody2DComponent::BodyType bodyType)
 	{
 		Scene* scene = ScriptEngine::GetSceneContext();
 		SE_CORE_ASSERT(scene);
@@ -218,9 +218,9 @@ namespace StarEngine {
 
 		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_ApplyLinearImpulse);
 		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_ApplyLinearImpulseToCenter);
-		SE_ADD_INTERNAL_CALL(Rigidbody2DComponent_GetLinearVelocity);
-		SE_ADD_INTERNAL_CALL(Rigidbody2DComponent_GetType);
-		SE_ADD_INTERNAL_CALL(Rigidbody2DComponent_SetType);
+		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_GetLinearVelocity);
+		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_GetType);
+		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_SetType);
 
 		SE_ADD_INTERNAL_CALL(Input_IsKeyDown);
 	}

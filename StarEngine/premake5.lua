@@ -54,7 +54,7 @@ project "StarEngine"
 		"GLFW",
 		"GLAD",
 		"imgui",
-		"opengl32.lib",
+		"opengl32",
 		"%{Library.mono}",
 		"yaml-cpp",
 		"Box2D",
