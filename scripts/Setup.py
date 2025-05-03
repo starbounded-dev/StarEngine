@@ -26,4 +26,3 @@ if (premakeInstalled):
     print("\nSetup completed!")
 else:
     print("StarEngine requires Premake to generate project files.")
-

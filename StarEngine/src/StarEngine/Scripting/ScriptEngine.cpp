@@ -193,7 +193,9 @@ namespace StarEngine {
 			SE_CORE_ERROR("[ScriptEngine] Could not load StarEngine-ScriptCore assembly.");
 			return;
 		}
-		status = LoadAppAssembly("SandboxProject/Assets/Scripts/Binaries/Sandbox.dll");
+
+		auto scriptModulePath = Project::GetAssetDirectory() / Project::GetActive()->GetConfig().ScriptModulePath;
+		status = LoadAppAssembly(scriptModulePath);
 		if (!status)
 		{
 			SE_CORE_ERROR("[ScriptEngine] Could not load app assembly.");
