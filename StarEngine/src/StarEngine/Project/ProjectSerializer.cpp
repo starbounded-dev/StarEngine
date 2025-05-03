@@ -14,7 +14,6 @@ namespace fmt {
 	};
 } // namespace fmt
 
-
 namespace StarEngine {
 
 	ProjectSerializer::ProjectSerializer(Ref<Project> project)

@@ -17,6 +17,8 @@
 #include "StarEngine/Core/Buffer.h"
 #include "StarEngine/Core/FileSystem.h"
 
+#include "StarEngine/Project/Project.h"
+
 namespace fmt {
 	template <>
 	struct formatter<std::filesystem::path> : formatter<std::string> {

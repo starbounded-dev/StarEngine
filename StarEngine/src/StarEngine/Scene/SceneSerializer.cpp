@@ -108,6 +108,7 @@ namespace YAML {
 	};
 
 }
+
 namespace StarEngine {
 
 	#define WRITE_SCRIPT_FIELD(FieldType, Type)           \
