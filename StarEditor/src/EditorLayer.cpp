@@ -4,6 +4,7 @@
 #include "StarEngine/Utils/PlatformUtils.h"
 #include "StarEngine/Math/Math.h"
 #include "StarEngine/Scripting/ScriptEngine.h"
+#include "StarEngine/Renderer/Font.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -12,12 +13,13 @@
 #include "imgui/imgui_internal.h"
 #include "ImGuizmo.h"
 
-
 namespace StarEngine {
 
 	EditorLayer::EditorLayer()
 		: Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f, true), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f })
 	{
+
+		Font font("assets/fonts/opensans/OpenSans-Regular.ttf");
 
 	}
 
