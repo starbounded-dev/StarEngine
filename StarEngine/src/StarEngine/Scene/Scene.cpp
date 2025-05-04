@@ -443,6 +443,7 @@ namespace StarEngine {
 				Renderer2D::DrawCircle(transform.GetTransform(), circle.Color, circle.Thickness, circle.Fade, (int)entity);
 			}
 		}
+		Renderer2D::DrawString("StarEngine", Font::GetDefault(), glm::mat4(1.0f), glm::vec4(1.0f));
 
 		Renderer2D::EndScene();
 	}
