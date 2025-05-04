@@ -15,11 +15,13 @@
 
 namespace StarEngine {
 
+	static Font* s_Font;
+
 	EditorLayer::EditorLayer()
 		: Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f, true), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f })
 	{
 
-		Font font("assets/fonts/opensans/OpenSans-Regular.ttf");
+		s_Font = new Font("assets/fonts/opensans/OpenSans-Regular.ttf");
 
 	}
 
@@ -265,6 +267,10 @@ namespace StarEngine {
 		}
 
 		ImGui::Checkbox("Show Physics Colliders", &m_ShowPhysicsColliders);
+
+		ImGui::Separator();
+
+		ImGui::Image((ImTextureID)s_Font->GetAtlasTexture()->GetRendererID(), { 512,512 }, { 0, 1 }, { 1, 0 });
 
 		ImGui::End();
 
