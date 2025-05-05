@@ -251,6 +251,17 @@ namespace StarEngine {
 				}
 			}
 
+			// Draw text
+			{
+				auto view = m_Registry.view<TransformComponent, TextComponent>();
+				for (auto entity : view)
+				{
+					auto [transform, text] = view.get<TransformComponent, TextComponent>(entity);
+
+					Renderer2D::DrawString(text.TextString, transform.GetTransform(), text, (int)entity);
+				}
+			}
+
 			Renderer2D::EndScene();
 		}
 
@@ -384,7 +395,7 @@ namespace StarEngine {
 				auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
 
 				b2PolygonShape boxShape;
-				boxShape.SetAsBox(bc2d.Size.x * transform.Scale.x, bc2d.Size.y * transform.Scale.y);
+				boxShape.SetAsBox(bc2d.Size.x * transform.Scale.x, bc2d.Size.y * transform.Scale.y, b2Vec2(bc2d.Offset.x, bc2d.Offset.y), 0.0f);
 
 				b2FixtureDef fixtureDef;
 				fixtureDef.shape = &boxShape;
@@ -443,7 +454,15 @@ namespace StarEngine {
 				Renderer2D::DrawCircle(transform.GetTransform(), circle.Color, circle.Thickness, circle.Fade, (int)entity);
 			}
 		}
-		Renderer2D::DrawString("StarEngine", Font::GetDefault(), glm::mat4(1.0f), glm::vec4(1.0f));
+		// Draw text
+		{
+			auto view = m_Registry.view<TransformComponent, TextComponent>();
+			for (auto entity : view)
+			{
+				auto [transform, text] = view.get<TransformComponent, TextComponent>(entity);
+				Renderer2D::DrawString(text.TextString, transform.GetTransform(), text, (int)entity);
+			}
+		}
 
 		Renderer2D::EndScene();
 	}
@@ -515,6 +534,12 @@ namespace StarEngine {
 
 	template<>
 	void Scene::OnComponentAdded<CircleCollider2DComponent>(Entity entity, CircleCollider2DComponent& component)
+	{
+
+	}
+
+	template<>
+	void Scene::OnComponentAdded<TextComponent>(Entity entity, TextComponent& component)
 	{
 
 	}
