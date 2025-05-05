@@ -30,6 +30,7 @@ group "Dependencies"
 	include "StarEngine/vendor/GLFW"
 	include "StarEngine/vendor/GLAD"
 	include "StarEngine/vendor/imgui"
+	include "StarEngine/vendor/msdf-atlas-gen"
 	include "StarEngine/vendor/yaml-cpp"
 group ""
 

@@ -42,6 +42,8 @@ project "StarEngine"
 		"%{IncludeDir.filewatch}",
 		"%{IncludeDir.stb_image}",
 		"%{IncludeDir.entt}",
+		"%{IncludeDir.msdfgen}",
+		"%{IncludeDir.msdf_atlas_gen}",
 		"%{IncludeDir.yaml_cpp}",
 		"%{IncludeDir.ImGuizmo}",
 		"%{IncludeDir.VulkanSDK}",
@@ -57,6 +59,7 @@ project "StarEngine"
 		"opengl32",
 		"%{Library.mono}",
 		"yaml-cpp",
+		"msdf-atlas-gen",
 		"Box2D",
 		"dwmapi.lib"
 	}

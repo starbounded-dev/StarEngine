@@ -23,3 +23,6 @@
 [submodule "StarEngine/vendor/Box2D"]
 	path = StarEngine/vendor/Box2D
 	url = https://github.com/sheazywi/box2d
+[submodule "StarEngine/vendor/msdf-atlas-gen"]
+	path = StarEngine/vendor/msdf-atlas-gen
+	url = https://github.com/sheazywi/msdf-atlas-gen
