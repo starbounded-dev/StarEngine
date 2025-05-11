@@ -95,4 +95,39 @@ namespace StarEngine
 		}
 
 	}
+
+	public class SpriteRendererComponent
+	{
+
+	}
+
+	public class CircleRendererComponent
+	{
+
+	}
+
+	public class CameraComponent
+	{
+
+	}
+
+	public class ScriptComponent
+	{
+
+	}
+
+	public class NativeScriptComponent
+	{
+
+	}
+
+	public class BoxCollider2DComponent
+	{
+
+	}
+
+	public class CircleCollider2DComponent
+	{
+
+	}
 }
