@@ -1,0 +1,4 @@
+AssetRegistry:
+  - Handle: 9263618904997247981
+    FilePath: Textures/starLogo.png
+    Type: AssetType::Texture2D

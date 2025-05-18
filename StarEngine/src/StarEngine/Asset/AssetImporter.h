@@ -10,4 +10,5 @@ namespace StarEngine
 		static Ref<Asset> ImportAsset(AssetHandle handle, const AssetMetadata& metadata);
 	};
 
+
 }

@@ -7,6 +7,8 @@
 
 #include "StarEngine.h"
 
+#include "StarEngine/Asset/TextureImporter.h"
+
 ExampleLayer::ExampleLayer()
 	: Layer("ExampleLayer"), m_CameraController(1280.0f / 720.0f)
 {
@@ -113,8 +115,8 @@ ExampleLayer::ExampleLayer()
 	m_FlatColorShader = StarEngine::Shader::Create("FlatColor", flatColorShaderVertexSrc, flatColorShaderFragmentSrc);
 	auto textureShader = m_ShaderLibrary.Load("assets/shaders/Texture.glsl");
 
-	m_Texture = StarEngine::Texture2D::Create("assets/textures/Checkerboard.png");
-	m_starLogoTexture = StarEngine::Texture2D::Create("assets/textures/starLogo.png");
+	m_Texture = StarEngine::TextureImporter::LoadTexture2D("assets/textures/Checkerboard.png");
+	m_starLogoTexture = StarEngine::TextureImporter::LoadTexture2D("assets/textures/starLogo.png");
 
 	textureShader->Bind();
 	textureShader->SetInt("u_Texture", 0);

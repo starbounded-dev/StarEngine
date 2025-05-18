@@ -3,7 +3,28 @@
 
 #include "AssetImporter.h"
 
+#include <fstream>
+#include <yaml-cpp/yaml.h>
+
+#include <spdlog/fmt/fmt.h>
+#include <filesystem>
+
+namespace fmt {
+	template <>
+	struct formatter<std::filesystem::path> : formatter<std::string> {
+		auto format(const std::filesystem::path& path, format_context& ctx) const {
+			return formatter<std::string>::format(path.string(), ctx);
+		}
+	};
+} // namespace fmt
+
 namespace StarEngine {
+
+	YAML::Emitter& operator<<(YAML::Emitter& out, const std::string_view& v)
+	{
+		out << std::string(v.data(), v.size());
+		return out;
+	}
 
 	bool EditorAssetManager::IsAssetHandleValid(AssetHandle handle) const
 	{
@@ -13,6 +34,22 @@ namespace StarEngine {
 	bool EditorAssetManager::IsAssetLoaded(AssetHandle handle) const
 	{
 		return m_LoadedAssets.find(handle) != m_LoadedAssets.end();
+	}
+
+	void EditorAssetManager::ImportAsset(const std::filesystem::path& filepath)
+	{
+		AssetHandle handle; // generate new handle
+		AssetMetadata metadata;
+		metadata.FilePath = filepath;
+		metadata.Type = AssetType::Texture2D; // TODO(Yan): grab this from extension and try to load
+		Ref<Asset> asset = AssetImporter::ImportAsset(handle, metadata);
+		asset->Handle = handle;
+		if (asset)
+		{
+			m_LoadedAssets[handle] = asset;
+			m_AssetRegistry[handle] = metadata;
+			SerializeAssetRegistry();
+		}
 	}
 
 	const AssetMetadata& EditorAssetManager::GetMetadata(AssetHandle handle) const
@@ -52,4 +89,60 @@ namespace StarEngine {
 		return asset;
 	}
 
+	void EditorAssetManager::SerializeAssetRegistry()
+	{
+		auto path = Project::GetAssetRegistryPath();
+
+		YAML::Emitter out;
+		{
+			out << YAML::BeginMap; // Root
+			out << YAML::Key << "AssetRegistry" << YAML::Value;
+
+			out << YAML::BeginSeq;
+			for (const auto& [handle, metadata] : m_AssetRegistry)
+			{
+				out << YAML::BeginMap;
+				out << YAML::Key << "Handle" << YAML::Value << handle;
+				std::string filepathStr = metadata.FilePath.generic_string();
+				out << YAML::Key << "FilePath" << YAML::Value << filepathStr;
+				out << YAML::Key << "Type" << YAML::Value << AssetTypeToString(metadata.Type);
+				out << YAML::EndMap;
+			}
+			out << YAML::EndSeq;
+			out << YAML::EndMap; // Root
+		}
+
+		std::ofstream fout(path);
+		fout << out.c_str();
+
+	}
+
+	bool EditorAssetManager::DeserializeAssetRegistry()
+	{
+		auto path = Project::GetAssetRegistryPath();
+		YAML::Node data;
+		try
+		{
+			data = YAML::LoadFile(path.string());
+		}
+		catch (YAML::ParserException e)
+		{
+			SE_CORE_ERROR("Failed to load project file '{0}'\n     {1}", path, e.what());
+			return false;
+		}
+
+		auto rootNode = data["AssetRegistry"];
+		if (!rootNode)
+			return false;
+
+		for (const auto& node : rootNode)
+		{
+			AssetHandle handle = node["Handle"].as<uint64_t>();
+			auto& metadata = m_AssetRegistry[handle];
+			metadata.FilePath = node["FilePath"].as<std::string>();
+			metadata.Type = AssetTypeFromString(node["Type"].as<std::string>());
+		}
+
+		return true;
+	}
 }

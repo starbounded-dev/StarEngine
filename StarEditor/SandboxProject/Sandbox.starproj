@@ -2,4 +2,5 @@ Project:
   Name: Sandbox
   StartScene: "Scenes/Physics2D.starscene"
   AssetDirectory: "Assets"
+  AssetRegistryPath: "AssetRegistry.ser"
   ScriptModulePath: "Scripts/Binaries/Sandbox.dll"

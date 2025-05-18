@@ -5,6 +5,8 @@
 #include "StarEngine/Renderer/UniformBuffer.h"
 #include "StarEngine/Renderer/RenderCommand.h"
 
+#include "StarEngine/Asset/AssetManager.h"
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -404,6 +406,7 @@ namespace StarEngine {
 	void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor, int entityID)
 	{
 		SE_PROFILE_FUNCTION();
+		SE_CORE_VERIFY(texture);
 
 		constexpr size_t quadVertexCount = 4;
 		constexpr glm::vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
@@ -549,7 +552,8 @@ namespace StarEngine {
 	{
 		if (src.Texture)
 		{
-			DrawQuad(transform, src.Texture, src.TilingFactor, src.Color, entityID);
+			Ref<Texture2D> texture = AssetManager::GetAsset<Texture2D>(src.Texture);
+			DrawQuad(transform, texture, src.TilingFactor, src.Color, entityID);
 		}
 		else
 		{

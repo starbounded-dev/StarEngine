@@ -1,11 +1,20 @@
 #include "sepch.h"
 #include "TextureImporter.h"
 
+#include "StarEngine/Project/Project.h"
+
 #include <stb_image.h>
 
 namespace StarEngine {
 
 	Ref<Texture2D> TextureImporter::ImportTexture2D(AssetHandle handle, const AssetMetadata& metadata)
+	{
+		SE_PROFILE_FUNCTION();
+
+		return LoadTexture2D(Project::GetAssetDirectory() / metadata.FilePath);
+	}
+
+	Ref<Texture2D> TextureImporter::LoadTexture2D(const std::filesystem::path& path)
 	{
 		SE_PROFILE_FUNCTION();
 
@@ -15,13 +24,13 @@ namespace StarEngine {
 
 		{
 			SE_PROFILE_SCOPE("stbi_load - TextureImporter::ImportTexture2D");
-			std::string pathStr = metadata.FilePath.string();
+			std::string pathStr = path.string();
 			data.Data = stbi_load(pathStr.c_str(), &width, &height, &channels, 0);
 		}
 
 		if (data.Data == nullptr)
 		{
-			SE_CORE_ERROR("TextureImporter::ImportTexture2D - Could not load texture from filepath: {}", metadata.FilePath.string());
+			SE_CORE_ERROR("TextureImporter::ImportTexture2D - Could not load texture from filepath: {}", path.string());
 			return nullptr;
 		}
 
@@ -45,6 +54,4 @@ namespace StarEngine {
 		data.Release();
 		return texture;
 	}
-
-
 }
