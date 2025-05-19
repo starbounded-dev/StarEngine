@@ -1,6 +1,6 @@
 //--------------------------
 // - StarEngine 2D -
-// Renderer2D Circle Shader
+// Renderer2D Quad Shader
 // --------------------------
 
 #type vertex

@@ -1,4 +1,7 @@
-// MSDF text shader
+//--------------------------
+// - StarEngine 2D -
+// Renderer2D Text Shader
+// --------------------------
 
 #type vertex
 #version 450 core
