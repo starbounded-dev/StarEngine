@@ -1,3 +1,5 @@
+#include "sepch.h"
+
 #include "SceneHierarchyPanel.h"
 #include "StarEngine/Scene/Components.h"
 
@@ -22,8 +24,8 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-namespace StarEngine
-{
+namespace StarEngine {
+
 	SceneHierarchyPanel::SceneHierarchyPanel(const Ref<Scene>& context)
 	{
 		SetContext(context);
@@ -59,6 +61,7 @@ namespace StarEngine
 
 				ImGui::EndPopup();
 			}
+
 		}
 		ImGui::End();
 
@@ -472,7 +475,7 @@ namespace StarEngine
 				ImGui::DragFloat("Fade", &component.Fade, 0.00025f, 0.0f, 1.0f);
 			});
 
-		DrawComponent<RigidBody2DComponent>("Rigid Body 2D", entity, [](auto& component)
+		DrawComponent<RigidBody2DComponent>("RigidBody 2D", entity, [](auto& component)
 			{
 				const char* bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic" };
 				const char* currentBodyTypeString = bodyTypeStrings[(int)component.Type];
@@ -524,6 +527,7 @@ namespace StarEngine
 				ImGui::DragFloat("Kerning", &component.Kerning, 0.025f);
 				ImGui::DragFloat("Line Spacing", &component.LineSpacing, 0.025f);
 			});
+
 	}
 
 	template<typename T>
@@ -537,4 +541,5 @@ namespace StarEngine
 			}
 		}
 	}
+
 }

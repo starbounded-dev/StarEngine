@@ -1,12 +1,12 @@
 #pragma once
 
 #include "StarEngine/Core/Base.h"
-
 #include "StarEngine/Scene/Scene.h"
 #include "StarEngine/Scene/Entity.h"
 
 namespace StarEngine {
-    class SceneHierarchyPanel
+
+	class SceneHierarchyPanel
 	{
 	public:
 		SceneHierarchyPanel() = default;
@@ -28,4 +28,5 @@ namespace StarEngine {
 		Ref<Scene> m_Context;
 		Entity m_SelectionContext;
 	};
+
 }

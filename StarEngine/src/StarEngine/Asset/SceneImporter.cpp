@@ -30,5 +30,4 @@ namespace StarEngine {
 		SceneSerializer serializer(scene);
 		serializer.Serialize(Project::GetAssetDirectory() / path);
 	}
-
 }
