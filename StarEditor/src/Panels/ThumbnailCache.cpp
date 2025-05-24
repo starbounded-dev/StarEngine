@@ -36,14 +36,38 @@ namespace StarEngine {
 		if (assetPath.extension() != ".png")
 			return nullptr;
 
-		Ref<Texture2D> texture = TextureImporter::LoadTexture2D(absolutePath);
-		if (!texture)
-			return nullptr;
+		m_Queue.push({ absolutePath, assetPath, timestamp });
+		return nullptr;
+	}
 
-		auto& cachedImage = m_CachedImages[assetPath];
-		cachedImage.Timestamp = timestamp;
-		cachedImage.Image = texture;
-		return cachedImage.Image;
+	void ThumbnailCache::OnUpdate()
+	{
+		while (!m_Queue.empty())
+		{
+			const auto& thumbnailInfo = m_Queue.front();
+
+			if (m_CachedImages.find(thumbnailInfo.AssetPath) != m_CachedImages.end())
+			{
+				auto& cachedImage = m_CachedImages.at(thumbnailInfo.AssetPath);
+				if (cachedImage.Timestamp == thumbnailInfo.Timestamp)
+				{
+					m_Queue.pop();
+					continue;
+				}
+			}
+
+			Ref<Texture2D> texture = TextureImporter::LoadTexture2D(thumbnailInfo.AbsolutePath);
+			if (!texture) {
+				m_Queue.pop();
+				continue;
+			}
+
+			auto& cachedImage = m_CachedImages[thumbnailInfo.AssetPath];
+			cachedImage.Timestamp = thumbnailInfo.Timestamp;
+			cachedImage.Image = texture;
+			m_Queue.pop();
+			break;
+		}
 	}
 
 }
