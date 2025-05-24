@@ -2,46 +2,40 @@ name: Build StarEngine
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   pull_request:
-    branches:
-      - main
+    branches: [ "main" ]
+
+env: 
+  SOLUTION_FILE_PATH: StarEngine.sln
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release, Dist]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          submodules: recursive
-          fetch-depth: 0
+          repository: 'starbounded-dev/StarEngine'
+          submodules: true
+          lfs: true
 
-      - name: Checkout correct commit for GLFW submodule
-        run: |
-          cd StarEngine/vendor/GLFW
-          git fetch origin f48003349257c49ddc0e3d8a31d1f2d25d1585f7
-          git checkout f48003349257c49ddc0e3d8a31d1f2d25d1585f7
-
-      - name: Checkout correct commit for ImGui submodule
-        run: |
-          cd StarEngine/vendor/imgui
-          git fetch origin 0cfb1e23348b1fd480714eed212c21d913fee27c
-          git checkout 0cfb1e23348b1fd480714eed212c21d913fee27c
-
-      - name: Checkout correct commit for yaml-cpp submodule
-        run: |
-          cd StarEngine/vendor/yaml-cpp
-          git fetch origin ceb728371d88def1b26a03d8e15cba42c9509d4f
-          git checkout ceb728371d88def1b26a03d8e15cba42c9509d4f
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
 
       - name: Install Vulkan SDK
         uses: jakoch/install-vulkan-sdk-action@v1.2.0
         with:
-          # You can set the Vulkan SDK version to download.
-          # Defaults to latest version, if version not set.
           vulkan_version: 1.3.296.0
           optional_components: com.lunarg.vulkan.vma, com.lunarg.vulkan.debug, com.lunarg.vulkan.glm
           install_runtime: true
@@ -52,24 +46,18 @@ jobs:
           install_lavapipe: false
 
       - name: Set up MSBuild
-        uses: microsoft/setup-msbuild@v1.0.2
-
-      - uses: abel0b/setup-premake@v2.4
+        uses: microsoft/setup-msbuild@v1.1
         with:
-          version: "5.0.0-beta4"
+          msbuild-architecture: 'x64'
+      
+      - name: Setup
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          cd scripts
+          python setup.py
 
-      - name: Generate project files with Premake
-        run: premake5 vs2022
-
-      - name: Build project with MSBuild
-        run: MSBuild /m /p:Configuration=Release StarEngine.sln
-
-      - name: Upload executable
-        uses: actions/upload-artifact@v4
-        with:
-          name: StarEngine-Windows
-          path: |
-            bin/Release-windows-x86_64/StarEditor/StarEditor.exe
-            bin/Release-windows-x86_64/StarEditor/assets
-            bin/Release-windows-x86_64/StarEditor/Resources
-            bin/Release-windows-x86_64/StarEditor/imgui.ini
+      - name: Build
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          MSBuild ${{env.SOLUTION_FILE_PATH}} /m /p:Configuration=${{ matrix.build-configuration }} -fl -flp:logfile=logs/Build-${{ matrix.build-configuration }}.log
+          
