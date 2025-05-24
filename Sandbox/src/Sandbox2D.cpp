@@ -7,6 +7,8 @@
 
 #include "imgui/imgui_internal.h"
 
+#include "StarEngine/Asset/TextureImporter.h"
+
 
 Sandbox2D::Sandbox2D()
 	:Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f, true), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f })
@@ -18,7 +20,7 @@ void Sandbox2D::OnAttach()
 {
 	SE_PROFILE_FUNCTION();
 
-	m_CheckerboardTexture = StarEngine::Texture2D::Create("assets/textures/Checkerboard.png");
+	m_CheckerboardTexture = StarEngine::TextureImporter::LoadTexture2D("assets/textures/Checkerboard.png");
 }
 
 void Sandbox2D::OnDetach()

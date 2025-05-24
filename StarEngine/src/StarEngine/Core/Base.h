@@ -1,11 +1,9 @@
 #pragma once
 
-#include <memory>
-
 #include "StarEngine/Core/PlatformDetection.h"
 
+#include <memory>
 
-#ifdef SE_DEBUG
 #if defined(SE_PLATFORM_WINDOWS)
 #define SE_DEBUGBREAK() __debugbreak()
 #elif defined(SE_PLATFORM_LINUX)
@@ -14,9 +12,13 @@
 #else
 #error "Platform doesn't support debugbreak yet!"
 #endif
+
+#ifdef SE_DEBUG
 #define SE_ENABLE_ASSERTS
-#else
-#define SE_DEBUGBREAK()
+#endif
+
+#ifndef SE_DIST
+#define SE_ENABLE_VERIFY
 #endif
 
 #define SE_EXPAND_MACRO(x) x
@@ -45,7 +47,6 @@ namespace StarEngine {
 	}
 
 }
-
 
 #include "StarEngine/Core/Log.h"
 #include "StarEngine/Core/Assert.h"

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarEngine/Asset/Asset.h"
 #include "StarEngine/Core/Timestep.h"
 #include "StarEngine/Core/UUID.h"
 #include "StarEngine/Renderer/EditorCamera.h"
@@ -12,13 +13,15 @@ namespace StarEngine {
 
 	class Entity;
 
-	class Scene
+	class Scene : public Asset
 	{
 	public:
 		Scene();
 		~Scene();
 
 		static Ref<Scene> Copy(Ref<Scene> other);
+
+		virtual AssetType GetType() const { return AssetType::Scene; }
 
 		Entity CreateEntity(const std::string& name = std::string());
 		Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());

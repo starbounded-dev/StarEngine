@@ -4,16 +4,6 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
-namespace fmt {
-	template <>
-	struct formatter<std::filesystem::path> : formatter<std::string> {
-		template <typename FormatContext>
-		auto format(const std::filesystem::path& path, FormatContext& ctx) const {
-			return formatter<std::string>::format(path.string(), ctx);
-		}
-	};
-} // namespace fmt
-
 namespace StarEngine {
 
 	ProjectSerializer::ProjectSerializer(Ref<Project> project)
@@ -32,8 +22,9 @@ namespace StarEngine {
 			{
 				out << YAML::BeginMap;// Project
 				out << YAML::Key << "Name" << YAML::Value << config.Name;
-				out << YAML::Key << "StartScene" << YAML::Value << config.StartScene.string();
+				out << YAML::Key << "StartScene" << YAML::Value << (uint64_t)config.StartScene;
 				out << YAML::Key << "AssetDirectory" << YAML::Value << config.AssetDirectory.string();
+				out << YAML::Key << "AssetRegistryPath" << YAML::Value << config.AssetRegistryPath.string();
 				out << YAML::Key << "ScriptModulePath" << YAML::Value << config.ScriptModulePath.string();
 				out << YAML::EndMap; // Project
 			}
@@ -57,7 +48,8 @@ namespace StarEngine {
 		}
 		catch (YAML::ParserException e)
 		{
-			SE_CORE_ERROR("Failed to load project file '{0}'\n     {1}", filepath, e.what());
+			SE_CORE_ERROR("Failed to load project file '{0}'\n     {1}", filepath.string(), e.what());
+
 			return false;
 		}
 
@@ -66,8 +58,10 @@ namespace StarEngine {
 			return false;
 
 		config.Name = projectNode["Name"].as<std::string>();
-		config.StartScene = projectNode["StartScene"].as<std::string>();
+		config.StartScene = projectNode["StartScene"].as<uint64_t>();
 		config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
+		if (projectNode["AssetRegistryPath"])
+			config.AssetRegistryPath = projectNode["AssetRegistryPath"].as<std::string>();
 		config.ScriptModulePath = projectNode["ScriptModulePath"].as<std::string>();
 		return true;
 	}

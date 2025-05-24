@@ -2,8 +2,8 @@
 
 #include "Project.h"
 
-namespace StarEngine
-{
+namespace StarEngine {
+
 	class ProjectSerializer
 	{
 	public:
