@@ -19,6 +19,7 @@ namespace StarEngine {
 		virtual AssetType GetAssetType(AssetHandle handle) const override;
 
 		void ImportAsset(const std::filesystem::path& filepath);
+		void ImportScriptAsset(const std::filesystem::path& filepath, uint64_t uuid);
 
 		const AssetMetadata& GetMetadata(AssetHandle handle) const;
 		const std::filesystem::path& GetFilePath(AssetHandle handle) const;
@@ -27,6 +28,7 @@ namespace StarEngine {
 
 		void SerializeAssetRegistry();
 		bool DeserializeAssetRegistry();
+
 	private:
 		AssetRegistry m_AssetRegistry;
 		AssetMap m_LoadedAssets;

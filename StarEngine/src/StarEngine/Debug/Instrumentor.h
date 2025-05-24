@@ -234,10 +234,14 @@ namespace StarEngine {
 	::StarEngine::InstrumentationTimer timer##line(fixedName##line.Data)
 #define SE_PROFILE_SCOPE_LINE(name, line) SE_PROFILE_SCOPE_LINE2(name, line)
 #define SE_PROFILE_SCOPE(name) SE_PROFILE_SCOPE_LINE(name, __LINE__)
+#define SE_PROFILE_SCOPE_COLOR(name, ...)		SE_PROFILE_FUNCTION_COLOR(name, __VA_ARGS__)
 #define SE_PROFILE_FUNCTION() SE_PROFILE_SCOPE(SS_FUNC_SIG)
+#define SE_PROFILE_FUNCTION_COLOR(name, ...)	ZoneScopedNC(name, __VA_ARGS__) // Color is in hexadecimal
 #else
 #define SE_PROFILE_BEGIN_SESSION(name, filepath)
 #define SE_PROFILE_END_SESSION()
 #define SE_PROFILE_SCOPE(name)
+#define SE_PROFILE_SCOPE_COLOR(name, ...)
 #define SE_PROFILE_FUNCTION()
+#define SE_PROFILE_FUNCTION_COLOR(name, ...)
 #endif

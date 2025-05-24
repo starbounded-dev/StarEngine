@@ -22,9 +22,15 @@ namespace StarEngine {
 
 	static std::map<std::filesystem::path, AssetType> s_AssetExtensionMap = {
 		{ ".starscene", AssetType::Scene },
+		{ ".hazel", AssetType::Scene },
 		{ ".png", AssetType::Texture2D },
 		{ ".jpg", AssetType::Texture2D },
-		{ ".jpeg", AssetType::Texture2D }
+		{ ".jpeg", AssetType::Texture2D },/*
+		{ ".mp3", AssetType::Audio },
+		{ ".wav", AssetType::Audio },
+		{ ".ogg", AssetType::Audio },
+		{ ".obj", AssetType::ObjModel },
+		{ ".cs", AssetType::ScriptFile },*/
 	};
 
 	static AssetType GetAssetTypeFromFileExtension(const std::filesystem::path& extension)
@@ -79,8 +85,27 @@ namespace StarEngine {
 		}
 	}
 
+	void EditorAssetManager::ImportScriptAsset(const std::filesystem::path& filepath, uint64_t uuid)
+	{
+		AssetHandle handle = uuid; // generate new handle
+		AssetMetadata metadata;
+		metadata.FilePath = filepath;
+		metadata.Type = GetAssetTypeFromFileExtension(filepath.extension());
+		SE_CORE_ASSERT(metadata.Type != AssetType::None);
+		Ref<Asset> asset = AssetImporter::ImportAsset(handle, metadata);
+		if (asset)
+		{
+			asset->Handle = handle;
+			m_LoadedAssets[handle] = asset;
+			m_AssetRegistry[handle] = metadata;
+			SerializeAssetRegistry();
+		}
+	}
+
 	const AssetMetadata& EditorAssetManager::GetMetadata(AssetHandle handle) const
 	{
+		SE_PROFILE_FUNCTION_COLOR("EditorAssetManager::GetMetadata", 0xF2A58A);
+
 		static AssetMetadata s_NullMetadata;
 		auto it = m_AssetRegistry.find(handle);
 		if (it == m_AssetRegistry.end())
@@ -96,6 +121,8 @@ namespace StarEngine {
 
 	Ref<Asset> EditorAssetManager::GetAsset(AssetHandle handle)
 	{
+		SE_PROFILE_FUNCTION_COLOR("EditorAssetManager::GetAsset", 0xA3FFA4);
+
 		// 1. check if handle is valid
 		if (!IsAssetHandleValid(handle))
 			return nullptr;
@@ -104,10 +131,14 @@ namespace StarEngine {
 		Ref<Asset> asset;
 		if (IsAssetLoaded(handle))
 		{
+			SE_PROFILE_SCOPE_COLOR("EditorAssetManager::GetAsset Scope", 0xFF7200);
+
 			asset = m_LoadedAssets.at(handle);
 		}
 		else
 		{
+			//SE_PROFILE_SCOPE_COLOR("EditorAssetManager::GetAsset 2 Scope", 0xA331F3);
+
 			// load asset
 			const AssetMetadata& metadata = GetMetadata(handle);
 			asset = AssetImporter::ImportAsset(handle, metadata);
@@ -116,8 +147,10 @@ namespace StarEngine {
 				// import failed
 				SE_CORE_ERROR("EditorAssetManager::GetAsset - asset import failed!");
 			}
+
 			m_LoadedAssets[handle] = asset;
 		}
+
 		// 3. return asset
 		return asset;
 	}
