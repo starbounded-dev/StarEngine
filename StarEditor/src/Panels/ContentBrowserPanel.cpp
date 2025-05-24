@@ -6,6 +6,8 @@
 
 #include <imgui/imgui.h>
 
+#include "StarEngine/Utils/StringUtils.h"
+
 namespace StarEngine {
 
 	ContentBrowserPanel::ContentBrowserPanel(Ref<Project> project)
@@ -51,6 +53,8 @@ namespace StarEngine {
 			columnCount = 1;
 
 		ImGui::Columns(columnCount, 0, false);
+
+		uint32_t itemRenderCount = 0;
 
 		if (m_Mode == Mode::Asset)
 		{
@@ -169,9 +173,22 @@ namespace StarEngine {
 						}
 
 						ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-						ImGui::ImageButton("thumbnail", (ImTextureID)(uint64_t)thumbnail->GetRendererID(), { thumbnailSize, thumbnailSize }, { 0, 1 }, { 1, 0 });
 
-						//itemRenderCount++;
+						float thumbnailHeight = thumbnailSize * ((float)thumbnail->GetHeight() / (float)thumbnail->GetWidth());
+						float diff = thumbnailSize - thumbnailHeight;
+
+						ImGui::SetCursorPosY(ImGui::GetCursorPosY() + diff); // Center thumbnail vertically
+
+						ImGui::ImageButton("##thumbnail", (ImTextureID)thumbnail->GetRendererID(), { thumbnailSize, thumbnailHeight }, { 0, 1 }, { 1, 0 });
+						if (ImGui::IsItemHovered())
+						{
+							ImGui::BeginTooltip();
+							std::string sizeString = Utils::BytesToString(thumbnail->GetEstimatedSize());
+							ImGui::Text("Memory: %s", sizeString.c_str());
+							ImGui::EndTooltip();
+						}
+
+						itemRenderCount++;
 
 						if (ImGui::BeginPopupContextItem())
 						{

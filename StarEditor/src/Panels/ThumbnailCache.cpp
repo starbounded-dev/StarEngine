@@ -57,6 +57,8 @@ namespace StarEngine {
 			}
 
 			Ref<Texture2D> texture = TextureImporter::LoadTexture2D(thumbnailInfo.AbsolutePath);
+			float thumbnailHeight = m_ThumbnailSize * ((float)texture->GetHeight() / (float)texture->GetWidth());
+			texture->ChangeSize(m_ThumbnailSize, thumbnailHeight);
 			if (!texture) {
 				m_Queue.pop();
 				continue;

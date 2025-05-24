@@ -18,6 +18,10 @@ namespace StarEngine {
 		virtual uint32_t GetHeight() const override { return m_Height; }
 		virtual uint32_t GetRendererID() const override { return m_RendererID; }
 
+		virtual uint64_t GetEstimatedSize() const override { return m_Width * m_Height * 4; } // Assuming RGBA8 format
+
+		virtual void ChangeSize(uint32_t newWidth, uint32_t newHeight) override;
+
 		virtual void SetData(Buffer data) override;
 
 		virtual void Bind(uint32_t slot = 0) const override;
