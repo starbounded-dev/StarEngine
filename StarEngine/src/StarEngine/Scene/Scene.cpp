@@ -1,13 +1,18 @@
 #include "sepch.h"
 #include "StarEngine/Scene/Scene.h"
 
+#include "StarEngine/Asset/AssetManager.h"
+
+#include "StarEngine/Audio/AudioEngine.h"
+#include "StarEngine/Audio/AudioSource.h"
+#include "StarEngine/Audio/AudioListener.h"
+
 #include "StarEngine/Scene/Components.h"
+#include "StarEngine/Scene/Entity.h"
 #include "StarEngine/Scene/ScriptableEntity.h"
 #include "StarEngine/Scripting/ScriptEngine.h"
 #include "StarEngine/Renderer/Renderer2D.h"
-#include "StarEngine/Physics/Physics2D.h"
-
-#include "StarEngine/Scene/Entity.h"
+#include "StarEngine/Physics/ContactListener2D.h"
 
 #include <glm/glm.hpp>
 
@@ -19,6 +24,8 @@
 #include "box2d/b2_circle_shape.h"
 
 namespace StarEngine {
+
+	static ContactListener2D s_Box2DContactListener;
 
 	Scene::Scene()
 	{
@@ -123,6 +130,73 @@ namespace StarEngine {
 
 		OnPhysics2DStart();
 
+		ContactListener2D::m_IsPlaying = true;
+
+		{
+			auto filter = m_Registry.view<TransformComponent, AudioListenerComponent>();
+			filter.each([&](TransformComponent& transform, AudioListenerComponent& ac)
+				{
+					ac.Listener = CreateRef<AudioListener>();
+					if (ac.Active)
+					{
+						const glm::mat4 inverted = glm::inverse(transform.GetTransform());
+						const glm::vec3 forward = glm::normalize(glm::vec3(inverted[2].x, inverted[2].y, inverted[2].z));
+						ac.Listener->SetConfig(ac.Config);
+						ac.Listener->SetPosition(glm::vec4(transform.Translation, 1.0f));
+						ac.Listener->SetDirection(glm::vec3{ -forward.x, -forward.y, -forward.z });
+					}
+				});
+		}
+
+		{
+			auto view = m_Registry.view<TransformComponent, AudioSourceComponent>();
+			view.each([&](TransformComponent& transform, AudioSourceComponent& ac)
+				{
+					if (AssetManager::IsAssetHandleValid(ac.Audio))
+					{
+						if (ac.Audio && !ac.AudioSourceData.UsePlaylist)
+						{
+							Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(ac.Audio);
+							const glm::mat4 inverted = glm::inverse(transform.GetTransform());
+							const glm::vec3 forward = glm::normalize(glm::vec3(inverted[2].x, inverted[2].y, inverted[2].z));
+
+							if (audioSource != nullptr)
+							{
+								audioSource->SetConfig(ac.Config);
+								audioSource->SetPosition(glm::vec4(transform.Translation, 1.0f));
+								audioSource->SetDirection(forward);
+								if (ac.Config.PlayOnAwake)
+									audioSource->Play();
+							}
+						}
+						else if (ac.Audio && ac.AudioSourceData.UsePlaylist)
+						{
+							if (ac.AudioSourceData.CurrentIndex >= ac.AudioSourceData.Playlist.size())
+								ac.AudioSourceData.CurrentIndex = 0;
+
+							if (ac.AudioSourceData.CurrentIndex < ac.AudioSourceData.Playlist.size())
+							{
+								Ref<AudioSource> playingSourceIndex = AssetManager::GetAsset<AudioSource>(ac.AudioSourceData.Playlist[ac.AudioSourceData.CurrentIndex]);
+								const glm::mat4 inverted = glm ::inverse(transform.GetTransform());
+								const glm::vec3 forward = glm::normalize(glm::vec3(inverted[2].x, inverted[2].y, inverted[2].z));
+
+								if (playingSourceIndex != nullptr)
+								{
+									playingSourceIndex->SetConfig(ac.Config);
+									playingSourceIndex->SetPosition(glm::vec4(transform.Translation, 1.0f));
+									playingSourceIndex->SetDirection(forward);
+									if (ac.Config.PlayOnAwake)
+										playingSourceIndex->Play();
+
+									ac.AudioSourceData.PlayingCurrentIndex = true;
+									ac.AudioSourceData.CurrentIndex++;
+								}
+							}
+						}
+					}
+				});
+		}
+
 		// Scripting
 		{
 			ScriptEngine::OnRuntimeStart(this);
@@ -141,7 +215,40 @@ namespace StarEngine {
 	{
 		m_IsRunning = false;
 
+		ContactListener2D::m_IsPlaying = false;
+
 		OnPhysics2DStop();
+
+		{
+			auto view = m_Registry.view<AudioSourceComponent>();
+			view.each([&](entt::entity entity, AudioSourceComponent& asc)
+				{
+					auto& ac = asc;
+					if (AssetManager::IsAssetHandleValid(ac.Audio))
+					{
+						if (ac.Audio && !ac.AudioSourceData.UsePlaylist)
+						{
+							Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(ac.Audio);
+
+							if (audioSource != nullptr && audioSource->IsPlaying())
+								audioSource->Stop();
+						}
+						else if (ac.Audio && ac.AudioSourceData.UsePlaylist)
+						{
+							ac.AudioSourceData.CurrentIndex = ac.AudioSourceData.StartIndex;
+							ac.AudioSourceData.PlayingCurrentIndex = false;
+
+							for (auto audio : ac.AudioSourceData.Playlist)
+							{
+								Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(audio);
+
+								if (audioSource != nullptr && audioSource->IsPlaying())
+									audioSource->Stop();
+							}
+						}
+					}
+				});
+		}
 
 		ScriptEngine::OnRuntimeStop();
 	}
@@ -204,6 +311,202 @@ namespace StarEngine {
 					transform.Translation.y = position.y;
 					transform.Rotation.z = body->GetAngle();
 				}
+			}
+
+			{
+				SE_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::AudioListenerComponent Scope", 0xFF7200);
+
+				auto view = m_Registry.view<AudioListenerComponent>();
+				view.each([&](entt::entity entity, AudioListenerComponent& alc)
+					{
+						Entity e = { entity, this };
+						auto& ac = e.GetComponent<AudioListenerComponent>();
+						auto& transform = e.GetComponent<TransformComponent>();
+
+						if (ac.Active)
+						{
+							const glm::mat4 inverted = glm::inverse(transform.GetTransform());
+							const glm::vec3 forward = glm::normalize(glm::vec3(inverted[2].x, inverted[2].y, inverted[2].z));
+							ac.Listener->SetPosition(glm::vec4(transform.Translation, 1.0f));
+							ac.Listener->SetDirection(glm::vec3{ -forward.x, -forward.y, -forward.z });
+							//break;
+						}
+					});
+			}
+
+			{
+				SE_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::AudioSourceComponent Scope", 0xFF7200);
+
+				auto view = m_Registry.view<TransformComponent, AudioSourceComponent>();
+				view.each([&](entt::entity entity, TransformComponent& transform, AudioSourceComponent& asc)
+					{
+						//Entity e = { entity, this };
+						//auto& transform = e.GetComponent<TransformComponent>();
+
+						//const glm::mat4 inverted = glm::inverse(transform.GetTransform());
+						//const glm::vec3 forward = glm::vector_normalize3(inverted.Value.z_axis);
+
+						if (asc.Audio && !asc.AudioSourceData.UsePlaylist)
+						{
+							Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(asc.Audio);
+							if (!audioSource->IsPlaying() && asc.Paused)
+							{
+								audioSource->SetConfig(asc.Config);
+								audioSource->Play();
+								asc.Paused = false;
+							}
+
+							if (audioSource != nullptr)
+							{
+								audioSource->SetConfig(asc.Config);
+								audioSource->SetPosition(glm::vec4(transform.Translation, 1.0f));
+								//audioSource->SetDirection(forward);
+							}
+						}
+						else if (asc.Audio && asc.AudioSourceData.UsePlaylist)
+						{
+							SE_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::AudioSourceComponent 2 Scope", 0xEE3AFF);
+
+							Ref<AudioSource> audioSourceIndex = AssetManager::GetAsset<AudioSource>(asc.AudioSourceData.Playlist[asc.AudioSourceData.OldIndex]);
+
+							//if (ac.AudioSourceData.OldIndex <= ac.AudioSourceData.Playlist.size() - 1)
+							if (asc.AudioSourceData.CurrentIndex < asc.AudioSourceData.Playlist.size() && audioSourceIndex != nullptr && asc.Config.PlayOnAwake && !audioSourceIndex->IsPlaying() && !asc.Paused)
+							{
+								SE_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::AudioSourceComponent 3 Scope", 0xFF8E68);
+
+								audioSourceIndex = AssetManager::GetAsset<AudioSource>(asc.AudioSourceData.Playlist[asc.AudioSourceData.CurrentIndex]);
+
+								if (!audioSourceIndex->IsLooping())
+								{
+									SE_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::AudioSourceComponent 4 Scope", 0xFF2F68);
+
+									audioSourceIndex->SetConfig(asc.Config);
+									audioSourceIndex->Play();
+									asc.AudioSourceData.PlayingCurrentIndex = true;
+									asc.Paused = false;
+
+									//const rtmcpp::Mat4 inverted = rtmcpp::Inverse(transform.GetTransform());
+									//const rtmcpp::Vec3 forward = rtm::vector_normalize3(inverted.Value.z_axis);
+
+									audioSourceIndex->SetConfig(asc.Config);
+									audioSourceIndex->SetPosition(glm::vec4(transform.Translation, 1.0f));
+									//audioSourceIndex->SetDirection(forward);
+
+									if (asc.AudioSourceData.RepeatAfterSpecificTrackPlays && asc.AudioSourceData.CurrentIndex == asc.AudioSourceData.StartIndex)
+									{
+										SE_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::AudioSourceComponent 5 Scope", 0xA191FF);
+
+										audioSourceIndex->SetLooping(true);
+									}
+
+									if (asc.AudioSourceData.OldIndex != asc.AudioSourceData.CurrentIndex)
+									{
+										SE_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::AudioSourceComponent 6 Scope", 0x8CCBFF);
+
+										asc.AudioSourceData.OldIndex = asc.AudioSourceData.CurrentIndex;
+									}
+
+									asc.AudioSourceData.CurrentIndex++;
+								}
+							}
+							else if (asc.AudioSourceData.CurrentIndex < asc.AudioSourceData.Playlist.size() && audioSourceIndex != nullptr && asc.Config.PlayOnAwake && asc.Paused)
+							{
+								audioSourceIndex->SetConfig(asc.Config);
+								audioSourceIndex->Play();
+								asc.AudioSourceData.PlayingCurrentIndex = true;
+								asc.Paused = false;
+							}
+
+							if (asc.AudioSourceData.RepeatPlaylist && !asc.AudioSourceData.RepeatAfterSpecificTrackPlays && asc.AudioSourceData.CurrentIndex >= asc.AudioSourceData.Playlist.size())
+							{
+								if (audioSourceIndex != nullptr && !audioSourceIndex->IsPlaying())
+									asc.AudioSourceData.CurrentIndex = 0;
+							}
+
+							if (asc.AudioSourceData.RepeatAfterSpecificTrackPlays && !asc.AudioSourceData.RepeatPlaylist && asc.AudioSourceData.CurrentIndex > asc.AudioSourceData.StartIndex)
+							{
+								if (audioSourceIndex != nullptr && !audioSourceIndex->IsPlaying())
+									asc.AudioSourceData.CurrentIndex = asc.AudioSourceData.StartIndex;
+							}
+						}
+					});
+			}
+		}
+		else if (m_IsPaused)
+		{
+			SE_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::AudioListenerComponent 2 Scope", 0xFF7200);
+
+			auto view = m_Registry.view<AudioListenerComponent>();
+			view.each([&](entt::entity acEntity, AudioListenerComponent& alc)
+				{
+					Entity e = { acEntity, this };
+					auto& ac = e.GetComponent<AudioListenerComponent>();
+					auto& transform = e.GetComponent<TransformComponent>();
+
+					if (ac.Active)
+					{
+						const glm::mat4 inverted = glm::inverse(transform.GetTransform());
+						const glm::vec3 forward = glm::normalize(glm::vec3(inverted[2].x, inverted[2].y, inverted[2].z));
+						ac.Listener->SetPosition(glm::vec4(transform.Translation, 1.0f));
+						ac.Listener->SetDirection(glm::vec3{ -forward.x, -forward.y, -forward.z });
+					}
+				});
+
+
+			{
+				SE_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::AudioSourceComponent 2 Scope", 0xFF7200);
+
+				auto view = m_Registry.view<AudioSourceComponent>();
+				view.each([&](entt::entity entity, AudioSourceComponent& asc)
+					{
+
+						Entity e = { entity , this};
+						auto& transform = e.GetComponent<TransformComponent>();
+
+						if (asc.Audio)
+						{
+							if (!asc.AudioSourceData.UsePlaylist)
+							{
+								Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(asc.Audio);
+								if (audioSource->IsPlaying())
+								{
+									audioSource->SetConfig(asc.Config);
+									audioSource->Pause();
+									asc.Paused = true;
+								}
+							}
+							else if (asc.AudioSourceData.UsePlaylist)
+							{
+								if (asc.AudioSourceData.OldIndex == 0)
+								{
+									Ref<AudioSource> audioSourceIndex = AssetManager::GetAsset<AudioSource>(asc.Audio);
+
+									if (audioSourceIndex->IsPlaying())
+									{
+										audioSourceIndex->SetConfig(asc.Config);
+										audioSourceIndex->Pause();
+										//ac.AudioSourceData.PlayingCurrentIndex = false;
+										asc.Paused = true;
+									}
+								}
+								else if (asc.AudioSourceData.OldIndex > 0)
+								{
+									Ref<AudioSource> audioSourceIndex = AssetManager::GetAsset<AudioSource>(asc.AudioSourceData.Playlist[asc.AudioSourceData.OldIndex]);
+
+									if (asc.AudioSourceData.OldIndex < asc.AudioSourceData.Playlist.size())
+									{
+										if (audioSourceIndex->IsPlaying())
+										{
+											audioSourceIndex->SetConfig(asc.Config);
+											audioSourceIndex->Pause();
+											//ac.AudioSourceData.PlayingCurrentIndex = false;
+											asc.Paused = true;
+										}
+									}
+								}
+							}
+						}
+					});
 			}
 		}
 
@@ -544,4 +847,36 @@ namespace StarEngine {
 
 	}
 
+	template<>
+	void Scene::OnComponentAdded<AudioData>(Entity entity, AudioData& component)
+	{
+
+	}
+
+	template<>
+	void Scene::OnComponentAdded<AudioSourceComponent>(Entity entity, AudioSourceComponent& component)
+	{
+		if (component.Audio && !component.AudioSourceData.UsePlaylist)
+		{
+			Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(component.Audio);
+			if (audioSource != nullptr)
+				audioSource->SetConfig(component.Config);
+		}
+		else if (component.Audio && component.AudioSourceData.UsePlaylist)
+		{
+			for (auto audio : component.AudioSourceData.Playlist)
+			{
+				Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(audio);
+				if (audioSource != nullptr)
+					audioSource->SetConfig(component.Config);
+			}
+		}
+	}
+
+	template<>
+	void Scene::OnComponentAdded<AudioListenerComponent>(Entity entity, AudioListenerComponent& component)
+	{
+		if (component.Listener)
+			component.Listener->SetConfig(component.Config);
+	}
 }

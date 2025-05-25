@@ -1,6 +1,5 @@
 #include "sepch.h"
 #include "ContentBrowserPanel.h"
-
 #include "StarEngine/Project/Project.h"
 #include "StarEngine/Asset/TextureImporter.h"
 

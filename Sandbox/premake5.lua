@@ -19,7 +19,8 @@ project "Sandbox"
 		"%{wks.location}/StarEngine/src",
 		"%{wks.location}/StarEngine/vendor",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.entt}"
+		"%{IncludeDir.entt}",
+		"%{IncludeDir.miniaudio}"
 	}
 
 	links

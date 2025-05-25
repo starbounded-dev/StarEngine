@@ -1,6 +1,11 @@
 #pragma once
 
 #include "SceneCamera.h"
+
+
+#include "StarEngine/Asset/AssetManager.h"
+#include "StarEngine/Audio/AudioListener.h"
+#include "StarEngine/Audio/AudioSource.h"
 #include "StarEngine/Core/UUID.h"
 #include "StarEngine/Renderer/Texture.h"
 #include "StarEngine/Renderer/Font.h"
@@ -13,6 +18,25 @@
 #include "glm/gtx/quaternion.hpp"
 
 namespace StarEngine {
+
+	struct AudioData // For audio sources only!
+	{
+		std::vector<AssetHandle> Playlist;
+		bool UsePlaylist = false;
+		bool RepeatPlaylist = false;
+		bool RepeatAfterSpecificTrackPlays = false;
+		bool PlayingCurrentIndex = false;
+		uint32_t NumberOfAudioSources = 0;
+		uint32_t OldIndex = 0;
+		uint32_t CurrentIndex = 0;
+		uint32_t StartIndex = 0;
+
+		// For Scene:
+		bool HasPlayedAudioSource = false;
+
+		// Copies
+		std::vector<AssetHandle> PlaylistCopy;
+	};
 
 	struct IDComponent
 	{
@@ -88,16 +112,19 @@ namespace StarEngine {
 		CameraComponent(const CameraComponent&) = default;
 	};
 
+	// Forward declaration
+	class ScriptableEntity;
+
 	struct ScriptComponent
 	{
 		std::string ClassName;
 
+		// Add the missing Instance member
+		Ref<ScriptableEntity> Instance;
+
 		ScriptComponent() = default;
 		ScriptComponent(const ScriptComponent&) = default;
 	};
-
-	// Forward declaration
-	class ScriptableEntity;
 
 	struct NativeScriptComponent
 	{
@@ -178,6 +205,61 @@ namespace StarEngine {
 		float LineSpacing = 0.0f;
 	};
 
+	struct AudioSourceComponent
+	{
+		AudioSourceConfig Config;
+
+		AssetHandle Audio = 0;
+		AudioData AudioSourceData;
+
+		bool Paused = false;
+		bool Seek = false;
+		uint64_t SeekPosition = 0;
+
+		Ref<AudioSource> GetAudioSource(uint32_t index) const { return AssetManager::GetAsset<AudioSource>(AudioSourceData.Playlist[index]); }
+		void SetAudioSource(uint32_t index) { Audio = AudioSourceData.Playlist[index]; }
+
+		void AddAudioSource(AssetHandle& audio)
+		{
+			AudioSourceData.Playlist.emplace_back(audio);
+			AudioSourceData.NumberOfAudioSources = (uint32_t)AudioSourceData.Playlist.size();
+		}
+
+		void RemoveAudioSource(uint32_t index)
+		{
+			AudioSourceData.Playlist.erase(AudioSourceData.Playlist.begin() + index);
+			AudioSourceData.Playlist.shrink_to_fit();
+			AudioSourceData.NumberOfAudioSources = (uint32_t)AudioSourceData.Playlist.size();
+		}
+
+		void RemoveAudioSource(AssetHandle& audio)
+		{
+			uint32_t index = 0;
+
+			for (uint32_t i = 0; i < AudioSourceData.Playlist.size(); i++)
+			{
+				AssetHandle audioSource = AudioSourceData.Playlist[i];
+
+				if (audioSource == audio)
+				{
+					index = i;
+				}
+			}
+
+			AudioSourceData.Playlist.erase(AudioSourceData.Playlist.begin() + index);
+			AudioSourceData.Playlist.shrink_to_fit();
+			AudioSourceData.NumberOfAudioSources = (uint32_t)AudioSourceData.Playlist.size();
+		}
+	};
+
+	struct AudioListenerComponent
+	{
+		bool Active = true;
+		AudioListenerConfig Config;
+
+		Ref<AudioListener> Listener;
+	};
+
 	template<typename... Component>
 	struct ComponentGroup
 	{
@@ -187,6 +269,6 @@ namespace StarEngine {
 		ComponentGroup<TransformComponent, SpriteRendererComponent,
 		CircleRendererComponent, CameraComponent, ScriptComponent,
 		NativeScriptComponent, RigidBody2DComponent, BoxCollider2DComponent,
-		CircleCollider2DComponent, TextComponent>;
+		CircleCollider2DComponent, TextComponent, AudioData, AudioSourceComponent, AudioListenerComponent>;
 
 }

@@ -130,4 +130,19 @@ namespace StarEngine
 	{
 
 	}
+
+	public class AudioData
+	{
+
+	}
+
+	public class AudioSourceComponent
+	{
+
+	}
+
+	public class AudioListenerComponent
+	{
+
+	}
 }

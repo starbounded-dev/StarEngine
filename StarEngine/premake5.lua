@@ -49,6 +49,7 @@ project "StarEngine"
 		"%{IncludeDir.VulkanSDK}",
 
 		"%{IncludeDir.mono}",
+		"%{IncludeDir.miniaudio}"
 	}
 
 	links

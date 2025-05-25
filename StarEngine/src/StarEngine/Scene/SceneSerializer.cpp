@@ -145,6 +145,14 @@ namespace StarEngine {
 		return out;
 	}
 
+	template<typename T>
+	inline T TrySetEnum(T& value, const YAML::Node& node)
+	{
+		if (node)
+			value = static_cast<T>(node.as<int>(static_cast<int>(value)));
+		return value;
+	}
+
 	static std::string RigidBody2DBodyTypeToString(RigidBody2DComponent::BodyType type)
 	{
 		switch (type)
@@ -370,6 +378,65 @@ namespace StarEngine {
 			out << YAML::Key << "LineSpacing" << YAML::Value << textComponent.LineSpacing;
 
 			out << YAML::EndMap; // TextComponent
+		}
+
+		if (entity.HasComponent<AudioSourceComponent>())
+		{
+			out << YAML::Key << "AudioSourceComponent";
+			out << YAML::BeginMap;
+
+			const auto& audioSourceComponent = entity.GetComponent<AudioSourceComponent>();
+			out << YAML::Key << "AudioHandle" << YAML::Value << audioSourceComponent.Audio;
+			out << YAML::Key << "VolumeMultiplier" << YAML::Value << audioSourceComponent.Config.VolumeMultiplier;
+			out << YAML::Key << "PitchMultiplier" << YAML::Value << audioSourceComponent.Config.PitchMultiplier;
+			out << YAML::Key << "PlayOnAwake" << YAML::Value << audioSourceComponent.Config.PlayOnAwake;
+			out << YAML::Key << "Looping" << YAML::Value << audioSourceComponent.Config.Looping;
+			out << YAML::Key << "Spatialization" << YAML::Value << audioSourceComponent.Config.Spatialization;
+			out << YAML::Key << "AttenuationModel" << YAML::Value << static_cast<int>(audioSourceComponent.Config.AttenuationModel);
+			out << YAML::Key << "RollOff" << YAML::Value << audioSourceComponent.Config.RollOff;
+			out << YAML::Key << "MinGain" << YAML::Value << audioSourceComponent.Config.MinGain;
+			out << YAML::Key << "MaxGain" << YAML::Value << audioSourceComponent.Config.MaxGain;
+			out << YAML::Key << "MinDistance" << YAML::Value << audioSourceComponent.Config.MinDistance;
+			out << YAML::Key << "MaxDistance" << YAML::Value << audioSourceComponent.Config.MaxDistance;
+			out << YAML::Key << "ConeInnerAngle" << YAML::Value << audioSourceComponent.Config.ConeInnerAngle;
+			out << YAML::Key << "ConeOuterAngle" << YAML::Value << audioSourceComponent.Config.ConeOuterAngle;
+			out << YAML::Key << "ConeOuterGain" << YAML::Value << audioSourceComponent.Config.ConeOuterGain;
+			out << YAML::Key << "DopplerFactor" << YAML::Value << audioSourceComponent.Config.DopplerFactor;
+
+			out << YAML::Key << "UsePlaylist" << YAML::Value << audioSourceComponent.AudioSourceData.UsePlaylist;
+
+			if (audioSourceComponent.AudioSourceData.UsePlaylist)
+			{
+				out << YAML::Key << "AudioSourcesSize" << YAML::Value << audioSourceComponent.AudioSourceData.NumberOfAudioSources;
+				out << YAML::Key << "StartIndex" << YAML::Value << audioSourceComponent.AudioSourceData.StartIndex;
+				out << YAML::Key << "RepeatPlaylist" << YAML::Value << audioSourceComponent.AudioSourceData.RepeatPlaylist;
+				out << YAML::Key << "RepeatSpecificTrack" << YAML::Value << audioSourceComponent.AudioSourceData.RepeatAfterSpecificTrackPlays;
+
+				for (uint32_t i = 0; i < audioSourceComponent.AudioSourceData.Playlist.size(); i++)
+				{
+					if (audioSourceComponent.AudioSourceData.Playlist[i])
+					{
+						std::string audioName = "AudioHandle" + std::to_string(i);
+						out << YAML::Key << audioName.c_str() << YAML::Value << audioSourceComponent.AudioSourceData.Playlist[i];
+					}
+				}
+			}
+
+			out << YAML::EndMap;
+		}
+
+		if (entity.HasComponent<AudioListenerComponent>())
+		{
+			out << YAML::Key << "AudioListenerComponent";
+			out << YAML::BeginMap;
+
+			const auto& audioListenerComponent = entity.GetComponent<AudioListenerComponent>();
+			out << YAML::Key << "Active" << YAML::Value << audioListenerComponent.Active;
+			out << YAML::Key << "ConeInnerAngle" << YAML::Value << audioListenerComponent.Config.ConeInnerAngle;
+			out << YAML::Key << "ConeOuterAngle" << YAML::Value << audioListenerComponent.Config.ConeOuterAngle;
+			out << YAML::Key << "ConeOuterGain" << YAML::Value << audioListenerComponent.Config.ConeOuterGain;
+
+			out << YAML::EndMap;
 		}
 
 		out << YAML::EndMap; // Entity
@@ -598,6 +665,112 @@ namespace StarEngine {
 					tc.Color = textComponent["Color"].as<glm::vec4>();
 					tc.Kerning = textComponent["Kerning"].as<float>();
 					tc.LineSpacing = textComponent["LineSpacing"].as<float>();
+				}
+
+				auto audioSourceComponent = entity["AudioSourceComponent"];
+				if (audioSourceComponent)
+				{
+					auto& component = deserializedEntity.AddComponent<AudioSourceComponent>();
+
+					if (audioSourceComponent["AudioHandle"])
+						component.Audio = audioSourceComponent["AudioHandle"].as<AssetHandle>();
+
+					if (audioSourceComponent["VolumeMultiplier"])
+						component.Config.VolumeMultiplier = audioSourceComponent["VolumeMultiplier"].as<float>();
+
+					if (audioSourceComponent["PitchMultiplier"])
+						component.Config.PitchMultiplier = audioSourceComponent["PitchMultiplier"].as<float>();
+
+					if (audioSourceComponent["PlayOnAwake"])
+						component.Config.PlayOnAwake = audioSourceComponent["PlayOnAwake"].as<bool>();
+
+					if (audioSourceComponent["Looping"])
+						component.Config.Looping = audioSourceComponent["Looping"].as<bool>();
+
+					if (audioSourceComponent["Spatialization"])
+						component.Config.Spatialization = audioSourceComponent["Spatialization"].as<bool>();
+
+					TrySetEnum(component.Config.AttenuationModel, audioSourceComponent["AttenuationModel"]);
+
+					if (audioSourceComponent["RollOff"])
+						component.Config.RollOff = audioSourceComponent["RollOff"].as<float>();
+
+					if (audioSourceComponent["MinGain"])
+						component.Config.MinGain = audioSourceComponent["MinGain"].as<float>();
+
+					if (audioSourceComponent["MaxGain"])
+						component.Config.MaxGain = audioSourceComponent["MaxGain"].as<float>();
+
+					if (audioSourceComponent["MinDistance"])
+						component.Config.MinDistance = audioSourceComponent["MinDistance"].as<float>();
+
+					if (audioSourceComponent["MaxDistance"])
+						component.Config.MaxDistance = audioSourceComponent["MaxDistance"].as<float>();
+
+					if (audioSourceComponent["ConeInnerAngle"])
+						component.Config.ConeInnerAngle = audioSourceComponent["ConeInnerAngle"].as<float>();
+
+					if (audioSourceComponent["ConeOuterAngle"])
+						component.Config.ConeOuterAngle = audioSourceComponent["ConeOuterAngle"].as<float>();
+
+					if (audioSourceComponent["ConeOuterGain"])
+						component.Config.ConeOuterGain = audioSourceComponent["ConeOuterGain"].as<float>();
+
+					if (audioSourceComponent["DopplerFactor"])
+						component.Config.DopplerFactor = audioSourceComponent["DopplerFactor"].as<float>();
+
+					if (component.Audio != 0)
+					{
+						Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(component.Audio);
+						audioSource->SetConfig(component.Config);
+					}
+
+					if (audioSourceComponent["UsePlaylist"])
+						component.AudioSourceData.UsePlaylist = audioSourceComponent["UsePlaylist"].as<bool>();
+
+					if (component.AudioSourceData.UsePlaylist)
+					{
+						if (audioSourceComponent["AudioSourcesSize"])
+							component.AudioSourceData.NumberOfAudioSources = audioSourceComponent["AudioSourcesSize"].as<int>();
+
+						if (audioSourceComponent["StartIndex"])
+							component.AudioSourceData.StartIndex = audioSourceComponent["StartIndex"].as<int>();
+
+						if (audioSourceComponent["RepeatPlaylist"])
+							component.AudioSourceData.RepeatPlaylist = audioSourceComponent["RepeatPlaylist"].as<bool>();
+
+						if (audioSourceComponent["RepeatSpecificTrack"])
+							component.AudioSourceData.RepeatAfterSpecificTrackPlays = audioSourceComponent["RepeatSpecificTrack"].as<bool>();
+
+						for (uint32_t i = 0; i < component.AudioSourceData.NumberOfAudioSources; i++)
+						{
+							std::string audioName = "AudioHandle" + std::to_string(i);
+							if (audioSourceComponent[audioName.c_str()])
+							{
+								AssetHandle audioHandle = audioSourceComponent[audioName.c_str()].as<AssetHandle>();
+								component.AudioSourceData.Playlist.emplace_back(audioHandle);
+
+							}
+						}
+					}
+				}
+
+				auto audioListenerComponent = entity["AudioListenerComponent"];
+				if (audioListenerComponent)
+				{
+					auto& component = deserializedEntity.AddComponent<AudioListenerComponent>();
+
+					if (audioListenerComponent["Active"])
+						component.Active = audioListenerComponent["Active"].as<bool>();
+
+					if (audioListenerComponent["ConeInnerAngle"])
+						component.Config.ConeInnerAngle = audioListenerComponent["ConeInnerAngle"].as<float>();
+
+					if (audioListenerComponent["ConeOuterAngle"])
+						component.Config.ConeOuterAngle = audioListenerComponent["ConeOuterAngle"].as<float>();
+
+					if (audioListenerComponent["ConeOuterGain"])
+						component.Config.ConeOuterGain = audioListenerComponent["ConeOuterGain"].as<float>();
 				}
 			}
 		}
