@@ -39,6 +39,11 @@ Entities:
         OrthographicFar: 1
       Primary: true
       FixedAspectRatio: false
+    AudioListenerComponent:
+      Active: true
+      ConeInnerAngle: 6.28318548
+      ConeOuterAngle: 6.28318548
+      ConeOuterGain: 0
   - Entity: 16059016071823036758
     TagComponent:
       Tag: Cube
@@ -102,6 +107,24 @@ Entities:
       Friction: 0.5
       Restitution: 1
       RestitutionThreshold: 0.5
+    AudioSourceComponent:
+      AudioHandle: 5698620207532946169
+      VolumeMultiplier: 1
+      PitchMultiplier: 1
+      PlayOnAwake: true
+      Looping: true
+      Spatialization: true
+      AttenuationModel: 1
+      RollOff: 1
+      MinGain: 0
+      MaxGain: 1
+      MinDistance: 0.300000012
+      MaxDistance: 1000
+      ConeInnerAngle: 6.28318548
+      ConeOuterAngle: 6.28318548
+      ConeOuterGain: 0
+      DopplerFactor: 1
+      UsePlaylist: false
   - Entity: 12327645238897851592
     TagComponent:
       Tag: Welcome
