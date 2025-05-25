@@ -635,66 +635,28 @@ namespace StarEngine {
 					Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(component.Audio);
 
 					float volumeMultiplier = config.VolumeMultiplier;
-					if (ImGui::SliderFloat("Volume Multiplier", &config.VolumeMultiplier, 0.0f, 2.0f, "%.2f"));
+					if (ImGui::SliderFloat("Volume Multiplier", &config.VolumeMultiplier, 0.0f, 2.0f, "%.2f"))
 					{
 						config.VolumeMultiplier = volumeMultiplier;
 					}
 
 
 					float pitchMultiplier = config.PitchMultiplier;
-					if (ImGui::SliderFloat("Pitch Multiplier", &config.PitchMultiplier, 0.0f, 3.0f, "%.2f"));
+					if (ImGui::SliderFloat("Pitch Multiplier", &config.PitchMultiplier, 0.0f, 3.0f, "%.2f"))
 					{
 						config.PitchMultiplier = pitchMultiplier;
 					}
 
 					bool playOnAwake = config.PlayOnAwake;
-					if (ImGui::Checkbox("Play On Awake", &config.PlayOnAwake));
+					if (ImGui::Checkbox("Play On Awake", &config.PlayOnAwake))
 					{
 						config.PlayOnAwake = playOnAwake;
 					}
-
-					if (component.AudioSourceData.UsePlaylist)
-					{
-						bool looping = false;
-						audioSource->SetLooping(looping);
-						config.Looping = looping;
-
-						ImGui::BeginDisabled();
-						ImGui::Checkbox("Looping", &looping);
-						ImGui::EndDisabled();
-					}
-					else
-					{
-						if (ImGui::Checkbox("Looping", &config.Looping))
-						{
-							audioSource->SetLooping(config.Looping);
-						}
-					}
-
 
 					bool spatialization = config.Spatialization;
 					if (ImGui::Checkbox("Spatialization", &config.Spatialization))
 					{
 						audioSource->SetSpatialization(config.Spatialization);
-					}
-
-					if (component.AudioSourceData.UsePlaylist)
-					{
-						// Looping is not available in playlist mode
-						bool looping = false;
-						audioSource->SetLooping(looping);
-						config.Looping = looping;
-
-						ImGui::BeginDisabled();
-						ImGui::Checkbox("Looping", &looping);
-						ImGui::EndDisabled();
-					}
-					else
-					{
-						if (ImGui::Checkbox("Looping", &config.Looping))
-						{
-							audioSource->SetLooping(config.Looping);
-						}
 					}
 
 					if (component.AudioSourceData.UsePlaylist)
