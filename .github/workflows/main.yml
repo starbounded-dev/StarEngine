@@ -54,7 +54,7 @@ jobs:
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
           cd scripts
-          python setup.py
+          python SetupAction.py
 
       - name: Build
         working-directory: ${{env.GITHUB_WORKSPACE}}
