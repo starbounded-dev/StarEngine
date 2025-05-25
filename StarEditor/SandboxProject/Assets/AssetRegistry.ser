@@ -1,7 +1,4 @@
 AssetRegistry:
-  - Handle: 9263618904997247981
-    FilePath: Textures/starLogo.png
-    Type: AssetType::Texture2D
-  - Handle: 10448957311305808839
+  - Handle: 7305845728380112481
     FilePath: Scenes/Physics2D.starscene
-    Type: AssetType::Scene
+    Type: Scene
