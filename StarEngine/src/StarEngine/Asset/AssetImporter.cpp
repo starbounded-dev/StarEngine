@@ -3,9 +3,10 @@
 
 #include "TextureImporter.h"
 #include "SceneImporter.h"
+#include "AudioImporter.h"
+
 /*
 #include "FontImporter.h"
-#include "AudioImporter.h"
 #include "ObjModelImporter.h"*/
 
 #include <map>
@@ -15,8 +16,8 @@ namespace StarEngine {
 	using AssetImportFunction = std::function<Ref<Asset>(AssetHandle, const AssetMetadata&)>;
 	static std::map<AssetType, AssetImportFunction> s_AssetImportFunctions = {
 		{ AssetType::Scene, SceneImporter::ImportScene },
-		{ AssetType::Texture2D, TextureImporter::ImportTexture2D },/*
-		{ AssetType::Audio, AudioImporter::ImportAudio },
+		{ AssetType::Texture2D, TextureImporter::ImportTexture2D },
+		{ AssetType::Audio, AudioImporter::ImportAudio },/*
 		{ AssetType::ObjModel, ObjModelImporter::ImportObjModel },
 		{ AssetType::ScriptFile, SceneImporter::ImportScript }*/
 	};

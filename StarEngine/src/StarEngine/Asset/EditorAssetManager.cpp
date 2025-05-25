@@ -25,10 +25,10 @@ namespace StarEngine {
 		{ ".hazel", AssetType::Scene },
 		{ ".png", AssetType::Texture2D },
 		{ ".jpg", AssetType::Texture2D },
-		{ ".jpeg", AssetType::Texture2D },/*
+		{ ".jpeg", AssetType::Texture2D },
 		{ ".mp3", AssetType::Audio },
 		{ ".wav", AssetType::Audio },
-		{ ".ogg", AssetType::Audio },
+		{ ".ogg", AssetType::Audio },/*
 		{ ".obj", AssetType::ObjModel },
 		{ ".cs", AssetType::ScriptFile },*/
 	};

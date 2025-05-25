@@ -13,7 +13,7 @@ namespace StarEngine {
 		None = 0,
 		Scene,
 		Texture2D,
-		/*Audio,
+		Audio,/*
 		ObjModel,
 		ScriptFile,*/
 	};
