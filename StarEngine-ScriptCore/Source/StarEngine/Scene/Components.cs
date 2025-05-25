@@ -141,7 +141,7 @@ namespace StarEngine
 
 	}
 
-	public class AudioListenerComponentP
+	public class AudioListenerComponent
 	{
 
 	}
