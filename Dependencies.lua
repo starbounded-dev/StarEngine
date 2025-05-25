@@ -19,6 +19,7 @@ IncludeDir["SPIRV_Cross"] = "%{wks.location}/StarEngine/vendor/SPIRV-Cross"
 IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
 IncludeDir["msdfgen"] = "%{wks.location}/StarEngine/vendor/msdf-atlas-gen/msdfgen"
 IncludeDir["msdf_atlas_gen"] = "%{wks.location}/StarEngine/vendor/msdf-atlas-gen/msdf-atlas-gen"
+IncludeDir["miniaudio"] = "%{wks.location}/StarEngine/vendor/miniaudio/include"
 
 LibraryDir = {}
 
