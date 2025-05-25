@@ -7,6 +7,7 @@ on:
     branches: [ "main" ]
 
 env: 
+  GITHUB_WORKSPACE: ${{ github.workspace }}
   SOLUTION_FILE_PATH: StarEngine.sln
 
 permissions:
@@ -59,5 +60,4 @@ jobs:
       - name: Build
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
-          MSBuild ${{env.SOLUTION_FILE_PATH}} /m /p:Configuration=${{ matrix.build-configuration }} -fl -flp:logfile=logs/Build-${{ matrix.build-configuration }}.log
-          
+          MSBuild ${{env.SOLUTION_FILE_PATH}} /m /p:Configuration=${{ matrix.configuration }} -fl -flp:logfile=logs/Build-${{ matrix.configuration }}.log
