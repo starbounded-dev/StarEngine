@@ -247,14 +247,46 @@ namespace StarEngine {
 
 		if (ImGui::BeginPopup("AddComponent"))
 		{
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f);
 			DisplayAddComponentEntry<CameraComponent>("Camera");
-			DisplayAddComponentEntry<ScriptComponent>("Script");
-			DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
-			DisplayAddComponentEntry<CircleRendererComponent>("Circle Renderer");
-			DisplayAddComponentEntry<RigidBody2DComponent>("RigidBody 2D");
-			DisplayAddComponentEntry<BoxCollider2DComponent>("Box Collider 2D");
-			DisplayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f);
+			DisplayAddComponentEntry<ScriptComponent>("Script Component");
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f);
 			DisplayAddComponentEntry<TextComponent>("Text Component");
+
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f);
+			if (ImGui::BeginMenu("2D Primitives"))
+			{
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f);
+				DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f);
+				DisplayAddComponentEntry<CircleRendererComponent>("Circle Renderer");
+
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f);
+				if (ImGui::BeginMenu("Physics"))
+				{
+					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f);
+					DisplayAddComponentEntry<RigidBody2DComponent>("Rigidbody 2D");
+					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f);
+					DisplayAddComponentEntry<BoxCollider2DComponent>("Box Collider 2D");
+					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f);
+					DisplayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
+
+					ImGui::EndMenu();
+				}
+
+				ImGui::EndMenu();
+			}
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f);
+			if (ImGui::BeginMenu("Audio"))
+			{
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f);
+				DisplayAddComponentEntry<AudioSourceComponent>("Audio Source");
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f);
+				DisplayAddComponentEntry<AudioListenerComponent>("Audio Listener");
+
+				ImGui::EndMenu();
+			}
 
 			ImGui::EndPopup();
 		}
@@ -527,6 +559,373 @@ namespace StarEngine {
 				ImGui::DragFloat("Kerning", &component.Kerning, 0.025f);
 				ImGui::DragFloat("Line Spacing", &component.LineSpacing, 0.025f);
 			});
+
+		DrawComponent<AudioSourceComponent>("Audio Source", entity, [&entity](AudioSourceComponent& component)
+			{
+				auto& config = component.Config;
+
+				ImGui::Text("Audio");
+				ImGui::NextColumn();
+				ImGui::PushItemWidth(-1);
+
+				std::string label = "None";
+				bool isAudioValid = false;
+				if (component.Audio != 0)
+				{
+					if (AssetManager::IsAssetHandleValid(component.Audio) && AssetManager::GetAssetType(component.Audio) == AssetType::Audio)
+					{
+						const AssetMetadata& metadata = Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Audio);
+						label = metadata.FilePath.filename().string();
+						isAudioValid = true;
+					}
+					else
+					{
+						label = "Invalid";
+					}
+				}
+
+				ImVec2 buttonLabelSize = ImGui::CalcTextSize(label.c_str());
+				buttonLabelSize.x += 20.0f;
+				float buttonLabelWidth = std::max<float>(100.0f, buttonLabelSize.x + 4.0f);
+
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 6, 6 });
+				ImGui::Button(label.c_str(), ImVec2(buttonLabelWidth, 0.0f));
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+					{
+						AssetHandle handle = *(AssetHandle*)payload->Data;
+
+						if (AssetManager::GetAssetType(handle) == AssetType::Audio)
+						{
+							if (component.AudioSourceData.Playlist.size() > 0)
+							{
+								component.AudioSourceData.Playlist[0] = handle;
+							}
+
+							component.Audio = handle;
+						}
+						else
+						{
+							SE_CORE_WARN("Wrong asset type!");
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+
+				if (isAudioValid)
+				{
+					ImGui::SameLine();
+					ImVec2 xLabelSize = ImGui::CalcTextSize("X");
+					float buttonSize = xLabelSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+
+					if (ImGui::Button("X", ImVec2(buttonSize, buttonSize)))
+					{
+						AssetHandle result = 0;
+						component.Audio = result;
+					}
+				}
+
+				ImGui::PopStyleVar();
+				ImGui::PopItemWidth();
+				ImGui::NextColumn();
+
+				if (component.Audio != 0)
+				{
+					Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(component.Audio);
+
+					float volumeMultiplier = config.VolumeMultiplier;
+					if (ImGui::SliderFloat("Volume Multiplier", &config.VolumeMultiplier, 0.0f, 2.0f, "%.2f"));
+					{
+						config.VolumeMultiplier = volumeMultiplier;
+					}
+
+
+					float pitchMultiplier = config.PitchMultiplier;
+					if (ImGui::SliderFloat("Pitch Multiplier", &config.PitchMultiplier, 0.0f, 3.0f, "%.2f"));
+					{
+						config.PitchMultiplier = pitchMultiplier;
+					}
+
+					bool playOnAwake = config.PlayOnAwake;
+					if (ImGui::Checkbox("Play On Awake", &config.PlayOnAwake));
+					{
+						config.PlayOnAwake = playOnAwake;
+					}
+
+					if (component.AudioSourceData.UsePlaylist)
+					{
+						bool looping = false;
+						audioSource->SetLooping(looping);
+						config.Looping = looping;
+
+						ImGui::BeginDisabled();
+						ImGui::Checkbox("Looping", &looping);
+						ImGui::EndDisabled();
+					}
+					else
+					{
+						if (ImGui::Checkbox("Looping", &config.Looping))
+						{
+							audioSource->SetLooping(config.Looping);
+						}
+					}
+
+
+					bool spatialization = config.Spatialization;
+					if (ImGui::Checkbox("Spatialization", &config.Spatialization))
+					{
+						audioSource->SetSpatialization(config.Spatialization);
+					}
+
+					if (component.AudioSourceData.UsePlaylist)
+					{
+						// Looping is not available in playlist mode
+						bool looping = false;
+						audioSource->SetLooping(looping);
+						config.Looping = looping;
+
+						ImGui::BeginDisabled();
+						ImGui::Checkbox("Looping", &looping);
+						ImGui::EndDisabled();
+					}
+					else
+					{
+						if (ImGui::Checkbox("Looping", &config.Looping))
+						{
+							audioSource->SetLooping(config.Looping);
+						}
+					}
+
+					if (component.AudioSourceData.UsePlaylist)
+					{
+						// Repeat Playlist
+						bool repeatPlaylist = component.AudioSourceData.RepeatPlaylist;
+						if (ImGui::Checkbox("Repeat Playlist", &repeatPlaylist))
+						{
+							if (component.AudioSourceData.RepeatAfterSpecificTrackPlays)
+								component.AudioSourceData.RepeatAfterSpecificTrackPlays = false;
+							component.AudioSourceData.RepeatPlaylist = repeatPlaylist;
+						}
+
+						// Loop When Start Index Plays
+						bool repeatAfterSpecificTrackPlays = component.AudioSourceData.RepeatAfterSpecificTrackPlays;
+						if (ImGui::Checkbox("Loop When Start Index Plays", &repeatAfterSpecificTrackPlays))
+						{
+							if (component.AudioSourceData.RepeatPlaylist)
+								component.AudioSourceData.RepeatPlaylist = false;
+							component.AudioSourceData.RepeatAfterSpecificTrackPlays = repeatAfterSpecificTrackPlays;
+						}
+
+						// Playlist Start Index
+						uint32_t startIndex = component.AudioSourceData.StartIndex;
+						uint32_t maxValue = component.AudioSourceData.Playlist.size() > 0 ? (uint32_t)(component.AudioSourceData.Playlist.size() - 1) : 0;
+						if (ImGui::SliderInt("Playlist Start Index", (int*)&startIndex, 0, (int)maxValue))
+						{
+							component.AudioSourceData.StartIndex = startIndex;
+						}
+					}
+
+
+					if (config.Spatialization)
+					{
+						// Attenuation Model Combo
+						const char* attenuationTypeStrings[] = { "None", "Inverse", "Linear", "Exponential" };
+						int attenuationType = static_cast<int>(config.AttenuationModel);
+						if (ImGui::Combo("Attenuation Model", &attenuationType, attenuationTypeStrings, IM_ARRAYSIZE(attenuationTypeStrings)))
+						{
+							config.AttenuationModel = static_cast<AttenuationModelType>(attenuationType);
+						}
+
+						// Roll Off
+						ImGui::SliderFloat("Roll Off", &config.RollOff, 0.0f, 10.0f, "%.2f");
+
+						// Min/Max Gain
+						ImGui::SliderFloat("Min Gain", &config.MinGain, 0.0f, 1.0f, "%.2f");
+						ImGui::SliderFloat("Max Gain", &config.MaxGain, 0.0f, 1.0f, "%.2f");
+
+						// Min/Max Distance
+						ImGui::SliderFloat("Min Distance", &config.MinDistance, 0.0f, 100.0f, "%.2f");
+						ImGui::SliderFloat("Max Distance", &config.MaxDistance, 0.0f, 100.0f, "%.2f");
+
+						// Cone Angles
+						float innerAngle = glm::degrees(config.ConeInnerAngle);
+						if (ImGui::SliderFloat("Cone Inner Angle", &innerAngle, 0.0f, 360.0f, "%.2f"))
+							config.ConeInnerAngle = glm::radians(innerAngle);
+
+						float outerAngle = glm::degrees(config.ConeOuterAngle);
+						if (ImGui::SliderFloat("Cone Outer Angle", &outerAngle, 0.0f, 360.0f, "%.2f"))
+							config.ConeOuterAngle = glm::radians(outerAngle);
+
+						// Cone Outer Gain
+						ImGui::SliderFloat("Cone Outer Gain", &config.ConeOuterGain, 0.0f, 1.0f, "%.2f");
+
+						// Doppler Factor
+						ImGui::SliderFloat("Doppler Factor", &config.DopplerFactor, 0.0f, 10.0f, "%.2f");
+					}
+
+
+					if (component.Audio)
+					{
+						glm::mat4 inverted = glm::inverse(entity.GetComponent<TransformComponent>().GetTransform());
+						glm::vec3 forward = glm::normalize(glm::vec3(inverted[2])); // z axis
+						audioSource->SetConfig(config);
+						audioSource->SetPosition(glm::vec4(entity.GetComponent<TransformComponent>().Translation, 1.0f));
+						audioSource->SetDirection(-forward);
+					}
+				}
+
+				if (component.AudioSourceData.UsePlaylist)
+				{
+					if (component.AudioSourceData.Playlist.size() == 0)
+						component.AddAudioSource(component.Audio);
+
+					if (component.AudioSourceData.PlaylistCopy.size() > 0 && component.AudioSourceData.Playlist.size() != component.AudioSourceData.PlaylistCopy.size()/* && component.AudioSourceData.ChangedUsingTextureAnimation*/)
+					{
+						if (component.AudioSourceData.Playlist.size() != component.AudioSourceData.PlaylistCopy.size())
+							component.AudioSourceData.Playlist.resize(component.AudioSourceData.PlaylistCopy.size());
+
+						for (uint32_t i = 0; i < component.AudioSourceData.PlaylistCopy.size(); i++)
+						{
+							if (component.AudioSourceData.Playlist[i] != component.AudioSourceData.PlaylistCopy[i])
+								component.AudioSourceData.Playlist[i] = component.AudioSourceData.PlaylistCopy[i];
+						}
+					}
+
+					ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 12, 8 });
+					if (ImGui::Button("Add Audio"))
+					{
+						if (component.Audio)
+						{
+							AssetHandle tempHandle = 0;
+							component.AddAudioSource(tempHandle);
+						}
+					}
+					ImGui::PopStyleVar();
+
+					if (component.AudioSourceData.PlaylistCopy.size() != component.AudioSourceData.Playlist.size())
+						component.AudioSourceData.PlaylistCopy.resize(component.AudioSourceData.Playlist.size());
+
+					for (uint32_t i = 0; i < component.AudioSourceData.Playlist.size(); i++)
+					{
+						if (component.AudioSourceData.PlaylistCopy[i] != component.AudioSourceData.Playlist[i])
+							component.AudioSourceData.PlaylistCopy[i] = component.AudioSourceData.Playlist[i];
+
+						ImGui::PushID(i);
+						ImGui::Text("Audio");
+						ImGui::NextColumn();
+						ImGui::PushItemWidth(-1);
+
+						std::string label = "None";
+						bool isAudioValid = false;
+						if (component.AudioSourceData.Playlist[i] != 0)
+						{
+							if (AssetManager::IsAssetHandleValid(component.AudioSourceData.Playlist[i]) && AssetManager::GetAssetType(component.AudioSourceData.Playlist[i]) == AssetType::Audio)
+							{
+								const AssetMetadata& metadata = Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.AudioSourceData.Playlist[i]);
+								label = metadata.FilePath.filename().string();
+								isAudioValid = true;
+							}
+							else
+							{
+								label = "Invalid";
+							}
+						}
+
+						ImVec2 buttonLabelSize = ImGui::CalcTextSize(label.c_str());
+						buttonLabelSize.x += 20.0f;
+						float buttonLabelWidth = std::max<float>(100.0f, buttonLabelSize.x + 4.0f);
+
+						ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 6, 6 });
+						ImGui::Button(label.c_str(), ImVec2(buttonLabelWidth, 0.0f));
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+							{
+								AssetHandle handle = *(AssetHandle*)payload->Data;
+
+								if (AssetManager::GetAssetType(handle) == AssetType::Audio)
+								{
+									if (i == 0)
+									{
+										component.Audio = handle;
+									}
+
+									component.AudioSourceData.Playlist[i] = handle;
+									component.AudioSourceData.PlaylistCopy[i] = handle;
+								}
+								else
+								{
+									SE_CORE_WARN("Wrong asset type!");
+								}
+							}
+							ImGui::EndDragDropTarget();
+						}
+
+						ImGui::SameLine();
+						ImVec2 xLabelSize = ImGui::CalcTextSize("X");
+						float buttonSize = xLabelSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+
+						if (ImGui::Button("X", ImVec2(buttonSize, buttonSize)))
+						{
+							AssetHandle result = 0;
+
+							if (component.AudioSourceData.PlaylistCopy.size() > 0)
+							{
+								uint32_t index = 0;
+
+								for (uint32_t j = 0; j < component.AudioSourceData.PlaylistCopy.size(); j++)
+								{
+									if (component.AudioSourceData.PlaylistCopy[j] == component.AudioSourceData.Playlist[i])
+										index = j;
+								}
+
+								component.AudioSourceData.PlaylistCopy.erase(component.AudioSourceData.PlaylistCopy.begin() + index);
+								component.AudioSourceData.PlaylistCopy.shrink_to_fit();
+							}
+
+							component.RemoveAudioSource(component.AudioSourceData.Playlist[i]);
+
+							if (i == 0)
+							{
+								if (component.AudioSourceData.Playlist.size() > 0)
+								{
+									if (component.Audio != component.AudioSourceData.Playlist[0] && component.AudioSourceData.Playlist[0] != 0)
+									{
+										component.Audio = component.AudioSourceData.Playlist[0];
+									}
+								}
+
+								if (component.AudioSourceData.Playlist.size() == 0)
+									component.AudioSourceData.UsePlaylist = false;
+							}
+						}
+
+						ImGui::PopStyleVar();
+						ImGui::PopItemWidth();
+						ImGui::NextColumn();
+						ImGui::PopID();
+					}
+				}
+			});
+
+			DrawComponent<AudioListenerComponent>("Audio Listener", entity, [](AudioListenerComponent& component)
+				{
+					auto& config = component.Config;
+
+					ImGui::Checkbox("Active", &component.Active);
+
+					float innerAngle = glm::degrees(config.ConeInnerAngle);
+					if (ImGui::SliderFloat("Cone Inner Angle", &innerAngle, 0.0f, 360.0f, "%.2f"))
+						config.ConeInnerAngle = glm::radians(innerAngle);
+
+					float outerAngle = glm::degrees(config.ConeOuterAngle);
+					if (ImGui::SliderFloat("Cone Outer Angle", &outerAngle, 0.0f, 360.0f, "%.2f"))
+						config.ConeOuterAngle = glm::radians(outerAngle);
+
+					ImGui::SliderFloat("Cone Outer Gain", &config.ConeOuterGain, 0.0f, 1.0f, "%.2f");
+				});
+
 
 	}
 

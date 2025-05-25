@@ -3,6 +3,8 @@
 #include "StarEngine/Renderer/Renderer.h"
 #include "StarEngine/Renderer/Renderer2D.h"
 
+#include "StarEngine/Audio/AudioEngine.h"
+
 namespace StarEngine {
 
 	Scope<Renderer::SceneData> Renderer::s_SceneData = CreateScope<Renderer::SceneData>();
@@ -11,6 +13,8 @@ namespace StarEngine {
 	{
 		SE_PROFILE_FUNCTION();
 
+		AudioEngine::Init();
+
 		RenderCommand::Init();
 		Renderer2D::Init();
 	}
@@ -18,6 +22,8 @@ namespace StarEngine {
 	void Renderer::Shutdown()
 	{
 		Renderer2D::Shutdown();
+
+		AudioEngine::Shutdown();
 	}
 
 	void Renderer::OnWindowResize(uint32_t width, uint32_t height)
