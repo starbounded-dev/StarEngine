@@ -33,6 +33,11 @@ group "Dependencies"
 	include "StarEngine/vendor/yaml-cpp"
 group ""
 
+group "Dependencies - Mono"
+	include "StarEngine/vendor/Coral/Coral.Managed"
+	include "StarEngine/vendor/Coral/Coral.Native"
+group ""
+
 group "Dependencies - Text"
 		include "StarEngine/vendor/msdf-atlas-gen"
 group ""
