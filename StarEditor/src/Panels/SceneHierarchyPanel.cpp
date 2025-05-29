@@ -661,6 +661,25 @@ namespace StarEngine {
 
 					if (component.AudioSourceData.UsePlaylist)
 					{
+						// Looping is not available in playlist mode
+						bool looping = false;
+						audioSource->SetLooping(looping);
+						config.Looping = looping;
+
+						ImGui::BeginDisabled();
+						ImGui::Checkbox("Looping", &looping);
+						ImGui::EndDisabled();
+					}
+					else
+					{
+						if (ImGui::Checkbox("Looping", &config.Looping))
+						{
+							audioSource->SetLooping(config.Looping);
+						}
+					}
+
+					if (component.AudioSourceData.UsePlaylist)
+					{
 						// Repeat Playlist
 						bool repeatPlaylist = component.AudioSourceData.RepeatPlaylist;
 						if (ImGui::Checkbox("Repeat Playlist", &repeatPlaylist))
