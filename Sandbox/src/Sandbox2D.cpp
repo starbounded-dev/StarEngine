@@ -20,7 +20,7 @@ void Sandbox2D::OnAttach()
 {
 	SE_PROFILE_FUNCTION();
 
-	m_CheckerboardTexture = StarEngine::TextureImporter::LoadTexture2D("assets/textures/Checkerboard.png");
+	//m_CheckerboardTexture = StarEngine::TextureImporter::LoadTexture2D("assets/textures/Checkerboard.png");
 }
 
 void Sandbox2D::OnDetach()
@@ -49,7 +49,7 @@ void Sandbox2D::OnUpdate(StarEngine::Timestep ts)
 		SE_PROFILE_SCOPE("Renderer Draw");
 
 		StarEngine::Renderer2D::BeginScene(m_CameraController.GetCamera());
-		StarEngine::Renderer2D::DrawQuad({ 0.0f, 0.0f, -0.1f }, { 20.0f, 20.0f }, m_CheckerboardTexture, 10.0f);
+		//StarEngine::Renderer2D::DrawQuad({ 0.0f, 0.0f, -0.1f }, { 20.0f, 20.0f }, m_CheckerboardTexture, 10.0f);
 		StarEngine::Renderer2D::DrawRotatedQuad({ 1.0f, 0.0f }, { 0.8f, 0.8f }, rotation, { 0.8f, 0.2f, 0.3f, 1.0f });
 		StarEngine::Renderer2D::EndScene();
 	}
