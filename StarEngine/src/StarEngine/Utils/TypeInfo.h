@@ -8,9 +8,9 @@
 #include <type_traits>
 #include <string>
 
-#include "Nutcrackz/Core/Hash.hpp"
+#include "StarEngine/Utils/Hash.h"
 
-namespace Nutcrackz {
+namespace StarEngine {
 
 	// NOTE(Peter): StringType is used because on non-MSVC compilers we have to make a copy of the buffer we get back from abi::__cxa_demangle
 	//				This is because that function allocates a heap buffer that we're responsible for freeing.
@@ -18,7 +18,7 @@ namespace Nutcrackz {
 	//				We could of course handle non-MSVC compilers explicitly just like we do with MSVC, but it's not worth it imo. I may end up merging this with Jay's TypeDescriptor
 	//				file if he thinks they fit together.
 
-#if defined(NZ_ABI_SUPPORTED)
+#if defined(SE_ABI_SUPPORTED)
 	using TypeNameString = std::string;
 
 	template<typename T, bool ExcludeNamespace>
@@ -37,7 +37,7 @@ namespace Nutcrackz {
 			{
 				size_t namespacePos = result.find("::");
 
-#ifndef NZ_PLATFORM_WINDOWS
+#ifndef SE_PLATFORM_WINDOWS
 				if (namespacePos != TypeNameString::npos)
 					return result.substr(namespacePos + 2);
 #endif
