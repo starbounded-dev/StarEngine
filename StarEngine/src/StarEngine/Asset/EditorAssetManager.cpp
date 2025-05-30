@@ -28,9 +28,9 @@ namespace StarEngine {
 		{ ".jpeg", AssetType::Texture2D },
 		{ ".mp3", AssetType::Audio },
 		{ ".wav", AssetType::Audio },
-		{ ".ogg", AssetType::Audio },/*
-		{ ".obj", AssetType::ObjModel },
-		{ ".cs", AssetType::ScriptFile },*/
+		{ ".ogg", AssetType::Audio },
+		//{ ".obj", AssetType::ObjModel },
+		//{ ".cs", AssetType::ScriptFile },
 	};
 
 	static AssetType GetAssetTypeFromFileExtension(const std::filesystem::path& extension)

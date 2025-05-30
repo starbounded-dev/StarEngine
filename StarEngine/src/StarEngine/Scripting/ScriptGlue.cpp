@@ -1,314 +1,147 @@
 #include "sepch.h"
 #include "ScriptGlue.h"
-#include "ScriptEngine.h"
 
-#include "StarEngine/Core/UUID.h"
-#include "StarEngine/Core/KeyCodes.h"
-#include "StarEngine/Core/Input.h"
+#include "StarEngine/Asset/AssetManager.h"
 
-#include "StarEngine/Scene/Scene.h"
+#include "StarEngine/Core/Application.h"
+#include "StarEngine/Utils/Hash.h"
 #include "StarEngine/Scene/Entity.h"
-
+#include "StarEngine/Scene/Components.h"
 #include "StarEngine/Physics/ContactListener2D.h"
 
-#include "mono/metadata/object.h"
-#include "mono/metadata/reflection.h"
+#include "StarEngine/Scripting/ScriptEngine.h"
 
-#include "box2d/b2_body.h"
+#include "StarEngine/Utils/TypeInfo.h"
 
-template<>
-struct fmt::formatter<glm::vec3> {
-	constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+#include "StarEngine/Core/KeyCodes.h"
 
-	template<typename FormatContext>
-	auto format(const glm::vec3& vec, FormatContext& ctx) const { // Marked as const
-		return format_to(ctx.out(), "({}, {}, {})", vec.x, vec.y, vec.z);
-	}
-};
+//#include <Coral/ManagedObject.hpp>
+//#include <Coral/HostInstance.hpp>
+
+#include <functional>
 
 namespace StarEngine {
 
-	namespace Utils {
+#ifdef SE_PLATFORM_WINDOWS
+#define SE_FUNCTION_NAME __func__
+#else
+#define SE_FUNCTION_NAME __FUNCTION__
+#endif
 
-		std::string MonoStringToString(MonoString* string)
+#define SE_ADD_INTERNAL_CALL(icall) coreAssembly.AddInternalCall("StarEngine.InternalCalls", #icall, (void*)InternalCalls::icall)
+
+#ifdef SE_DIST
+#define SE_ICALL_VALIDATE_PARAM(param) SE_CORE_VERIFY(param, "{} called with an invalid value ({}) for parameter '{}'", SE_FUNCTION_NAME, param, #param)
+#define SE_ICALL_VALIDATE_PARAM_V(param, value) SE_CORE_VERIFY(param, "{} called with an invalid value ({}) for parameter '{}'.\nStack Trace: {}", SE_FUNCTION_NAME, value, #param, ScriptUtils::GetCurrentStackTrace())
+#else
+#define SE_ICALL_VALIDATE_PARAM(param) { if (!(param)) { SE_CONSOLE_LOG_ERROR("{} called with an invalid value ({}) for parameter '{}'", SE_FUNCTION_NAME, param, #param); } }
+#define SE_ICALL_VALIDATE_PARAM_V(param, value) { if (!(param)) { SE_CONSOLE_LOG_ERROR("{} called with an invalid value ({}) for parameter '{}'.", SE_FUNCTION_NAME, value, #param); } }
+#endif
+
+	bool ScriptGlue::s_CalledSetCursor = false;
+	bool ScriptGlue::s_ChangedCursor = false;
+	glm::vec2 ScriptGlue::s_CursorHotSpot = glm::vec2(0.0f, 0.0f);
+	std::string ScriptGlue::s_SetCursorPath = "";
+
+	Entity s_HoveredEntity;
+	Entity s_SelectedEntity;
+
+	std::unordered_map<Coral::TypeId, std::function<void(Entity&)>> s_CreateComponentFuncs;
+	std::unordered_map<Coral::TypeId, std::function<bool(Entity&)>> s_HasComponentFuncs;
+	std::unordered_map<Coral::TypeId, std::function<void(Entity&)>> s_RemoveComponentFuncs;
+
+	template<typename TComponent>
+	static void RegisterManagedComponent(Coral::ManagedAssembly& coreAssembly)
+	{
+		// NOTE(Peter): Get the demangled type name of TComponent
+		const TypeNameString& componentTypeName = TypeInfo<TComponent, true>().Name();
+		std::string componentName = fmt::format("StarEngine.{}", componentTypeName);
+
+		auto& type = coreAssembly.GetType(componentName);
+
+		if (type)
 		{
-			char* cStr = mono_string_to_utf8(string);
-			std::string str(cStr);
-			mono_free(cStr);
-			return str;
+			s_CreateComponentFuncs[type.GetTypeId()] = [](Entity& entity) { entity.AddComponent<TComponent>(); };
+			s_HasComponentFuncs[type.GetTypeId()] = [](Entity& entity) { return entity.HasComponent<TComponent>(); };
+			s_RemoveComponentFuncs[type.GetTypeId()] = [](Entity& entity) { entity.RemoveComponent<TComponent>(); };
+		}
+		else
+		{
+			SE_CORE_ERROR("No C# component class found for {}!", componentName);
+			SE_CORE_VERIFY(false, "No C# component class found!");
+		}
+	}
+
+	template<typename TComponent>
+	static void RegisterManagedComponent(std::function<void(Entity&)>&& addFunction, Coral::ManagedAssembly& coreAssembly)
+	{
+		// NOTE(Peter): Get the demangled type name of TComponent
+		const TypeNameString& componentTypeName = TypeInfo<TComponent, true>().Name();
+		std::string componentName = fmt::format("StarEngine.{}", componentTypeName);
+
+		auto& type = coreAssembly.GetType(componentName);
+
+		if (type)
+		{
+			s_CreateComponentFuncs[type.GetTypeId()] = std::move(addFunction);
+			s_HasComponentFuncs[type.GetTypeId()] = [](Entity& entity) { return entity.HasComponent<TComponent>(); };
+			s_RemoveComponentFuncs[type.GetTypeId()] = [](Entity& entity) { entity.RemoveComponent<TComponent>(); };
+		}
+		else
+		{
+			SE_CORE_ERROR("No C# component class found for {}!", componentName);
+			SE_CORE_VERIFY(false, "No C# component class found!");
+		}
+	}
+
+	template<typename... TArgs>
+	static void WarnWithTrace(const std::string& inFormat, TArgs&&... inArgs)
+	{
+		/*auto stackTrace = ScriptUtils::GetCurrentStackTrace();
+		std::string formattedMessage = fmt::format(inFormat, std::forward<TArgs>(inArgs)...);
+		Log::GetEditorConsoleLogger()->warn("{}\nStack Trace: {}", formattedMessage, stackTrace);*/
+	}
+
+	template<typename... TArgs>
+	static void ErrorWithTrace(const std::string& inFormat, TArgs&&... inArgs)
+	{
+		/*auto stackTrace = ScriptUtils::GetCurrentStackTrace();
+		std::string formattedMessage = fmt::format(inFormat, std::forward<TArgs>(inArgs)...);
+		Log::GetEditorConsoleLogger()->error("{}\nStack Trace: {}", formattedMessage, stackTrace);*/
+	}
+
+	void ScriptGlue::RegisterGlue(Coral::ManagedAssembly& coreAssembly)
+	{
+		if (!s_CreateComponentFuncs.empty())
+		{
+			s_CreateComponentFuncs.clear();
+			s_HasComponentFuncs.clear();
+			s_RemoveComponentFuncs.clear();
 		}
 
+		RegisterComponentTypes(coreAssembly);
+		RegisterInternalCalls(coreAssembly);
+
+		coreAssembly.UploadInternalCalls();
 	}
 
-	static std::unordered_map<MonoType*, std::function<bool(Entity)>> s_EntityHasComponentFuncs;
-
-#define SE_ADD_INTERNAL_CALL(Name) mono_add_internal_call("StarEngine.InternalCalls::" #Name, Name)
-
-	static void NativeLog(MonoString* string, int parameter)
+	void ScriptGlue::RegisterComponentTypes(Coral::ManagedAssembly& coreAssembly)
 	{
-		std::string str = Utils::MonoStringToString(string);
-		std::cout << str << ", " << parameter << std::endl;
+		RegisterManagedComponent<TagComponent>(coreAssembly);
+		RegisterManagedComponent<TransformComponent>(coreAssembly);
+		RegisterManagedComponent<SpriteRendererComponent>(coreAssembly);
+		RegisterManagedComponent<CircleRendererComponent>(coreAssembly);
+		RegisterManagedComponent<TextComponent>(coreAssembly);
+		RegisterManagedComponent<CameraComponent>(coreAssembly);
+		RegisterManagedComponent<RigidBody2DComponent>(coreAssembly);
+		RegisterManagedComponent<BoxCollider2DComponent>(coreAssembly);
+		RegisterManagedComponent<CircleCollider2DComponent>(coreAssembly);
+		RegisterManagedComponent<ScriptComponent>(coreAssembly);
+		RegisterManagedComponent<AudioListenerComponent>(coreAssembly);
+		RegisterManagedComponent<AudioSourceComponent>(coreAssembly);
 	}
 
-	static void NativeLog_Vector(glm::vec3* parameter, glm::vec3* outResult)
-	{
-		SE_CORE_WARN("Value: {}", *parameter);
-		*outResult = glm::normalize(*parameter);
-	}
-
-	static float NativeLog_VectorDot(glm::vec3* parameter)
-	{
-		SE_CORE_WARN("Value: {}", *parameter);
-		return glm::dot(*parameter, *parameter);
-	}
-
-	static MonoObject* GetScriptInstance(UUID entityID)
-	{
-		return ScriptEngine::GetManagedInstance(entityID);
-	}
-
-	static bool Entity_HasComponent(UUID entityID, MonoReflectionType* componentType)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-
-		MonoType* managedType = mono_reflection_type_get_type(componentType);
-		SE_CORE_ASSERT(s_EntityHasComponentFuncs.find(managedType) != s_EntityHasComponentFuncs.end());
-		return s_EntityHasComponentFuncs.at(managedType)(entity);
-	}
-
-	static uint64_t Entity_FindEntityByName(MonoString* name)
-	{
-		char* nameCStr = mono_string_to_utf8(name);
-
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->FindEntityByName(nameCStr);
-		mono_free(nameCStr);
-
-		if (!entity)
-			return 0;
-
-		return entity.GetUUID();
-	}
-
-	static void TransformComponent_GetTranslation(UUID entityID, glm::vec3* outTranslation)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-
-		*outTranslation = entity.GetComponent<TransformComponent>().Translation;
-	}
-
-	static void TransformComponent_SetTranslation(UUID entityID, glm::vec3* translation)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-
-		entity.GetComponent<TransformComponent>().Translation = *translation;
-	}
-
-	static void RigidBody2DComponent_ApplyLinearImpulse(UUID entityID, glm::vec2* impulse, glm::vec2* point, bool wake)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-
-		auto& rb2d = entity.GetComponent<RigidBody2DComponent>();
-		b2Body* body = (b2Body*)rb2d.RuntimeBody;
-		body->ApplyLinearImpulse(b2Vec2(impulse->x, impulse->y), b2Vec2(point->x, point->y), wake);
-	}
-
-	static void RigidBody2DComponent_ApplyLinearImpulseToCenter(UUID entityID, glm::vec2* impulse, bool wake)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-
-		auto& rb2d = entity.GetComponent<RigidBody2DComponent>();
-		b2Body* body = (b2Body*)rb2d.RuntimeBody;
-		body->ApplyLinearImpulseToCenter(b2Vec2(impulse->x, impulse->y), wake);
-	}
-
-	static void RigidBody2DComponent_GetLinearVelocity(UUID entityID, glm::vec2* outLinearVelocity)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-
-		auto& rb2d = entity.GetComponent<RigidBody2DComponent>();
-		b2Body* body = (b2Body*)rb2d.RuntimeBody;
-		const b2Vec2& linearVelocity = body->GetLinearVelocity();
-		*outLinearVelocity = glm::vec2(linearVelocity.x, linearVelocity.y);
-	}
-
-	static RigidBody2DComponent::BodyType RigidBody2DComponent_GetType(UUID entityID)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-
-		auto& rb2d = entity.GetComponent<RigidBody2DComponent>();
-		b2Body* body = (b2Body*)rb2d.RuntimeBody;
-		return Utils::RigidBody2DTypeFromBox2DBody(body->GetType());
-	}
-
-	static void RigidBody2DComponent_SetType(UUID entityID, RigidBody2DComponent::BodyType bodyType)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-
-		auto& rb2d = entity.GetComponent<RigidBody2DComponent>();
-		b2Body* body = (b2Body*)rb2d.RuntimeBody;
-		body->SetType(Utils::RigidBody2DTypeToBox2DBody(bodyType));
-	}
-
-	static MonoString* TextComponent_GetText(UUID entityID)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-		SE_CORE_ASSERT(entity.HasComponent<TextComponent>());
-
-		auto& tc = entity.GetComponent<TextComponent>();
-		return ScriptEngine::CreateString(tc.TextString.c_str());
-	}
-
-	static void TextComponent_SetText(UUID entityID, MonoString* textString)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-		SE_CORE_ASSERT(entity.HasComponent<TextComponent>());
-
-		auto& tc = entity.GetComponent<TextComponent>();
-		tc.TextString = Utils::MonoStringToString(textString);
-	}
-
-	static void TextComponent_GetColor(UUID entityID, glm::vec4* color)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-		SE_CORE_ASSERT(entity.HasComponent<TextComponent>());
-
-		auto& tc = entity.GetComponent<TextComponent>();
-		*color = tc.Color;
-	}
-
-	static void TextComponent_SetColor(UUID entityID, glm::vec4* color)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-		SE_CORE_ASSERT(entity.HasComponent<TextComponent>());
-
-		auto& tc = entity.GetComponent<TextComponent>();
-		tc.Color = *color;
-	}
-
-	static float TextComponent_GetKerning(UUID entityID)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-		SE_CORE_ASSERT(entity.HasComponent<TextComponent>());
-
-		auto& tc = entity.GetComponent<TextComponent>();
-		return tc.Kerning;
-	}
-
-	static void TextComponent_SetKerning(UUID entityID, float kerning)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-		SE_CORE_ASSERT(entity.HasComponent<TextComponent>());
-
-		auto& tc = entity.GetComponent<TextComponent>();
-		tc.Kerning = kerning;
-	}
-
-	static float TextComponent_GetLineSpacing(UUID entityID)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-		SE_CORE_ASSERT(entity.HasComponent<TextComponent>());
-
-		auto& tc = entity.GetComponent<TextComponent>();
-		return tc.LineSpacing;
-	}
-
-	static void TextComponent_SetLineSpacing(UUID entityID, float lineSpacing)
-	{
-		Scene* scene = ScriptEngine::GetSceneContext();
-		SE_CORE_ASSERT(scene);
-		Entity entity = scene->GetEntityByUUID(entityID);
-		SE_CORE_ASSERT(entity);
-		SE_CORE_ASSERT(entity.HasComponent<TextComponent>());
-
-		auto& tc = entity.GetComponent<TextComponent>();
-		tc.LineSpacing = lineSpacing;
-	}
-
-	static bool Input_IsKeyDown(KeyCode keycode)
-	{
-		return Input::IsKeyPressed(keycode);
-	}
-
-	template<typename... Component>
-	static void RegisterComponent()
-	{
-		([]()
-			{
-				std::string_view typeName = typeid(Component).name();
-				size_t pos = typeName.find_last_of(':');
-				std::string_view structName = typeName.substr(pos + 1);
-				std::string managedTypename = fmt::format("StarEngine.{}", structName);
-
-				MonoType* managedType = mono_reflection_type_from_name(managedTypename.data(), ScriptEngine::GetCoreAssemblyImage());
-				if (!managedType)
-				{
-					SE_CORE_ERROR("Could not find component type {}", managedTypename);
-					return;
-				}
-				s_EntityHasComponentFuncs[managedType] = [](Entity entity) { return entity.HasComponent<Component>(); };
-			}(), ...);
-	}
-
-	template<typename... Component>
-	static void RegisterComponent(ComponentGroup<Component...>)
-	{
-		RegisterComponent<Component...>();
-	}
-
-	void ScriptGlue::RegisterComponents()
-	{
-		s_EntityHasComponentFuncs.clear();
-		RegisterComponent(AllComponents{});
-	}
-
-	void ScriptGlue::RegisterFunctions()
+	void ScriptGlue::RegisterInternalCalls(Coral::ManagedAssembly& coreAssembly)
 	{
 		SE_ADD_INTERNAL_CALL(NativeLog);
 		SE_ADD_INTERNAL_CALL(NativeLog_Vector);
@@ -338,6 +171,88 @@ namespace StarEngine {
 		SE_ADD_INTERNAL_CALL(TextComponent_SetLineSpacing);
 
 		SE_ADD_INTERNAL_CALL(Input_IsKeyDown);
+
+		// AudioListener
+		SE_ADD_INTERNAL_CALL(AudioListenerComponent_GetActive);
+		SE_ADD_INTERNAL_CALL(AudioListenerComponent_SetActive);
+
+		// AudioSource
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetAssetHandle);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetAssetHandle);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetVolume);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetVolume);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetPitch);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetPitch);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetPlayOnAwake);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetPlayOnAwake);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetLooping);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetLooping);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetSpatialization);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetSpatialization);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetAttenuationModel);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetAttenuationModel);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetRollOff);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetRollOff);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetMinGain);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetMinGain);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetMaxGain);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetMaxGain);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetMinDistance);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetMinDistance);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetMaxDistance);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetMaxDistance);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetConeInnerAngle);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetConeInnerAngle);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetConeOuterAngle);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetConeOuterAngle);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetConeOuterGain);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetConeOuterGain);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetCone);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetDopplerFactor);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetDopplerFactor);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_IsPlaying);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_Play);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_Pause);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_UnPause);
+		SE_ADD_INTERNAL_CALL(AudioSourceComponent_Stop);
 	}
 
+	Entity ScriptGlue::GetHoveredEntity()
+	{
+		return s_HoveredEntity;
+	}
+
+	void ScriptGlue::SetHoveredEntity(Entity entity)
+	{
+		s_HoveredEntity = entity;
+	}
+
+	Entity ScriptGlue::GetSelectedEntity()
+	{
+		return s_SelectedEntity;
+	}
+
+	void ScriptGlue::SetSelectedEntity(Entity entity)
+	{
+		s_SelectedEntity = entity;
+	}
+
+	namespace InternalCalls
+	{
+		template<std::default_initializable T>
+		struct Param
+		{
+			std::byte Data [sizeof(T)];
+
+			operator T() const
+			{
+				T result;
+				std::memcpy(&result, Data, sizeof(T));
+				return result;
+			}
+		};
+
+		bool Input_IsKeyDown(KeyCode keycode);
+
+	}
 }
