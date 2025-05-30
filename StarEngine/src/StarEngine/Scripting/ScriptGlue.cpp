@@ -69,6 +69,12 @@ namespace StarEngine {
 		{
 			SE_CORE_ERROR("No C# component class found for {}!", componentName);
 			SE_CORE_VERIFY(false, "No C# component class found!");
+			#if defined(_MSC_VER)
+						__debugbreak();
+			#else
+						__builtin_trap();
+			#endif
+			return;
 		}
 	}
 
@@ -91,6 +97,12 @@ namespace StarEngine {
 		{
 			SE_CORE_ERROR("No C# component class found for {}!", componentName);
 			SE_CORE_VERIFY(false, "No C# component class found!");
+			#if defined(_MSC_VER)
+						__debugbreak();
+			#else
+						__builtin_trap();
+			#endif
+			return;
 		}
 	}
 
@@ -171,50 +183,6 @@ namespace StarEngine {
 		SE_ADD_INTERNAL_CALL(TextComponent_SetLineSpacing);
 
 		SE_ADD_INTERNAL_CALL(Input_IsKeyDown);
-
-		// AudioListener
-		SE_ADD_INTERNAL_CALL(AudioListenerComponent_GetActive);
-		SE_ADD_INTERNAL_CALL(AudioListenerComponent_SetActive);
-
-		// AudioSource
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetAssetHandle);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetAssetHandle);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetVolume);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetVolume);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetPitch);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetPitch);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetPlayOnAwake);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetPlayOnAwake);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetLooping);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetLooping);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetSpatialization);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetSpatialization);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetAttenuationModel);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetAttenuationModel);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetRollOff);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetRollOff);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetMinGain);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetMinGain);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetMaxGain);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetMaxGain);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetMinDistance);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetMinDistance);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetMaxDistance);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetMaxDistance);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetConeInnerAngle);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetConeInnerAngle);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetConeOuterAngle);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetConeOuterAngle);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetConeOuterGain);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetConeOuterGain);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetCone);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetDopplerFactor);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetDopplerFactor);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_IsPlaying);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_Play);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_Pause);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_UnPause);
-		SE_ADD_INTERNAL_CALL(AudioSourceComponent_Stop);
 	}
 
 	Entity ScriptGlue::GetHoveredEntity()
@@ -239,10 +207,10 @@ namespace StarEngine {
 
 	namespace InternalCalls
 	{
-		template<std::default_initializable T>
+		template<typename T>
 		struct Param
 		{
-			std::byte Data [sizeof(T)];
+			std::byte Data[sizeof(T)];
 
 			operator T() const
 			{
@@ -251,8 +219,6 @@ namespace StarEngine {
 				return result;
 			}
 		};
-
-		bool Input_IsKeyDown(KeyCode keycode);
-
 	}
+
 }

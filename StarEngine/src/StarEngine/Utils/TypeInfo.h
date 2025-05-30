@@ -1,7 +1,7 @@
 #pragma once
 
 #if __has_include(<cxxabi.h>)
-#define NZ_ABI_SUPPORTED
+#define SE_ABI_SUPPORTED
 #include <cxxabi.h>
 #endif
 

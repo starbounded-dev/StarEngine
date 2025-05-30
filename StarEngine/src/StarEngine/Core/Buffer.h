@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <cstring>
+#include <memory>
 
 namespace StarEngine {
 
@@ -66,11 +67,11 @@ namespace StarEngine {
 			return *(T*)((byte*)Data + offset);
 		}
 
-		uint8_t* ReadBytes(uint32_t size, uint32_t offset)
+		std::unique_ptr<uint8_t[]> ReadBytes(uint32_t size, uint32_t offset)
 		{
 			SE_CORE_ASSERT(offset + size <= Size, "Buffer overflow!");
-			uint8_t* buffer = new uint8_t[size];
-			memcpy(buffer, (uint8_t*)Data + offset, size);
+			std::unique_ptr<uint8_t[]> buffer = std::make_unique<uint8_t[]>(size);
+			memcpy(buffer.get(), (uint8_t*)Data + offset, size);
 			return buffer;
 		}
 

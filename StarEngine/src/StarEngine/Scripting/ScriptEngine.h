@@ -3,10 +3,9 @@
 #include "CSharpObject.h"
 #include "ScriptEntityStorage.h"
 
-#include "StarEngine/Core/Base.h"
+#include "StarEngine/Asset/Asset.h"
 #include "StarEngine/Core/Base.h"
 #include "StarEngine/Core/Buffer.h"
-#include "StarEngine/Asset/Asset.h"
 #include "StarEngine/Scene/Scene.h"
 
 #include <Coral/Assembly.hpp>
@@ -110,7 +109,7 @@ namespace StarEngine {
 			auto instance = type->CreateInstance(std::forward<TArgs>(args)...);
 			auto [index, handle] = m_ManagedObjects.Insert(std::move(instance));
 
-			entityStorage.Instance = &handle;
+			entityStorage.InstanceIndex = index;
 
 			for (auto& [fieldID, fieldStorage] : entityStorage.Fields)
 			{
@@ -160,7 +159,7 @@ namespace StarEngine {
 					handle.SetFieldValueRaw(fieldStorage.GetName(), fieldStorage.m_ValueBuffer.Data);
 				}
 
-				fieldStorage.m_Instance = &handle;
+				fieldStorage.m_InstanceIndex = index;
 			}
 
 			CSharpObject result;
@@ -177,11 +176,16 @@ namespace StarEngine {
 			SE_CORE_VERIFY(IsValidScript(entityStorage.ScriptID));
 
 			for (auto& [fieldID, fieldStorage] : entityStorage.Fields)
-				fieldStorage.m_Instance = nullptr;
+				fieldStorage.m_InstanceIndex = FieldStorage::InvalidInstanceIndex;
 
+			if (entityStorage.InstanceIndex != EntityScriptStorage::InvalidInstanceIndex)
+			{
+				m_ManagedObjects[entityStorage.InstanceIndex].Destroy();
+				m_ManagedObjects.Erase(entityStorage.InstanceIndex); // Remove from StableVector to free memory
+			}
+			entityStorage.InstanceIndex = EntityScriptStorage::InvalidInstanceIndex;
 			entityStorage.Instance->Destroy();
 			entityStorage.Instance = nullptr;
-
 			// TODO(Peter): Free-list
 		}
 

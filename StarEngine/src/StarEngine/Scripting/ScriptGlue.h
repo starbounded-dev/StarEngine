@@ -8,7 +8,7 @@
 #include <Coral/String.hpp>
 #include <Coral/Array.hpp>
 
-//#include <glm/glm.hpp>
+#include <glm/glm.hpp>
 
 namespace StarEngine {
 

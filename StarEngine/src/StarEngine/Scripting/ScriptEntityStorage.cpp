@@ -85,7 +85,7 @@ namespace StarEngine {
 
 		const auto& scriptMetadata = scriptEngine.GetScriptMetadata(srcStorage.ScriptID);
 
-		dstStorage.Instance = nullptr;
+		dstStorage.InstanceIndex = EntityScriptStorage::InvalidInstanceIndex;
 
 		for (const auto& [fieldID, fieldStorage] : srcStorage.Fields)
 		{
@@ -100,54 +100,7 @@ namespace StarEngine {
 			otherFieldStorage.m_Type = fieldStorage.m_Type;
 			otherFieldStorage.m_DataType = fieldStorage.m_DataType;
 			otherFieldStorage.m_ValueBuffer = Buffer::Copy(fieldStorage.m_ValueBuffer);
-			otherFieldStorage.m_Instance = nullptr;
-		}
-	}
-
-
-	void ScriptStorage::CopyEntityStorage(UUID entityID, UUID targetEntityID, ScriptStorage& targetStorage) const
-	{
-		if (!targetStorage.EntityStorage.contains(targetEntityID))
-		{
-			SE_CORE_ERROR("Cannot copy script storage to entity {} because InitializeScriptStorage hasn't been called for it.", targetEntityID);
-			return;
-		}
-
-		const auto& scriptEngine = ScriptEngine::GetInstance();
-		const auto& srcStorage = EntityStorage.at(entityID);
-
-		if (!scriptEngine.IsValidScript(srcStorage.ScriptID))
-		{
-			SE_CORE_ERROR("Cannot copy script data for script ID {}. The script is no longer valid", srcStorage.ScriptID);
-			return;
-		}
-
-		auto& dstStorage = targetStorage.EntityStorage.at(targetEntityID);
-
-		if (dstStorage.ScriptID != srcStorage.ScriptID)
-		{
-			SE_CORE_ERROR("Cannot copy script storage from entity {} to entity {} because they have different scritps!", entityID, targetEntityID);
-			return;
-		}
-
-		const auto& scriptMetadata = scriptEngine.GetScriptMetadata(srcStorage.ScriptID);
-
-		dstStorage.Instance = nullptr;
-
-		for (const auto& [fieldID, fieldStorage] : srcStorage.Fields)
-		{
-			if (!scriptMetadata.Fields.contains(fieldID))
-			{
-				SE_CORE_ERROR("Cannot copy script data for field {}. The field is no longer contained in the script.", fieldStorage.GetName());
-				continue;
-			}
-
-			auto& otherFieldStorage = dstStorage.Fields[fieldID];
-			otherFieldStorage.m_Name = fieldStorage.m_Name;
-			otherFieldStorage.m_Type = fieldStorage.m_Type;
-			otherFieldStorage.m_DataType = fieldStorage.m_DataType;
-			otherFieldStorage.m_ValueBuffer = Buffer::Copy(fieldStorage.m_ValueBuffer);
-			otherFieldStorage.m_Instance = nullptr;
+			otherFieldStorage.m_InstanceIndex = FieldStorage::InvalidInstanceIndex;
 		}
 	}
 
@@ -178,7 +131,7 @@ namespace StarEngine {
 			fieldStorage.m_ValueBuffer = Buffer::Copy(fieldMetadata.DefaultValue);
 		}
 
-		fieldStorage.m_Instance = nullptr;
+		fieldStorage.m_InstanceIndex = FieldStorage::InvalidInstanceIndex;
 	}
 
 }

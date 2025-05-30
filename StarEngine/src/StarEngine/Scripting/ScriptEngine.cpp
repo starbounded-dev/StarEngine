@@ -2,7 +2,7 @@
 #include "ScriptEngine.h"
 #include "ScriptGlue.h"
 
-#include "StarEngine/Core/Application.h "
+#include "StarEngine/Core/Application.h"
 #include "StarEngine/Utils/Hash.h"
 #include "StarEngine/Project/Project.h"
 #include "StarEngine/Asset/AssetManager.h"

@@ -199,15 +199,20 @@ namespace StarEngine {
 
 		// Scripting
 		{
-			ScriptEngine::OnRuntimeStart(this);
-			// Instantiate all scripts entities
+			auto& scriptEngine = ScriptEngine::GetMutable();
+			scriptEngine.SetCurrentScene(this);
 
 			auto view = m_Registry.view<ScriptComponent>();
-			for (auto e : view)
-			{
-				Entity entity = { e, this };
-				ScriptEngine::OnCreateEntity(entity);
-			}
+			view.each([&](auto entity, ScriptComponent& sc) 
+				{
+					sc.Instance = scriptEngine.Instantiate(uint64_t(entity), m_ScriptStorage, uint64_t(entity));
+				});
+
+			auto filter = m_Registry.view<IDComponent, ScriptComponent>();
+			filter.each([&](entt::entity scriptEntity, IDComponent& id, ScriptComponent& sc)
+				{
+					sc.Instance.Invoke("OnCreate");
+				});
 		}
 	}
 
@@ -250,7 +255,28 @@ namespace StarEngine {
 				});
 		}
 
-		ScriptEngine::OnRuntimeStop();
+		{
+			auto& scriptEngine = ScriptEngine::GetMutable();
+
+			auto view = m_Registry.view<IDComponent, ScriptComponent>();
+			view.each([&](entt::entity scriptEntity, IDComponent& id, ScriptComponent& sc)
+				{
+					sc.Instance.Invoke("OnDestroy");
+					scriptEngine.DestroyInstance(id.ID, m_ScriptStorage);
+				});
+
+			view.each([&](entt::entity scriptEntity, IDComponent& id, ScriptComponent& sc)
+				{
+					Entity e = { scriptEntity, this };
+
+					sc.HasInitializedScript = false;
+
+					if (!m_ScriptStorage.EntityStorage.contains(e.m_EntityHandle))
+						return;
+
+					m_ScriptStorage.ShutdownEntityStorage(sc.ScriptHandle, e.m_EntityHandle);
+				});
+		}
 	}
 
 	void Scene::OnSimulationStart()
@@ -267,26 +293,14 @@ namespace StarEngine {
 	{
 		if (!m_IsPaused || m_StepFrames-- > 0)
 		{
-			// Update scripts
 			{
-				auto view = m_Registry.view<ScriptComponent>();
-				for (auto e : view)
-				{
-					Entity entity = { e, this };
-					ScriptEngine::OnUpdateEntity(entity, ts);
-				}
+				SE_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::ScriptComponent Scope", 0xFF7200);
 
-				m_Registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc)
+				// Update Scripts
+				auto filter = m_ECS.filter<IDComponent, ScriptComponent>();
+				filter.each([&](IDComponent& id, ScriptComponent& sc)
 					{
-						// TODO: Move to Scene::OnScenePlay
-						if (!nsc.Instance)
-						{
-							nsc.Instance = nsc.InstantiateScript();
-							nsc.Instance->m_Entity = Entity{ entity, this };
-							nsc.Instance->OnCreate();
-						}
-
-						nsc.Instance->OnUpdate(ts);
+						sc.Instance.Invoke<float>("OnUpdate", ts);
 					});
 			}
 

@@ -1,8 +1,10 @@
 #pragma once
-
+ 
+#include <cstdint>
+#include <string_view>
 #include <string>
 
-namespace Nutcrackz {
+namespace StarEngine {
 
 	class Hash
 	{

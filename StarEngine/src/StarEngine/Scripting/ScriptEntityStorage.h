@@ -7,6 +7,8 @@
 #include <Coral/Type.hpp>
 #include <Coral/Array.hpp>
 
+#include "Coral/StableVector.hpp"
+
 namespace StarEngine {
 
 	enum class DataType
@@ -129,21 +131,31 @@ namespace StarEngine {
 		template<typename T>
 		T GetValue()
 		{
-			return m_Instance ? m_Instance->GetFieldValue<T>(m_Name) : m_ValueBuffer.Read<T>();
+			//return m_Instance ? m_Instance->GetFieldValue<T>(m_Name) : m_ValueBuffer.Read<T>();
+			//if (m_Instance)
+			if (m_InstanceIndex != InvalidInstanceIndex)
+				return GetInstancePtr(*managedObjects)->GetFieldValue<T>(m_Name);
+			else
+				return m_ValueBuffer.Read<T>();
 		}
 
 		template<typename T>
 		T GetValue() const
 		{
-			return m_Instance ? m_Instance->GetFieldValue<T>(m_Name) : m_ValueBuffer.Read<T>();
+			//return m_Instance ? m_Instance->GetFieldValue<T>(m_Name) : m_ValueBuffer.Read<T>();
+			//if (m_Instance)
+			if (m_InstanceIndex != InvalidInstanceIndex)
+				return GetInstancePtr(*managedObjects)->GetFieldValue<T>(m_Name);
+			else
+				return m_ValueBuffer.Read<T>();
 		}
 
 		template<typename T>
 		T GetValue(int32_t index) const
 		{
-			if (m_Instance)
+			if (m_InstanceIndex != InvalidInstanceIndex)
 			{
-				auto arr = m_Instance->GetFieldValue<Coral::Array<T>>(m_Name);
+				auto arr = GetInstancePtr(*managedObjects)->GetFieldValue<Coral::Array<T>>(m_Name);
 				T value = arr[index];
 				Coral::Array<T>::Free(arr);
 				return value;
@@ -155,9 +167,9 @@ namespace StarEngine {
 		template<typename T>
 		void SetValue(const T& value)
 		{
-			if (m_Instance)
+			if (m_InstanceIndex != InvalidInstanceIndex)
 			{
-				m_Instance->SetFieldValue(m_Name, value);
+				GetInstancePtr(*managedObjects)->SetFieldValue(m_Name, value);
 			}
 			else
 			{
@@ -170,11 +182,11 @@ namespace StarEngine {
 		{
 			SE_CORE_VERIFY(m_Type->IsSZArray());
 
-			if (m_Instance)
+			if (m_InstanceIndex != InvalidInstanceIndex)
 			{
-				auto arr = m_Instance->GetFieldValue<Coral::Array<T>>(m_Name);
+				auto arr = GetInstancePtr(*managedObjects)->GetFieldValue<Coral::Array<T>>(m_Name);
 				arr[index] = value;
-				m_Instance->SetFieldValue(m_Name, arr);
+				GetInstancePtr(*managedObjects)->SetFieldValue(m_Name, arr);
 				Coral::Array<T>::Free(arr);
 			}
 			else
@@ -188,13 +200,13 @@ namespace StarEngine {
 		{
 			uint64_t size = newLength * DataTypeSize(m_DataType);
 
-			if (m_Instance)
+			if (m_InstanceIndex != InvalidInstanceIndex)
 			{
-				/*auto arr = m_Instance->GetFieldValue<Coral::Array<T>>(m_Name);
+				/*auto arr = GetInstancePtr(*managedObjects)->GetFieldValue<Coral::Array<T>>(m_Name);
 				auto newArr = Coral::Array<T>::New(arr.Length() + 1);
 				newArr.Assign(arr);
 				Coral::Array<T>::Free(arr);
-				m_Instance->SetFieldValue(m_Name, newArr);
+				GetInstancePtr(*managedObjects)->SetFieldValue(m_Name, newArr);
 				Coral::Array<T>::Free(newArr);*/
 			}
 			else
@@ -234,13 +246,21 @@ namespace StarEngine {
 			oldBuffer.Release();
 		}
 
+		// Helper to get the ManagedObject* from the index
+		Coral::ManagedObject* GetInstancePtr(Coral::StableVector<Coral::ManagedObject>& managedObjects) const {
+			if (m_InstanceIndex == InvalidInstanceIndex) return nullptr;
+			return &managedObjects[m_InstanceIndex];
+		}
+
 	private:
 		std::string m_Name;
 		Coral::Type* m_Type;
 		DataType m_DataType;
 		Buffer m_ValueBuffer;
 
-		Coral::ManagedObject* m_Instance;
+		// Use an invalid index to represent 'null'.
+		static constexpr uint32_t InvalidInstanceIndex = std::numeric_limits<uint32_t>::max();
+		uint32_t m_InstanceIndex = InvalidInstanceIndex;
 
 		friend struct ScriptStorage;
 		friend class ScriptEngine;
@@ -250,7 +270,16 @@ namespace StarEngine {
 	{
 		UUID ScriptID;
 		std::unordered_map<uint32_t, FieldStorage> Fields;
-		Coral::ManagedObject* Instance = nullptr;
+		static constexpr uint32_t InvalidInstanceIndex = std::numeric_limits<uint32_t>::max();
+		uint32_t InstanceIndex = InvalidInstanceIndex;
+
+		// Helper to get the ManagedObject* from the index
+		Coral::ManagedObject* GetInstancePtr(Coral::StableVector<Coral::ManagedObject>& managedObjects) const {
+			if (InstanceIndex == InvalidInstanceIndex) return nullptr;
+			return &managedObjects[InstanceIndex];
+		}
+
+		friend struct ScriptStorage;
 	};
 
 	struct ScriptStorage

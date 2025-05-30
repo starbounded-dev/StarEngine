@@ -33,7 +33,7 @@ namespace StarEngine {
 		Ref<Project> project = CreateRef<Project>();
 
 		ProjectSerializer serializer(project);
-		if (serializer.Deserialize(path))
+		if (serializer.Serialize(path))
 		{
 			if (AudioEngine::HasInitializedEngine())
 			{
