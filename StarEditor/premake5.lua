@@ -37,11 +37,7 @@ project "StarEditor"
 
 	filter "system:windows" 
 		systemversion "latest"
-		postbuildcommands {
-			"{COPYDIR} %{wks.location}/StarEditor/assets %{wks.location}/bin/" .. outputdir .. "/StarEditor/assets",
-			"{COPYDIR} %{wks.location}/StarEditor/Resources %{wks.location}/bin/" .. outputdir .. "/StarEditor/Resources",
-			"{COPYFILE} %{wks.location}/StarEditor/imgui.ini %{wks.location}/bin/" .. outputdir .. "/StarEditor/imgui.ini",
-		}
+		postbuildcommands {}
 
 	filter "configurations:Debug"
 		defines "SE_DEBUG"

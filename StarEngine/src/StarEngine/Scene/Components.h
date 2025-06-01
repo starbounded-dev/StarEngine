@@ -131,8 +131,9 @@ namespace StarEngine {
 		// NOTE: Gets set to true when OnCreate has been called for this entity
 		bool IsRuntimeInitialized = false;
 
+		std::string ClassName; // Added this member to fix the error
+
 		ScriptComponent() = default;
-		//ScriptComponent(const ScriptComponent& other) = default;
 		ScriptComponent(const ScriptComponent& other)
 		{
 			ScriptHandle = other.ScriptHandle;
@@ -140,8 +141,10 @@ namespace StarEngine {
 			FieldIDs = other.FieldIDs;
 			HasInitializedScript = other.HasInitializedScript;
 			IsRuntimeInitialized = other.IsRuntimeInitialized;
+			ClassName = other.ClassName; // Ensure ClassName is copied
 		}
 	};
+
 
 	// Physics
 

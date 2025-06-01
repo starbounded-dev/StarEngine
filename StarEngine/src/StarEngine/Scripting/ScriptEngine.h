@@ -181,7 +181,7 @@ namespace StarEngine {
 			if (entityStorage.InstanceIndex != EntityScriptStorage::InvalidInstanceIndex)
 			{
 				m_ManagedObjects[entityStorage.InstanceIndex].Destroy();
-				m_ManagedObjects.Erase(entityStorage.InstanceIndex); // Remove from StableVector to free memory
+				m_ManagedObjects.Remove(entityStorage.InstanceIndex); // Remove from StableVector to free memory
 			}
 			entityStorage.InstanceIndex = EntityScriptStorage::InvalidInstanceIndex;
 			if (entityStorage.InstanceIndex != EntityScriptStorage::InvalidInstanceIndex)

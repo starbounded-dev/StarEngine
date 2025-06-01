@@ -276,7 +276,7 @@ namespace StarEngine {
 					if (m_ScriptStorage.EntityStorage.find(e.GetUUID()) == m_ScriptStorage.EntityStorage.end())
 						return;
 
-					m_ScriptStorage.ShutdownEntityStorage(sc.ScriptHandle, e.GetEntityHandle());
+					m_ScriptStorage.ShutdownEntityStorage(sc.ScriptHandle, e.GetUUID());
 				});
 		}
 	}
@@ -678,7 +678,8 @@ namespace StarEngine {
 				const auto& candidate = tc.Tag;
 
 				if (candidate == tag)
-					e = Entity{ entity };
+					e = Entity{ entity, this };
+
 			});
 
 		return e;
@@ -774,7 +775,8 @@ namespace StarEngine {
 		if (this != nullptr && m_EntityMap.size() > 0)
 		{
 			if (m_EntityMap.find(id) != m_EntityMap.end())
-				return { m_EntityMap.at(id) };
+				return { m_EntityMap.at(id), this };
+
 		}
 
 		return {};
@@ -783,8 +785,7 @@ namespace StarEngine {
 	Entity Scene::TryGetEntityWithID(uint64_t id) const
 	{
 		if (const auto iter = m_EntityMap.find(id); iter != m_EntityMap.end())
-			return iter->second;
-		return Entity{};
+			return { iter->second, const_cast<Scene*>(this) };
 	}
 
 	Entity Scene::GetEntityByUUID(UUID uuid)

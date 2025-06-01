@@ -231,7 +231,7 @@ namespace StarEngine {
 			if (ImGui::BeginMenu("Script"))
 			{
 				if (ImGui::MenuItem("Reload assembly", "Ctrl+R"))
-					ScriptEngine::ReloadAssembly();
+					ReloadCSharp();
 
 				ImGui::EndMenu();
 			}
@@ -540,7 +540,7 @@ namespace StarEngine {
 			{
 				if (control)
 				{
-					ScriptEngine::ReloadAssembly();
+					ReloadCSharp();
 				}
 				else
 				{

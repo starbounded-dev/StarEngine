@@ -64,17 +64,18 @@ namespace StarEngine {
 #pragma region Input
 
 		bool Input_IsKeyDown(KeyCode keycode);
-		bool Input_IsKeyUp(KeyCode keycode);
-		bool Input_IsMouseButtonPressed(MouseCode button);
-		bool Input_PressMouseButton(MouseCode button);
-		bool Input_ReleaseMouseButton(MouseCode button);
-		float Input_GetMousePositionX();
-		float Input_GetMousePositionY();
-		float Input_GetMouseWorldPositionX();
-		float Input_GetMouseWorldPositionY();
+		//bool Input_IsKeyUp(KeyCode keycode);
+		//bool Input_IsMouseButtonPressed(MouseCode button);
+		//bool Input_PressMouseButton(MouseCode button);
+		//bool Input_ReleaseMouseButton(MouseCode button);
+		//float Input_GetMousePositionX();
+		//float Input_GetMousePositionY();
+		//float Input_GetMouseWorldPositionX();
+		//float Input_GetMouseWorldPositionY();
 
 #pragma endregion
 
+		/*
 #pragma region Application
 
 		float Application_GetFPS();
@@ -83,7 +84,8 @@ namespace StarEngine {
 		float Application_GetMaxFrameTime();
 
 #pragma endregion
-
+		*/
+		/*
 #pragma region Scene
 
 		void Scene_LoadScene(AssetHandle assetHandle);
@@ -109,46 +111,46 @@ namespace StarEngine {
 		//void Scene_GetEntityComponent(uint64_t entityID, void* component);
 
 #pragma endregion
-
+		*/
 #pragma region Entity
 
-		void Entity_CreateComponent(uint64_t entityID, Coral::ReflectionType componentType);
+		//void Entity_CreateComponent(uint64_t entityID, Coral::ReflectionType componentType);
 		bool Entity_HasComponent(uint64_t entityID, Coral::ReflectionType componentType);
-		bool Entity_RemoveComponent(uint64_t entityID, Coral::ReflectionType componentType);
-		void Entity_DestroyEntity(uint64_t entityID);
+		//bool Entity_RemoveComponent(uint64_t entityID, Coral::ReflectionType componentType);
+		//void Entity_DestroyEntity(uint64_t entityID);
 		uint64_t Entity_FindEntityByName(Coral::String name);
 		uint64_t Entity_FindEntityByTag(Coral::String tag);
 
 #pragma endregion
-
+		/*
 #pragma region TagComponent
 
 		Coral::String TagComponent_GetTag(uint64_t entityID);
 		void TagComponent_SetTag(uint64_t entityID, Coral::String tag);
 
 #pragma endregion
-
+	*/
 #pragma region TransformComponent
 
-		bool TransformComponent_GetIsEnabled(uint64_t entityID);
-		void TransformComponent_SetIsEnabled(uint64_t entityID, bool isEnabled);
+		//bool TransformComponent_GetIsEnabled(uint64_t entityID);
+		//void TransformComponent_SetIsEnabled(uint64_t entityID, bool isEnabled);
 		void TransformComponent_GetTransform(uint64_t entityID, TransformComponent* outTransform);
 		void TransformComponent_SetTransform(uint64_t entityID, TransformComponent* inTransform);
-		float TransformComponent_GetTranslationX(uint64_t entityID);
-		float TransformComponent_GetTranslationY(uint64_t entityID);
-		float TransformComponent_GetTranslationZ(uint64_t entityID);
-		void TransformComponent_SetTranslation(uint64_t entityID, float translationX, float translationY, float translationZ);
-		float TransformComponent_GetRotationX(uint64_t entityID);
-		float TransformComponent_GetRotationY(uint64_t entityID);
-		float TransformComponent_GetRotationZ(uint64_t entityID);
-		void TransformComponent_SetRotation(uint64_t entityID, float rotationX, float rotationY, float rotationZ);
-		float TransformComponent_GetScaleX(uint64_t entityID);
-		float TransformComponent_GetScaleY(uint64_t entityID);
-		float TransformComponent_GetScaleZ(uint64_t entityID);
-		void TransformComponent_SetScale(uint64_t entityID, float scaleX, float scaleY, float scaleZ);
+		//float TransformComponent_GetTranslationX(uint64_t entityID);
+		//float TransformComponent_GetTranslationY(uint64_t entityID);
+		//float TransformComponent_GetTranslationZ(uint64_t entityID);
+		//void TransformComponent_SetTranslation(uint64_t entityID, float translationX, float translationY, float translationZ);
+		//float TransformComponent_GetRotationX(uint64_t entityID);
+		//float TransformComponent_GetRotationY(uint64_t entityID);
+		//float TransformComponent_GetRotationZ(uint64_t entityID);
+		//void TransformComponent_SetRotation(uint64_t entityID, float rotationX, float rotationY, float rotationZ);
+		//float TransformComponent_GetScaleX(uint64_t entityID);
+		//float TransformComponent_GetScaleY(uint64_t entityID);
+		//float TransformComponent_GetScaleZ(uint64_t entityID);
+		//void TransformComponent_SetScale(uint64_t entityID, float scaleX, float scaleY, float scaleZ);
 
 #pragma endregion
-
+		/*
 #pragma region CameraComponent
 
 		bool CameraComponent_GetIsPrimary(uint64_t entityID);
@@ -157,7 +159,8 @@ namespace StarEngine {
 		void CameraComponent_SetFixedAspectRatio(uint64_t entityID, bool fixedAspectRatio);
 
 #pragma endregion
-
+		*/
+		/*
 #pragma region SpriteRendererComponent
 
 		float SpriteRendererComponent_GetOffsetX(uint64_t entityID);
@@ -201,7 +204,8 @@ namespace StarEngine {
 		void SpriteRendererComponent_SetTextureAssetID(uint64_t entityID, uint64_t textureHandle);
 
 #pragma endregion
-
+		*/
+		/*
 #pragma region CircleRendererComponent
 
 		float CircleRendererComponent_GetColorX(uint64_t entityID);
@@ -235,14 +239,15 @@ namespace StarEngine {
 		void CircleRendererComponent_SetRow(uint64_t entityID, int row);
 
 #pragma endregion
-
+		*/
+		/*
 #pragma region LineRendererComponent
 
 		float LineRendererComponent_GetLineThickness(uint64_t entityID);
 		void LineRendererComponent_SetLineThickness(uint64_t entityID, float lineThickness);
 
 #pragma endregion
-
+		*/
 #pragma region TextComponent
 
 		Coral::String TextComponent_GetText(uint64_t entityID);
@@ -265,17 +270,18 @@ namespace StarEngine {
 		void RigidBody2DComponent_ApplyLinearImpulseToCenter(uint64_t entityID, float impulseX, float impulseY, bool wake);
 		float RigidBody2DComponent_GetLinearVelocityX(uint64_t entityID);
 		float RigidBody2DComponent_GetLinearVelocityY(uint64_t entityID);
-		void RigidBody2DComponent_SetLinearVelocity(uint64_t entityID, float velocityX, float velocityY);
+		//void RigidBody2DComponent_SetLinearVelocity(uint64_t entityID, float velocityX, float velocityY);
 		RigidBody2DComponent::BodyType Rigidbody2DComponent_GetType(uint64_t entityID);
 		void RigidBody2DComponent_SetType(uint64_t entityID, RigidBody2DComponent::BodyType bodyType);
-		float RigidBody2DComponent_GetGravityX(uint64_t entityID);
-		float RigidBody2DComponent_GetGravityY(uint64_t entityID);
-		void RigidBody2DComponent_SetGravity(uint64_t entityID, float gravityX, float gravityY);
-		bool RigidBody2DComponent_GetEnabled(uint64_t entityID);
-		void RigidBody2DComponent_SetEnabled(uint64_t entityID, bool setEnabled);
+		//float RigidBody2DComponent_GetGravityX(uint64_t entityID);
+		//float RigidBody2DComponent_GetGravityY(uint64_t entityID);
+		//void RigidBody2DComponent_SetGravity(uint64_t entityID, float gravityX, float gravityY);
+		//bool RigidBody2DComponent_GetEnabled(uint64_t entityID);
+		//void RigidBody2DComponent_SetEnabled(uint64_t entityID, bool setEnabled);
 
 #pragma endregion
 
+		/*
 #pragma region BoxCollider2DComponent
 
 		void BoxCollider2DComponent_GetOffset(uint64_t entityID, glm::vec2* outOffset);
@@ -300,7 +306,8 @@ namespace StarEngine {
 		void BoxCollider2DComponent_SetAwake(uint64_t entityID, bool setAwake);
 
 #pragma endregion
-
+		*/
+		/*
 #pragma region CircleCollider2DComponent
 
 		float CircleCollider2DComponent_GetOffsetX(uint64_t entityID);
@@ -323,7 +330,8 @@ namespace StarEngine {
 		void CircleCollider2DComponent_SetAwake(uint64_t entityID, bool setAwake);
 
 #pragma endregion
-
+		*/
+		/*
 #pragma region AudioListenerComponent
 
 		bool AudioListenerComponent_GetActive(uint64_t entityID);
@@ -373,5 +381,6 @@ namespace StarEngine {
 		void AudioSourceComponent_Stop(uint64_t entityID);
 
 #pragma endregion
+		*/
 	}
 }

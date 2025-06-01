@@ -56,8 +56,6 @@ namespace StarEngine {
 		/*
 		void RenderHoveredEntityOutline(Entity entity, glm::vec4 color);
 		void RenderSelectedEntityOutline(Entity entity, glm::vec4 color);*/
-
-		Entity FindEntityByName(std::string_view name);
 		Entity GetEntityByUUID(UUID uuid);
 
 		Entity GetPrimaryCameraEntity();

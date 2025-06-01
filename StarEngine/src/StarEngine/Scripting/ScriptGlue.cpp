@@ -158,14 +158,17 @@ namespace StarEngine {
 		SE_ADD_INTERNAL_CALL(AssetHandle_IsValid);
 
 		// ConsoleLog
+		/*
 		SE_ADD_INTERNAL_CALL(ConsoleLog_Trace);
 		SE_ADD_INTERNAL_CALL(ConsoleLog_Info);
 		SE_ADD_INTERNAL_CALL(ConsoleLog_Warning);
 		SE_ADD_INTERNAL_CALL(ConsoleLog_Error);
 		SE_ADD_INTERNAL_CALL(ConsoleLog_Critical);
+		*/
 
 		// Input
 		SE_ADD_INTERNAL_CALL(Input_IsKeyDown);
+		/*
 		SE_ADD_INTERNAL_CALL(Input_IsKeyUp);
 		SE_ADD_INTERNAL_CALL(Input_IsMouseButtonPressed);
 		SE_ADD_INTERNAL_CALL(Input_PressMouseButton);
@@ -174,14 +177,18 @@ namespace StarEngine {
 		SE_ADD_INTERNAL_CALL(Input_GetMousePositionY);
 		SE_ADD_INTERNAL_CALL(Input_GetMouseWorldPositionX);
 		SE_ADD_INTERNAL_CALL(Input_GetMouseWorldPositionY);
+		*/
 
 		// Application
+		/*
 		SE_ADD_INTERNAL_CALL(Application_GetFPS);
 		SE_ADD_INTERNAL_CALL(Application_GetFrameTime);
 		SE_ADD_INTERNAL_CALL(Application_GetMinFrameTime);
 		SE_ADD_INTERNAL_CALL(Application_GetMaxFrameTime);
+		*/
 
 		// Scene
+		/*
 		SE_ADD_INTERNAL_CALL(Scene_LoadScene);
 		SE_ADD_INTERNAL_CALL(Scene_GetCursor);
 		SE_ADD_INTERNAL_CALL(Scene_SetCursor);
@@ -202,25 +209,27 @@ namespace StarEngine {
 		SE_ADD_INTERNAL_CALL(Scene_RenderHoveredEntityOutline);
 		SE_ADD_INTERNAL_CALL(Scene_RenderSelectedEntityOutline);
 		SE_ADD_INTERNAL_CALL(Scene_GetEntityComponent);
+		*/
 
 		// Entity
-		SE_ADD_INTERNAL_CALL(Entity_CreateComponent);
+		//SE_ADD_INTERNAL_CALL(Entity_CreateComponent);
 		SE_ADD_INTERNAL_CALL(Entity_HasComponent);
-		SE_ADD_INTERNAL_CALL(Entity_RemoveComponent);
-		SE_ADD_INTERNAL_CALL(Entity_RemoveComponent);
-		SE_ADD_INTERNAL_CALL(Entity_DestroyEntity);
+		//SE_ADD_INTERNAL_CALL(Entity_RemoveComponent);
+		//SE_ADD_INTERNAL_CALL(Entity_RemoveComponent);
+		//SE_ADD_INTERNAL_CALL(Entity_DestroyEntity);
 		SE_ADD_INTERNAL_CALL(Entity_FindEntityByTag);
 		SE_ADD_INTERNAL_CALL(Entity_FindEntityByName);
 
 		// Tag
-		SE_ADD_INTERNAL_CALL(TagComponent_GetTag);
-		SE_ADD_INTERNAL_CALL(TagComponent_SetTag);
+		//SE_ADD_INTERNAL_CALL(TagComponent_GetTag);
+		//SE_ADD_INTERNAL_CALL(TagComponent_SetTag);
 
 		// Transform
-		SE_ADD_INTERNAL_CALL(TransformComponent_GetIsEnabled);
-		SE_ADD_INTERNAL_CALL(TransformComponent_SetIsEnabled);
+		//SE_ADD_INTERNAL_CALL(TransformComponent_GetIsEnabled);
+		//SE_ADD_INTERNAL_CALL(TransformComponent_SetIsEnabled);
 		SE_ADD_INTERNAL_CALL(TransformComponent_GetTransform);
 		SE_ADD_INTERNAL_CALL(TransformComponent_SetTransform);
+		/*
 		SE_ADD_INTERNAL_CALL(TransformComponent_GetTranslationX);
 		SE_ADD_INTERNAL_CALL(TransformComponent_GetTranslationY);
 		SE_ADD_INTERNAL_CALL(TransformComponent_GetTranslationZ);
@@ -233,14 +242,18 @@ namespace StarEngine {
 		SE_ADD_INTERNAL_CALL(TransformComponent_GetScaleY);
 		SE_ADD_INTERNAL_CALL(TransformComponent_GetScaleZ);
 		SE_ADD_INTERNAL_CALL(TransformComponent_SetScale);
+		*/
 
 		// CameraComponent
+		/*
 		SE_ADD_INTERNAL_CALL(CameraComponent_GetIsPrimary);
 		SE_ADD_INTERNAL_CALL(CameraComponent_SetPrimary);
 		SE_ADD_INTERNAL_CALL(CameraComponent_GetFixedAspectRatio);
 		SE_ADD_INTERNAL_CALL(CameraComponent_SetFixedAspectRatio);
+		*/
 
 		// SpriteRenderer
+		/*
 		SE_ADD_INTERNAL_CALL(SpriteRendererComponent_GetOffsetX);
 		SE_ADD_INTERNAL_CALL(SpriteRendererComponent_GetOffsetY);
 		SE_ADD_INTERNAL_CALL(SpriteRendererComponent_GetOffsetZ);
@@ -280,8 +293,10 @@ namespace StarEngine {
 		SE_ADD_INTERNAL_CALL(SpriteRendererComponent_SetTextureAssetHandle);
 		SE_ADD_INTERNAL_CALL(SpriteRendererComponent_GetTextureAssetID);
 		SE_ADD_INTERNAL_CALL(SpriteRendererComponent_SetTextureAssetID);
+		*/
 
 		// CircleRenderer
+		/*
 		SE_ADD_INTERNAL_CALL(CircleRendererComponent_GetColorX);
 		SE_ADD_INTERNAL_CALL(CircleRendererComponent_GetColorY);
 		SE_ADD_INTERNAL_CALL(CircleRendererComponent_GetColorZ);
@@ -311,10 +326,11 @@ namespace StarEngine {
 		SE_ADD_INTERNAL_CALL(CircleRendererComponent_SetColumn);
 		SE_ADD_INTERNAL_CALL(CircleRendererComponent_GetRow);
 		SE_ADD_INTERNAL_CALL(CircleRendererComponent_SetRow);
+		*/
 
 		// LineRenderer
-		SE_ADD_INTERNAL_CALL(LineRendererComponent_GetLineThickness);
-		SE_ADD_INTERNAL_CALL(LineRendererComponent_SetLineThickness);
+		//SE_ADD_INTERNAL_CALL(LineRendererComponent_GetLineThickness);
+		//SE_ADD_INTERNAL_CALL(LineRendererComponent_SetLineThickness);
 
 		// TextRenderer
 		SE_ADD_INTERNAL_CALL(TextComponent_GetText);
@@ -334,17 +350,18 @@ namespace StarEngine {
 		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_ApplyLinearImpulseToCenter);
 		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_GetLinearVelocityX);
 		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_GetLinearVelocityY);
-		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_SetLinearVelocity);
-		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_GetType);
+		//SE_ADD_INTERNAL_CALL(RigidBody2DComponent_SetLinearVelocity);
+		//SE_ADD_INTERNAL_CALL(RigidBody2DComponent_GetType);
 		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_SetType);
-		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_GetGravity);
-		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_GetGravityX);
-		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_GetGravityY);
-		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_SetGravity);
-		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_GetEnabled);
-		SE_ADD_INTERNAL_CALL(RigidBody2DComponent_SetEnabled);
+		//SE_ADD_INTERNAL_CALL(RigidBody2DComponent_GetGravity);
+		//SE_ADD_INTERNAL_CALL(RigidBody2DComponent_GetGravityX);
+		//SE_ADD_INTERNAL_CALL(RigidBody2DComponent_GetGravityY);
+		//SE_ADD_INTERNAL_CALL(RigidBody2DComponent_SetGravity);
+		//SE_ADD_INTERNAL_CALL(RigidBody2DComponent_GetEnabled);
+		//SE_ADD_INTERNAL_CALL(RigidBody2DComponent_SetEnabled);
 
 		// BoxCollider2D
+		/*
 		SE_ADD_INTERNAL_CALL(BoxCollider2DComponent_GetOffset);
 		SE_ADD_INTERNAL_CALL(BoxCollider2DComponent_GetOffsetX);
 		SE_ADD_INTERNAL_CALL(BoxCollider2DComponent_GetOffsetY);
@@ -365,8 +382,10 @@ namespace StarEngine {
 		SE_ADD_INTERNAL_CALL(BoxCollider2DComponent_SetCollisionRay);
 		SE_ADD_INTERNAL_CALL(BoxCollider2DComponent_GetAwake);
 		SE_ADD_INTERNAL_CALL(BoxCollider2DComponent_SetAwake);
+		*/
 
 		// CircleCollider2D
+		/*
 		SE_ADD_INTERNAL_CALL(CircleCollider2DComponent_GetOffsetX);
 		SE_ADD_INTERNAL_CALL(CircleCollider2DComponent_GetOffsetY);
 		SE_ADD_INTERNAL_CALL(CircleCollider2DComponent_SetOffset);
@@ -385,12 +404,14 @@ namespace StarEngine {
 		SE_ADD_INTERNAL_CALL(CircleCollider2DComponent_SetCollisionRay);
 		SE_ADD_INTERNAL_CALL(CircleCollider2DComponent_GetAwake);
 		SE_ADD_INTERNAL_CALL(CircleCollider2DComponent_SetAwake);
+		*/
 
 		// AudioListener
-		SE_ADD_INTERNAL_CALL(AudioListenerComponent_GetActive);
-		SE_ADD_INTERNAL_CALL(AudioListenerComponent_SetActive);
+		//SE_ADD_INTERNAL_CALL(AudioListenerComponent_GetActive);
+		//SE_ADD_INTERNAL_CALL(AudioListenerComponent_SetActive);
 
 		// AudioSource
+		/*
 		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetAssetHandle);
 		SE_ADD_INTERNAL_CALL(AudioSourceComponent_SetAssetHandle);
 		SE_ADD_INTERNAL_CALL(AudioSourceComponent_GetVolume);
@@ -429,6 +450,14 @@ namespace StarEngine {
 		SE_ADD_INTERNAL_CALL(AudioSourceComponent_Pause);
 		SE_ADD_INTERNAL_CALL(AudioSourceComponent_UnPause);
 		SE_ADD_INTERNAL_CALL(AudioSourceComponent_Stop);
+		*/
+	}
+
+	static Entity GetEntity(uint64_t entityID)
+	{
+		Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
+		SE_CORE_VERIFY(scene, "No active scene!");
+		return scene->TryGetEntityWithID(entityID);
 	}
 
 	Entity ScriptGlue::GetHoveredEntity()
@@ -469,7 +498,7 @@ namespace StarEngine {
 		{
 			return Input::IsKeyPressed(keycode);
 		}
-
+		/*
 		bool Input_IsKeyUp(KeyCode keycode)
 		{
 			return Input::IsKeyReleased(keycode);
@@ -522,11 +551,12 @@ namespace StarEngine {
 			glm::vec2 mousePosition = Input::GetViewportMousePosition();
 			return mousePosition.y;
 		}
+		*/
 
 #pragma endregion
 
 #pragma region Application
-
+		/*
 		float Application_GetFPS()
 		{
 			return Application::Get().GetFPS();
@@ -546,11 +576,11 @@ namespace StarEngine {
 		{
 			return Application::Get().GetMaxFrameTime();
 		}
-
+		*/
 #pragma endregion
 
 #pragma region Scene
-
+		/*
 		void Scene_LoadScene(AssetHandle assetHandle)
 		{
 			Ref<Scene> activeScene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -767,18 +797,18 @@ namespace StarEngine {
 			SE_CORE_ASSERT(s_GetComponentFuncs.find(managedType) != s_GetComponentFuncs.end());
 			s_GetComponentFuncs.at(managedType)(entity);
 		}
-
+		*/
 #pragma endregion
 
 #pragma region Entity
-
+		/*
 		static inline Entity GetEntity(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
 			SE_CORE_VERIFY(scene, "No active scene!");
 			return scene->TryGetEntityWithID(entityID);
 		};
-
+		
 		void Entity_CreateComponent(uint64_t entityID, Coral::ReflectionType componentType)
 		{
 			auto entity = GetEntity(entityID);
@@ -808,6 +838,7 @@ namespace StarEngine {
 
 			return s_CreateComponentFuncs.at(type.GetTypeId())(entity);
 		}
+		*/
 
 		bool Entity_HasComponent(uint64_t entityID, Coral::ReflectionType componentType)
 		{
@@ -824,7 +855,7 @@ namespace StarEngine {
 
 			Coral::ScopedString typeName = type.GetFullName();
 
-			if (!s_HasComponentFuncs.contains(type.GetTypeId()))
+			if (s_HasComponentFuncs.find(type.GetTypeId()) == s_HasComponentFuncs.end())
 			{
 				//ErrorWithTrace("Cannot check if entity '{}' has a component of type '{}'. That component hasn't been registered with the engine.", entity.Name(), std::string(typeName));
 				return false;
@@ -833,6 +864,7 @@ namespace StarEngine {
 			return s_HasComponentFuncs.at(type.GetTypeId())(entity);
 		}
 
+		/*
 		bool Entity_RemoveComponent(uint64_t entityID, Coral::ReflectionType componentType)
 		{
 			auto entity = GetEntity(entityID);
@@ -873,7 +905,7 @@ namespace StarEngine {
 
 			entity.DestroyEntity();
 		}
-
+		*/
 		uint64_t Entity_FindEntityByName(Coral::String name)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -885,11 +917,11 @@ namespace StarEngine {
 			Entity entity = scene->FindEntityByName(nameCStr);
 
 			if (entity)
-				return entity.GetEntityHandle();
+				return static_cast<uint64_t>(entity.GetEntityHandle());
 
 			return 0;
 		}
-
+		/*
 		uint64_t Entity_FindEntityByTag(Coral::String tag)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -904,12 +936,12 @@ namespace StarEngine {
 				return entity.GetComponent<IDComponent>().ID;
 
 			return 0;
-		}
+		}*/
 
 #pragma endregion
 
 #pragma region Tag
-
+		/*
 		Coral::String TagComponent_GetTag(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -933,11 +965,12 @@ namespace StarEngine {
 
 			tagComponent.Tag = tag;
 		}
-
+		*/
 #pragma endregion
 
 #pragma region Transform
 
+		/*
 		bool TransformComponent_GetIsEnabled(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -957,6 +990,7 @@ namespace StarEngine {
 
 			entity.GetComponent<TransformComponent>().Enabled = isEnabled;
 		}
+		*/
 
 		void TransformComponent_GetTransform(uint64_t entityID, TransformComponent* outTransform)
 		{
@@ -977,6 +1011,7 @@ namespace StarEngine {
 
 			entity.GetComponent<TransformComponent>() = *inTransform;
 		}
+		/*
 
 		float TransformComponent_GetTranslationX(uint64_t entityID)
 		{
@@ -1097,11 +1132,12 @@ namespace StarEngine {
 
 			entity.GetComponent<TransformComponent>().Scale = glm::vec3(scaleX, scaleY, scaleZ);
 		}
+		*/
 
 #pragma endregion
 
 #pragma region CameraComponent
-
+/*
 		bool CameraComponent_GetIsPrimary(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1141,11 +1177,11 @@ namespace StarEngine {
 
 			entity.GetComponent<CameraComponent>().FixedAspectRatio = fixedAspectRatio;
 		}
-
+		*/
 #pragma endregion
 
 #pragma region SpriteRenderer
-
+/*
 		float SpriteRendererComponent_GetOffsetX(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1325,11 +1361,11 @@ namespace StarEngine {
 
 			entity.GetComponent<SpriteRendererComponent>().TextureHandle = (AssetHandle)textureHandle;
 		}
-
+		*/
 #pragma endregion
-
+		
 #pragma region CircleRenderer
-
+/*
 		float CircleRendererComponent_GetColorX(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1409,11 +1445,11 @@ namespace StarEngine {
 
 			entity.GetComponent<CircleRendererComponent>().UV = glm::vec2(uvX, uvY);
 		}
-
+		*/
 #pragma endregion
-
+		
 #pragma region LineRendererComponent
-
+/*
 		float LineRendererComponent_GetLineThickness(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1433,7 +1469,7 @@ namespace StarEngine {
 
 			entity.GetComponent<LineRendererComponent>().LineThickness = lineThickness;
 		}
-
+		*/
 #pragma endregion
 
 #pragma region TextComponent
@@ -1619,7 +1655,7 @@ namespace StarEngine {
 			const b2Vec2& linearVelocity = body->GetLinearVelocity();
 			return linearVelocity.y;
 		}
-
+		/*
 		void RigidBody2DComponent_SetLinearVelocity(uint64_t entityID, float velocityX, float velocityY)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1631,7 +1667,7 @@ namespace StarEngine {
 			b2Body* body = (b2Body*)component.RuntimeBody;
 			body->SetLinearVelocity({ velocityX, velocityY });
 		}
-
+		*/
 		RigidBody2DComponent::BodyType RigidBody2DComponent_GetType(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1656,6 +1692,7 @@ namespace StarEngine {
 			body->SetType(Utils::RigidBody2DTypeToBox2DBody(bodyType));
 		}
 
+		/*
 		float Rigidbody2DComponent_GetGravityX(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1707,10 +1744,13 @@ namespace StarEngine {
 
 			entity.GetComponent<RigidBody2DComponent>().SetEnabled = setEnabled;
 		}
+		*/
 
 #pragma endregion
 
 #pragma region BoxCollider2D
+
+		/*
 
 		float BoxCollider2DComponent_GetOffsetX(uint64_t entityID)
 		{
@@ -1942,11 +1982,11 @@ namespace StarEngine {
 			if (entity.HasComponent<BoxCollider2DComponent>())
 				entity.GetComponent<BoxCollider2DComponent>().Awake = setAwake;
 		}
-
+		*/
 #pragma endregion
 
 #pragma region CircleCollider2D
-
+/*
 		float CircleCollider2DComponent_GetOffsetX(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -2164,7 +2204,7 @@ namespace StarEngine {
 			if (entity.HasComponent<CircleCollider2DComponent>())
 				entity.GetComponent<CircleCollider2DComponent>().Awake = setAwake;
 		}
-
+		*/
 #pragma endregion
 	}
 

@@ -12,6 +12,8 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include "StarEngine/Utils/Hash.h"
+
 namespace YAML {
 
 	template<>
@@ -244,52 +246,160 @@ namespace StarEngine {
 
 			out << YAML::Key << "ScriptComponent";
 			out << YAML::BeginMap; // ScriptComponent
-			out << YAML::Key << "ClassName" << YAML::Value << scriptComponent.ClassName;
 
-			// Fields
-			Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(scriptComponent.ClassName);
-			const auto& fields = entityClass->GetFields();
-			if (fields.size() > 0)
+			const auto& scriptEngine = ScriptEngine::GetInstance();
+			const auto& sc = entity.GetComponent<ScriptComponent>();
+
+			if (scriptEngine.IsValidScript(sc.ScriptHandle))
 			{
-				out << YAML::Key << "ScriptFields" << YAML::Value;
-				auto& entityFields = ScriptEngine::GetScriptFieldMap(entity);
-				out << YAML::BeginSeq;
-				for (const auto& [name, field] : fields)
+				const auto& scriptMetadata = scriptEngine.GetScriptMetadata(sc.ScriptHandle);
+				const auto& entityStorage = scene->m_ScriptStorage.EntityStorage.at(entity.GetEntityHandle());
+
+				out << YAML::Key << "ScriptHandle" << YAML::Value << sc.ScriptHandle;
+				out << YAML::Key << "ScriptName" << YAML::Value << scriptMetadata.FullName;
+
+				out << YAML::Key << "Fields" << YAML::Value << YAML::BeginSeq;
+				for (const auto& [fieldID, fieldStorage] : entityStorage.Fields)
 				{
-					if (entityFields.find(name) == entityFields.end())
-						continue;
+					const auto& fieldMetadata = scriptMetadata.Fields.at(fieldID);
 
-					out << YAML::BeginMap; // ScriptField
-					out << YAML::Key << "Name" << YAML::Value << name;
-					out << YAML::Key << "Type" << YAML::Value << Utils::ScriptFieldTypeToString(field.Type);
+					out << YAML::BeginMap;
+					out << YAML::Key << "ID" << YAML::Value << fieldID;
+					out << YAML::Key << "Name" << YAML::Value << fieldMetadata.Name;
+					out << YAML::Key << "Type" << YAML::Value << std::string(magic_enum::enum_name(fieldMetadata.Type));
+					out << YAML::Key << "Value" << YAML::Value;
 
-					out << YAML::Key << "Data" << YAML::Value;
-					ScriptFieldInstance& scriptField = entityFields.at(name);
-
-					switch (field.Type)
+					switch (fieldMetadata.Type)
 					{
-						WRITE_SCRIPT_FIELD(Float, float);
-						WRITE_SCRIPT_FIELD(Double, double);
-						WRITE_SCRIPT_FIELD(Bool, bool);
-						WRITE_SCRIPT_FIELD(Char, char);
-						WRITE_SCRIPT_FIELD(Byte, int8_t);
-						WRITE_SCRIPT_FIELD(Short, int16_t);
-						WRITE_SCRIPT_FIELD(Int, int32_t);
-						WRITE_SCRIPT_FIELD(Long, int64_t);
-						WRITE_SCRIPT_FIELD(UByte, uint8_t);
-						WRITE_SCRIPT_FIELD(UShort, uint16_t);
-						WRITE_SCRIPT_FIELD(UInt, uint32_t);
-						WRITE_SCRIPT_FIELD(ULong, uint64_t);
-						WRITE_SCRIPT_FIELD(Vector2, glm::vec2);
-						WRITE_SCRIPT_FIELD(Vector3, glm::vec3);
-						WRITE_SCRIPT_FIELD(Vector4, glm::vec4);
-						WRITE_SCRIPT_FIELD(Entity, UUID);
+					case DataType::SByte:
+						out << fieldStorage.GetValue<int8_t>();
+						break;
+					case DataType::Byte:
+						out << fieldStorage.GetValue<uint8_t>();
+						break;
+					case DataType::Short:
+						out << fieldStorage.GetValue<int16_t>();
+						break;
+					case DataType::UShort:
+						out << fieldStorage.GetValue<uint16_t>();
+						break;
+					case DataType::Int:
+						out << fieldStorage.GetValue<int32_t>();
+						break;
+					case DataType::UInt:
+						out << fieldStorage.GetValue<uint32_t>();
+						break;
+					case DataType::Long:
+						out << fieldStorage.GetValue<int64_t>();
+						break;
+					case DataType::ULong:
+						out << fieldStorage.GetValue<uint64_t>();
+						break;
+					case DataType::Float:
+						out << fieldStorage.GetValue<float>();
+						break;
+					case DataType::Double:
+						out << fieldStorage.GetValue<double>();
+						break;
+					case DataType::Bool:
+						//out << fieldStorage.GetValue<int16_t>();
+						out << fieldStorage.GetValue<bool>();
+						break;
+					case DataType::String:
+						out << fieldStorage.GetValue<Coral::String>();
+						break;
+					case DataType::Bool32:
+						out << fieldStorage.GetValue<bool>();
+						break;
+					case DataType::AssetHandle:
+						out << fieldStorage.GetValue<uint64_t>();
+						break;
+					case DataType::Vector2:
+						out << fieldStorage.GetValue<glm::vec2>();
+						break;
+					case DataType::Vector3:
+						out << fieldStorage.GetValue<glm::vec3>();
+						break;
+					case DataType::Vector4:
+						out << fieldStorage.GetValue<glm::vec4>();
+						break;
+						//case DataType::Entity:
+						//	out << fieldStorage.GetValue<uint64_t>();
+						//	break;
+						//case DataType::Prefab:
+						//	out << fieldStorage.GetValue<uint64_t>();
+						//	break;
+						//case DataType::Mesh:
+						//	out << fieldStorage.GetValue<uint64_t>();
+						//	break;
+						//case DataType::StaticMesh:
+						//	out << fieldStorage.GetValue<uint64_t>();
+						//	break;
+						//case DataType::Material:
+						//	out << fieldStorage.GetValue<uint64_t>();
+						//	break;
+						//case DataType::Texture2D:
+						//	out << fieldStorage.GetValue<uint64_t>();
+						//	break;
+						//case DataType::Scene:
+						//	out << fieldStorage.GetValue<uint64_t>();
+						//	break;
+					default:
+						break;
 					}
-					out << YAML::EndMap; // ScriptFields
+
+					out << YAML::EndMap;
 				}
 				out << YAML::EndSeq;
 			}
-
+			//
+			//	out << YAML::Key << "ClassName" << YAML::Value << scriptComponent.ClassName;
+			//
+			//	// Fields
+			//	Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(scriptComponent.ClassName);
+			//	const auto& fields = entityClass->GetFields();
+			//	if (fields.size() > 0)
+			//	{
+			//		out << YAML::Key << "ScriptFields" << YAML::Value;
+			//		auto& entityFields = ScriptEngine::GetScriptFieldMap(entity);
+			//		out << YAML::BeginSeq;
+			//		for (const auto& [name, field] : fields)
+			//		{
+			//			if (entityFields.find(name) == entityFields.end())
+			//				continue;
+			//
+			//			out << YAML::BeginMap; // ScriptField
+			//			out << YAML::Key << "Name" << YAML::Value << name;
+			//			out << YAML::Key << "Type" << YAML::Value << Utils::ScriptFieldTypeToString(field.Type);
+			//
+			//			out << YAML::Key << "Data" << YAML::Value;
+			//			ScriptFieldInstance& scriptField = entityFields.at(name);
+			//
+			//			switch (field.Type)
+			//			{
+			//			WRITE_SCRIPT_FIELD(Float, float);
+			//			WRITE_SCRIPT_FIELD(Double, double);
+			//			WRITE_SCRIPT_FIELD(Bool, bool);
+			//			WRITE_SCRIPT_FIELD(SByte, int8_t);
+			//			WRITE_SCRIPT_FIELD(Short, int16_t);
+			//			WRITE_SCRIPT_FIELD(Int, int32_t);
+			//			WRITE_SCRIPT_FIELD(Long, int64_t);
+			//			WRITE_SCRIPT_FIELD(Byte, uint8_t);
+			//			WRITE_SCRIPT_FIELD(UShort, uint16_t);
+			//			WRITE_SCRIPT_FIELD(UInt, uint32_t);
+			//			WRITE_SCRIPT_FIELD(ULong, uint64_t);
+			//			WRITE_SCRIPT_FIELD(String, std::string);
+			//			WRITE_SCRIPT_FIELD(Vector2, glm::vec2);
+			//			WRITE_SCRIPT_FIELD(Vector3, glm::vec3);
+			//			WRITE_SCRIPT_FIELD(Vector4, glm::vec4);
+			//			WRITE_SCRIPT_FIELD(AssetHandle, AssetHandle);
+			//			WRITE_SCRIPT_FIELD(Entity, UUID);
+			//			}
+			//			out << YAML::EndMap; // ScriptFields
+			//		}
+			//		out << YAML::EndSeq;
+			//	}
+			//
 			out << YAML::EndMap; // ScriptComponent
 		}
 
@@ -541,55 +651,184 @@ namespace StarEngine {
 				auto scriptComponent = entity["ScriptComponent"];
 				if (scriptComponent)
 				{
-					auto& sc = deserializedEntity.AddComponent<ScriptComponent>();
-					sc.ClassName = scriptComponent["ClassName"].as<std::string>();
+					uint64_t scriptID = scriptComponent["ScriptHandle"].as<uint64_t>(0);
 
-
-					auto scriptFields = scriptComponent["ScriptFields"];
-					if (scriptFields)
+					if (scriptID == 0)
 					{
-						Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(sc.ClassName);
-						if (entityClass)
+						scriptID = scriptComponent["ClassHandle"].as<uint64_t>(0);
+						SE_CORE_VERIFY(scriptID == 0);
+					}
+
+					{
+						auto& scriptEngine = ScriptEngine::GetMutable();
+
+						if (scriptEngine.IsValidScript(scriptID))
 						{
-							const auto& fields = entityClass->GetFields();
-							auto& entityFields = ScriptEngine::GetScriptFieldMap(deserializedEntity);
+							const auto& scriptMetadata = scriptEngine.GetScriptMetadata(scriptID);
 
-							for (auto scriptField : scriptFields)
+							ScriptComponent& sc = deserializedEntity.AddComponent<ScriptComponent>();
+							sc.ScriptHandle = scriptID;
+
+							m_Scene->m_ScriptStorage.InitializeEntityStorage(sc.ScriptHandle, deserializedEntity.GetUUID());
+
+							bool oldFormat = false;
+
+							auto fieldsArray = scriptComponent["Fields"];
+
+							if (!fieldsArray)
 							{
-								std::string name = scriptField["Name"].as<std::string>();
-								std::string typeString = scriptField["Type"].as<std::string>();
-								ScriptFieldType type = Utils::ScriptFieldTypeFromString(typeString);
+								fieldsArray = scriptComponent["StoredFields"];
+								oldFormat = true;
+							}
 
-								ScriptFieldInstance& fieldInstance = entityFields[name];
+							for (auto field : fieldsArray)
+							{
+								uint32_t fieldID = field["ID"].as<uint32_t>(0);
+								auto fieldName = field["Name"].as<std::string>("");
 
-								// TODO: turn this assert into StarEditor log warning
-								SE_CORE_ASSERT(fields.find(name) != fields.end());
-
-								if (fields.find(name) == fields.end())
-									continue;
-
-								fieldInstance.Field = fields.at(name);
-
-								switch (type)
+								if (oldFormat && fieldName.find(':') != std::string::npos)
 								{
-									READ_SCRIPT_FIELD(Float, float);
-									READ_SCRIPT_FIELD(Double, double);
-									READ_SCRIPT_FIELD(Bool, bool);
-									READ_SCRIPT_FIELD(Char, char);
-									READ_SCRIPT_FIELD(Byte, int8_t);
-									READ_SCRIPT_FIELD(Short, int16_t);
-									READ_SCRIPT_FIELD(Int, int32_t);
-									READ_SCRIPT_FIELD(Long, int64_t);
-									READ_SCRIPT_FIELD(UByte, uint8_t);
-									READ_SCRIPT_FIELD(UShort, uint16_t);
-									READ_SCRIPT_FIELD(UInt, uint32_t);
-									READ_SCRIPT_FIELD(ULong, uint64_t);
-									READ_SCRIPT_FIELD(Vector2, glm::vec2);
-									READ_SCRIPT_FIELD(Vector3, glm::vec3);
-									READ_SCRIPT_FIELD(Vector4, glm::vec4);
-									READ_SCRIPT_FIELD(Entity, UUID);
+									// Old format, try generating id from name
+									fieldName = fieldName.substr(fieldName.find(':') + 1);
+									fieldID = Hash::GenerateFNVHash(fieldName);
+								}
+
+								if (scriptMetadata.Fields.find(fieldID) != scriptMetadata.Fields.end())
+								{
+									const auto& fieldMetadata = scriptMetadata.Fields.at(fieldID);
+									auto& fieldStorage = m_Scene->m_ScriptStorage.EntityStorage.at(deserializedEntity.GetUUID()).Fields[fieldID];
+
+									auto valueNode = oldFormat ? field["Data"] : field["Value"];
+
+									switch (fieldMetadata.Type)
+									{
+									case DataType::SByte:
+									{
+										fieldStorage.SetValue(valueNode.as<int8_t>());
+										break;
+									}
+									case DataType::Byte:
+									{
+										fieldStorage.SetValue(valueNode.as<uint8_t>());
+										break;
+									}
+									case DataType::Short:
+									{
+										fieldStorage.SetValue(valueNode.as<int16_t>());
+										break;
+									}
+									case DataType::UShort:
+									{
+										fieldStorage.SetValue(valueNode.as<uint16_t>());
+										break;
+									}
+									case DataType::Int:
+									{
+										fieldStorage.SetValue(valueNode.as<int32_t>());
+										break;
+									}
+									case DataType::UInt:
+									{
+										fieldStorage.SetValue(valueNode.as<uint32_t>());
+										break;
+									}
+									case DataType::Long:
+									{
+										fieldStorage.SetValue(valueNode.as<int64_t>());
+										break;
+									}
+									case DataType::ULong:
+									{
+										fieldStorage.SetValue(valueNode.as<uint64_t>());
+										break;
+									}
+									case DataType::Float:
+									{
+										fieldStorage.SetValue(valueNode.as<float>());
+										break;
+									}
+									case DataType::Double:
+									{
+										fieldStorage.SetValue(valueNode.as<double>());
+										break;
+									}
+									case DataType::Bool:
+									{
+										fieldStorage.SetValue(valueNode.as<bool>());
+										break;
+									}
+									case DataType::String:
+									{
+										fieldStorage.SetValue(Coral::String::New(valueNode.as<std::string>()));
+										break;
+									}
+									case DataType::Bool32:
+									{
+										fieldStorage.SetValue((uint32_t)valueNode.as<bool>());
+										break;
+									}
+									case DataType::AssetHandle:
+									{
+										fieldStorage.SetValue(valueNode.as<uint64_t>());
+										break;
+									}
+									case DataType::Vector2:
+									{
+										fieldStorage.SetValue(valueNode.as<glm::vec2>());
+										break;
+									}
+									case DataType::Vector3:
+									{
+										fieldStorage.SetValue(valueNode.as<glm::vec3>());
+										break;
+									}
+									case DataType::Vector4:
+									{
+										fieldStorage.SetValue(valueNode.as<glm::vec4>());
+										break;
+									}
+									//case DataType::Entity:
+									//{
+									//	fieldStorage.SetValue(valueNode.as<uint64_t>());
+									//	break;
+									//}
+									//case DataType::Prefab:
+									//{
+									//	fieldStorage.SetValue(valueNode.as<uint64_t>());
+									//	break;
+									//}
+									//case DataType::Mesh:
+									//{
+									//	fieldStorage.SetValue(valueNode.as<uint64_t>());
+									//	break;
+									//}
+									//case DataType::StaticMesh:
+									//{
+									//	fieldStorage.SetValue(valueNode.as<uint64_t>());
+									//	break;
+									//}
+									//case DataType::Material:
+									//{
+									//	fieldStorage.SetValue(valueNode.as<uint64_t>());
+									//	break;
+									//}
+									//case DataType::Texture2D:
+									//{
+									//	fieldStorage.SetValue(valueNode.as<uint64_t>());
+									//	break;
+									//}
+									//case DataType::Scene:
+									//{
+									//	fieldStorage.SetValue(valueNode.as<uint64_t>());
+									//	break;
+									//}
+									default:
+										break;
+									}
 								}
 							}
+
+							sc.HasInitializedScript = true;
 						}
 					}
 				}

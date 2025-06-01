@@ -52,11 +52,11 @@ namespace StarEngine {
 
 	void ScriptEngine::LoadProjectAssembly()
 	{
-		m_AppAssemblyData.reset();
+		// Ensure m_AppAssemblyData is accessed through the current instance
+		this->m_AppAssemblyData = std::make_unique<AssemblyData>();
 
 		auto filepath = std::filesystem::absolute(Project::GetScriptModuleFilePath());
 
-		m_AppAssemblyData = std::make_unique<AssemblyData>();
 		m_AppAssemblyData->Assembly = &m_LoadContext->LoadAssembly(filepath.string());
 
 		if (m_AppAssemblyData->Assembly->GetLoadStatus() != Coral::AssemblyLoadStatus::Success)
@@ -66,6 +66,7 @@ namespace StarEngine {
 
 		BuildAssemblyCache(m_AppAssemblyData.get());
 	}
+
 
 	bool ScriptEngine::IsValidScript(UUID scriptID) const
 	{
