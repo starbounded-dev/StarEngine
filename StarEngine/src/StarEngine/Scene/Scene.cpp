@@ -9,7 +9,6 @@
 
 #include "StarEngine/Scene/Components.h"
 #include "StarEngine/Scene/Entity.h"
-#include "StarEngine/Scene/ScriptableEntity.h"
 #include "StarEngine/Scripting/ScriptEngine.h"
 #include "StarEngine/Renderer/Renderer2D.h"
 #include "StarEngine/Physics/ContactListener2D.h"
@@ -24,6 +23,9 @@
 #include "box2d/b2_circle_shape.h"
 
 namespace StarEngine {
+
+	bool Scene::s_SetPaused = false;
+	glm::vec2 Scene::s_Gravity = { 0.0f, -9.81f };
 
 	static ContactListener2D s_Box2DContactListener;
 
@@ -200,7 +202,7 @@ namespace StarEngine {
 		// Scripting
 		{
 			auto& scriptEngine = ScriptEngine::GetMutable();
-			scriptEngine.SetCurrentScene(this);
+			scriptEngine.SetCurrentScene(Ref<Scene>(this, [](Scene*) {}));
 
 			auto view = m_Registry.view<ScriptComponent>();
 			view.each([&](auto entity, ScriptComponent& sc) 
@@ -271,10 +273,10 @@ namespace StarEngine {
 
 					sc.HasInitializedScript = false;
 
-					if (!m_ScriptStorage.EntityStorage.contains(e.m_EntityHandle))
+					if (m_ScriptStorage.EntityStorage.find(e.GetUUID()) == m_ScriptStorage.EntityStorage.end())
 						return;
 
-					m_ScriptStorage.ShutdownEntityStorage(sc.ScriptHandle, e.m_EntityHandle);
+					m_ScriptStorage.ShutdownEntityStorage(sc.ScriptHandle, e.GetEntityHandle());
 				});
 		}
 	}
@@ -297,7 +299,7 @@ namespace StarEngine {
 				SE_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::ScriptComponent Scope", 0xFF7200);
 
 				// Update Scripts
-				auto filter = m_ECS.filter<IDComponent, ScriptComponent>();
+				auto filter = m_Registry.view<IDComponent, ScriptComponent>();
 				filter.each([&](IDComponent& id, ScriptComponent& sc)
 					{
 						sc.Instance.Invoke<float>("OnUpdate", ts);
@@ -667,6 +669,93 @@ namespace StarEngine {
 		return newEntity;
 	}
 
+	Entity Scene::FindEntityByTag(const std::string& tag)
+	{
+		Entity e{};
+		auto filter = m_Registry.view<TagComponent>();
+		filter.each([&](entt::entity entity, TagComponent& tc)
+			{
+				const auto& candidate = tc.Tag;
+
+				if (candidate == tag)
+					e = Entity{ entity };
+			});
+
+		return e;
+	}
+
+	void Scene::OnSceneTransition(AssetHandle handle)
+	{
+		if (m_OnSceneTransitionCallback)
+			m_OnSceneTransitionCallback(handle);
+
+		// Debug
+		if (!m_OnSceneTransitionCallback)
+		{
+			SE_CORE_WARN("Cannot transition scene - no callback set!");
+		}
+	}
+
+	glm::vec2 Scene::GetPhysics2DGravity()
+	{
+		return s_Gravity;
+	}
+
+	void Scene::SetPhysics2DGravity(const glm::vec2& gravity)
+	{
+		s_Gravity = gravity;
+
+		if (m_PhysicsWorld)
+			m_PhysicsWorld->SetGravity(b2Vec2(s_Gravity.x, s_Gravity.y));
+		else if (m_PhysicsWorld == nullptr)
+			m_PhysicsWorld = new b2World({ s_Gravity.x, s_Gravity.y });
+	}
+
+	/*
+	void Scene::RenderHoveredEntityOutline(Entity entity, glm::vec4 color)
+	{
+
+	}
+
+	void Scene::RenderSelectedEntityOutline(Entity entity, glm::vec4 color)
+	{
+		if (entity)
+		{
+			Entity camera = GetPrimaryCameraEntity();
+
+			if (!camera)
+				return;
+
+			Renderer2D::BeginScene(*camera.GetComponent<CameraComponent>().Camera.Raw(), camera.GetComponent<TransformComponent>().GetTransform());
+
+			// Calculate z index for translation
+			float zIndex = 0.001f;
+			glm::vec3 cameraForwardDirection = camera.GetComponent<CameraComponent>().Camera->GetForwardDirection();
+
+			// Calculate z index for translation
+			glm::vec3 projectionCollider = cameraForwardDirection * glm::vec3(zIndex, zIndex, zIndex);
+
+			// Hovered entity outline
+			auto& tc = entity.GetComponent<TransformComponent>();
+
+			if (entity.HasComponent<SpriteRendererComponent>() ||
+				entity.HasComponent<CircleRendererComponent>())
+			{
+				rtmcpp::Vec3 translation = rtmcpp::Vec3{ tc.Translation.X, tc.Translation.Y, tc.Translation.Z + -projectionCollider.Z };
+				rtmcpp::Mat4 rotation = rtmcpp::Mat4Cast(rtmcpp::FromEuler(rtmcpp::Vec3{ tc.Rotation.Y, tc.Rotation.Z, tc.Rotation.X }));
+
+				rtmcpp::Mat4 transform = rtmcpp::Mat4Cast(rtmcpp::Scale(tc.Scale))
+					* rotation
+					* rtmcpp::Mat4Cast(rtmcpp::Translation(rtmcpp::Vec3{ translation.X, translation.Y, translation.Z }));
+
+				Renderer2D::SetLineWidth(2.0f);
+				Renderer2D::DrawRect(transform, color);
+			}
+
+			Renderer2D::EndScene();
+		}
+	}*/
+
 	Entity Scene::FindEntityByName(std::string_view name)
 	{
 		auto view = m_Registry.view<TagComponent>();
@@ -677,6 +766,25 @@ namespace StarEngine {
 				return Entity{ entity, this };
 		}
 		return {};
+	}
+
+	Entity Scene::GetEntityByID(uint64_t id)
+	{
+		// TODO: Maybe should be assert
+		if (this != nullptr && m_EntityMap.size() > 0)
+		{
+			if (m_EntityMap.find(id) != m_EntityMap.end())
+				return { m_EntityMap.at(id) };
+		}
+
+		return {};
+	}
+
+	Entity Scene::TryGetEntityWithID(uint64_t id) const
+	{
+		if (const auto iter = m_EntityMap.find(id); iter != m_EntityMap.end())
+			return iter->second;
+		return Entity{};
 	}
 
 	Entity Scene::GetEntityByUUID(UUID uuid)
@@ -829,13 +937,7 @@ namespace StarEngine {
 	void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent& component)
 	{
 
-	}
-
-	template<>
-	void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component)
-	{
-
-	}
+	} 
 
 	template<>
 	void Scene::OnComponentAdded<RigidBody2DComponent>(Entity entity, RigidBody2DComponent& component)

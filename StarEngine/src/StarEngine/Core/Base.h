@@ -45,7 +45,6 @@ namespace StarEngine {
 	{
 		return std::make_shared<T>(std::forward<Args>(args)...);
 	}
-
 }
 
 #include "StarEngine/Core/Log.h"

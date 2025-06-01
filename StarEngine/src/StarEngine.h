@@ -25,7 +25,6 @@
 #include "StarEngine/Scene/Scene.h"
 #include "StarEngine/Scene/Entity.h"
 #include "StarEngine/Scene/Components.h"
-#include "StarEngine/Scene/ScriptableEntity.h"
 
 #include "StarEngine/Project/Project.h"
 

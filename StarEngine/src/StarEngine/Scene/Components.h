@@ -1,14 +1,15 @@
 #pragma once
 
-#include "SceneCamera.h"
 
-
-#include "StarEngine/Asset/AssetManager.h"
+#include "StarEngine/Core/UUID.h"
 #include "StarEngine/Audio/AudioListener.h"
 #include "StarEngine/Audio/AudioSource.h"
-#include "StarEngine/Core/UUID.h"
 #include "StarEngine/Renderer/Texture.h"
 #include "StarEngine/Renderer/Font.h"
+#include "SceneCamera.h"
+
+#include "StarEngine/Asset/AssetManager.h"
+#include "StarEngine/Scripting/CSharpObject.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -109,35 +110,36 @@ namespace StarEngine {
 		bool FixedAspectRatio = false;
 
 		CameraComponent() = default;
-		CameraComponent(const CameraComponent&) = default;
-	};
+		CameraComponent(const CameraComponent& other)
+		{
+			Camera = other.Camera;
+			Primary = other.Primary;
+			FixedAspectRatio = other.FixedAspectRatio;
+		}
 
-	// Forward declaration
-	class ScriptableEntity;
+		operator SceneCamera& () { return Camera; }
+		operator const SceneCamera& () const { return Camera; }
+	};
 
 	struct ScriptComponent
 	{
-		std::string ClassName;
+		AssetHandle ScriptHandle = 0;
+		CSharpObject Instance;
+		std::vector<uint32_t> FieldIDs;
+		bool HasInitializedScript = false;
 
-		// Add the missing Instance member
-		Ref<ScriptableEntity> Instance;
+		// NOTE: Gets set to true when OnCreate has been called for this entity
+		bool IsRuntimeInitialized = false;
 
 		ScriptComponent() = default;
-		ScriptComponent(const ScriptComponent&) = default;
-	};
-
-	struct NativeScriptComponent
-	{
-		ScriptableEntity* Instance = nullptr;
-
-		ScriptableEntity*(*InstantiateScript)();
-		void (*DestroyScript)(NativeScriptComponent*);
-
-		template<typename T>
-		void Bind()
+		//ScriptComponent(const ScriptComponent& other) = default;
+		ScriptComponent(const ScriptComponent& other)
 		{
-			InstantiateScript = []() { return static_cast<ScriptableEntity*>(new T()); };
-			DestroyScript = [](NativeScriptComponent* nsc) { delete nsc->Instance; nsc->Instance = nullptr; };
+			ScriptHandle = other.ScriptHandle;
+			Instance = other.Instance;
+			FieldIDs = other.FieldIDs;
+			HasInitializedScript = other.HasInitializedScript;
+			IsRuntimeInitialized = other.IsRuntimeInitialized;
 		}
 	};
 
@@ -268,7 +270,7 @@ namespace StarEngine {
 	using AllComponents =
 		ComponentGroup<TransformComponent, SpriteRendererComponent,
 		CircleRendererComponent, CameraComponent, ScriptComponent,
-		NativeScriptComponent, RigidBody2DComponent, BoxCollider2DComponent,
+		RigidBody2DComponent, BoxCollider2DComponent,
 		CircleCollider2DComponent, TextComponent, AudioData, AudioSourceComponent, AudioListenerComponent>;
 
 }

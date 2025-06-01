@@ -184,7 +184,13 @@ namespace StarEngine {
 				m_ManagedObjects.Erase(entityStorage.InstanceIndex); // Remove from StableVector to free memory
 			}
 			entityStorage.InstanceIndex = EntityScriptStorage::InvalidInstanceIndex;
-			entityStorage.Instance->Destroy();
+			if (entityStorage.InstanceIndex != EntityScriptStorage::InvalidInstanceIndex)
+			{
+				auto* instance = entityStorage.GetInstancePtr(m_ManagedObjects);
+				SE_CORE_VERIFY(instance != nullptr);
+				instance->Destroy();
+			}
+
 			entityStorage.Instance = nullptr;
 			// TODO(Peter): Free-list
 		}

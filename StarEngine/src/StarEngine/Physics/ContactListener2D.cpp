@@ -3,7 +3,6 @@
 
 #include "StarEngine/Scene/Entity.h"
 #include "StarEngine/Scripting/ScriptEngine.h"
-#include "StarEngine/Scene/ScriptableEntity.h"
 
 namespace StarEngine {
 
