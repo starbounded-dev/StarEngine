@@ -69,6 +69,8 @@ namespace StarEngine
 			return !(*this == other);
 		}
 
+		Scene* GetScene() const { return m_Scene; }
+
 		entt::entity GetEntityHandle() const { return m_EntityHandle; }
 	private:
 		entt::entity m_EntityHandle{ entt::null };

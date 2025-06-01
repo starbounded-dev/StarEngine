@@ -4,6 +4,7 @@
 #include "StarEngine/Scene/Components.h"
 
 #include "StarEngine/Scripting/ScriptEngine.h"
+#include "StarEngine/Scripting/ScriptEntityStorage.h"
 #include "StarEngine/UI/UI.h"
 
 #include "StarEngine/Asset/AssetManager.h"
@@ -401,7 +402,7 @@ namespace StarEngine {
 				{
 					if (scriptClassExists)
 					{
-						Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(component.ClassName);
+						Ref<ScriptComponent> entityClass = ScriptEngine::GetEntityClass(component.ClassName);
 						const auto& fields = entityClass->GetFields();
 
 						auto& entityFields = ScriptEngine::GetScriptFieldMap(entity);

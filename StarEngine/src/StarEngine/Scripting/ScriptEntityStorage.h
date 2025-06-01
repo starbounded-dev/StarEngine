@@ -106,6 +106,8 @@ namespace StarEngine {
 
 	struct FieldMetadata;
 
+
+
 	class FieldStorage
 	{
 	public:
@@ -116,38 +118,40 @@ namespace StarEngine {
 		int32_t GetLength() const
 		{
 			SE_CORE_VERIFY(m_Type->IsSZArray());
-
-			/*if (m_Instance)
-			{
-				auto arr = m_Instance->GetFieldValue<Coral::Array<T>>(m_Name);
-				int32_t length = arr.Length();
-				Coral::Array<T>::Free(arr);
-				return length;
-			}*/
-
 			return (int32_t)(m_ValueBuffer.Size / DataTypeSize(m_DataType));
 		}
 
 		template<typename T>
 		T GetValue()
 		{
-			//return m_Instance ? m_Instance->GetFieldValue<T>(m_Name) : m_ValueBuffer.Read<T>();
-			//if (m_Instance)
 			if (m_InstanceIndex != InvalidInstanceIndex)
+			{
+				// Declare managedObjects in the scope
+				extern Coral::StableVector<Coral::ManagedObject> managedObjects;
+
 				return GetInstancePtr(*managedObjects)->GetFieldValue<T>(m_Name);
+			}
 			else
+			{
 				return m_ValueBuffer.Read<T>();
+			}
 		}
+
 
 		template<typename T>
 		T GetValue() const
 		{
-			//return m_Instance ? m_Instance->GetFieldValue<T>(m_Name) : m_ValueBuffer.Read<T>();
-			//if (m_Instance)
 			if (m_InstanceIndex != InvalidInstanceIndex)
+			{
+				// Declare managedObjects in the scope
+				extern Coral::StableVector<Coral::ManagedObject> managedObjects;
+
 				return GetInstancePtr(*managedObjects)->GetFieldValue<T>(m_Name);
+			}
 			else
+			{
 				return m_ValueBuffer.Read<T>();
+			}
 		}
 
 		template<typename T>
@@ -156,13 +160,21 @@ namespace StarEngine {
 			if (m_InstanceIndex != InvalidInstanceIndex)
 			{
 				auto arr = GetInstancePtr(*managedObjects)->GetFieldValue<Coral::Array<T>>(m_Name);
-				T value = arr[index];
-				Coral::Array<T>::Free(arr);
-				return value;
+				if (arr.IsValid()) // Ensure the array is valid before accessing it
+				{
+					T value = arr[index];
+					Coral::Array<T>::Free(arr); // Free the array after use
+					return value;
+				}
+				else
+				{
+					throw std::runtime_error("Invalid Coral::Array<T> instance.");
+				}
 			}
 
 			return m_ValueBuffer.Read<T>(index * sizeof(T));
 		}
+
 
 		template<typename T>
 		void SetValue(const T& value)
@@ -202,12 +214,7 @@ namespace StarEngine {
 
 			if (m_InstanceIndex != InvalidInstanceIndex)
 			{
-				/*auto arr = GetInstancePtr(*managedObjects)->GetFieldValue<Coral::Array<T>>(m_Name);
-				auto newArr = Coral::Array<T>::New(arr.Length() + 1);
-				newArr.Assign(arr);
-				Coral::Array<T>::Free(arr);
-				GetInstancePtr(*managedObjects)->SetFieldValue(m_Name, newArr);
-				Coral::Array<T>::Free(newArr);*/
+				// Handle resizing for managed objects if needed
 			}
 			else
 			{
@@ -246,41 +253,36 @@ namespace StarEngine {
 			oldBuffer.Release();
 		}
 
-		// Helper to get the ManagedObject* from the index
-		Coral::ManagedObject* GetInstancePtr(Coral::StableVector<Coral::ManagedObject>& managedObjects) const {
-			if (m_InstanceIndex == InvalidInstanceIndex) return nullptr;
-			return &managedObjects[m_InstanceIndex];
-		}
-
 	private:
 		std::string m_Name;
 		Coral::Type* m_Type;
 		DataType m_DataType;
 		Buffer m_ValueBuffer;
 
-		// Use an invalid index to represent 'null'.
+		// Declare m_InstanceIndex and InvalidInstanceIndex
 		static constexpr uint32_t InvalidInstanceIndex = std::numeric_limits<uint32_t>::max();
-		uint32_t m_InstanceIndex = InvalidInstanceIndex;
+		uint32_t m_InstanceIndex = InvalidInstanceIndex; // Initialize with InvalidInstanceIndex
+
+		Coral::ManagedObject* m_Instance = nullptr;
 
 		friend struct ScriptStorage;
 		friend class ScriptEngine;
 	};
 
+
 	struct EntityScriptStorage
 	{
 		UUID ScriptID;
 		std::unordered_map<uint32_t, FieldStorage> Fields;
-		static constexpr uint32_t InvalidInstanceIndex = std::numeric_limits<uint32_t>::max();
-		uint32_t InstanceIndex = InvalidInstanceIndex;
+		Coral::ManagedObject* Instance = nullptr;
 
-		// Helper to get the ManagedObject* from the index
-		Coral::ManagedObject* GetInstancePtr(Coral::StableVector<Coral::ManagedObject>& managedObjects) const {
-			if (InstanceIndex == InvalidInstanceIndex) return nullptr;
-			return &managedObjects[InstanceIndex];
-		}
-
-		friend struct ScriptStorage;
+		// Add the missing InvalidInstanceIndex member
+		static constexpr uint32_t InvalidInstanceIndex = std::numeric_limits<uint32_t>::max(); // Default to an invalid index
+		uint32_t InstanceIndex = InvalidInstanceIndex; // Initialize with InvalidInstanceIndex
 	};
+
+
+
 
 	struct ScriptStorage
 	{

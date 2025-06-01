@@ -80,7 +80,6 @@ namespace StarEngine {
 		const std::unordered_map<UUID, ScriptMetadata>& GetAllScripts() const { return m_ScriptMetadata; }
 
 		const Coral::Type* GetTypeByName(std::string_view name) const;
-
 	public:
 		static const ScriptEngine& GetInstance();
 
@@ -98,7 +97,7 @@ namespace StarEngine {
 		template<typename... TArgs>
 		CSharpObject Instantiate(UUID entityID, ScriptStorage& storage, TArgs&&... args)
 		{
-			SE_CORE_VERIFY(storage.EntityStorage.contains(entityID));
+			SE_CORE_VERIFY(storage.EntityStorage.find(entityID) != storage.EntityStorage.end());
 
 			auto& entityStorage = storage.EntityStorage.at(entityID);
 
@@ -175,23 +174,15 @@ namespace StarEngine {
 
 			SE_CORE_VERIFY(IsValidScript(entityStorage.ScriptID));
 
+			// Declare managedObjects in the scope
+			Coral::StableVector<Coral::ManagedObject>& managedObjects = m_ManagedObjects;
+
 			for (auto& [fieldID, fieldStorage] : entityStorage.Fields)
-				fieldStorage.m_InstanceIndex = FieldStorage::InvalidInstanceIndex;
+				fieldStorage.m_Instance = nullptr;
 
-			if (entityStorage.InstanceIndex != EntityScriptStorage::InvalidInstanceIndex)
-			{
-				m_ManagedObjects[entityStorage.InstanceIndex].Destroy();
-				m_ManagedObjects.Remove(entityStorage.InstanceIndex); // Remove from StableVector to free memory
-			}
-			entityStorage.InstanceIndex = EntityScriptStorage::InvalidInstanceIndex;
-			if (entityStorage.InstanceIndex != EntityScriptStorage::InvalidInstanceIndex)
-			{
-				auto* instance = entityStorage.GetInstancePtr(m_ManagedObjects);
-				SE_CORE_VERIFY(instance != nullptr);
-				instance->Destroy();
-			}
-
+			entityStorage.Instance->Destroy();
 			entityStorage.Instance = nullptr;
+
 			// TODO(Peter): Free-list
 		}
 

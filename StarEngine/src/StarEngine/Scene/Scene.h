@@ -82,7 +82,6 @@ namespace StarEngine {
 
 		ScriptStorage& GetScriptStorage() { return m_ScriptStorage; }
 		const ScriptStorage& GetScriptStorage() const { return m_ScriptStorage; }
-
 	private:
 		template<typename T>
 		void OnComponentAdded(Entity entity, T& component);

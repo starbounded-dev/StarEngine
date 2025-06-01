@@ -184,7 +184,7 @@ namespace StarEngine {
 
 	}
 
-	static void SerializeEntity(YAML::Emitter& out, Entity entity)
+	void SerializeEntity(YAML::Emitter& out, Entity entity, Ref<Scene> scene)
 	{
 		SE_CORE_ASSERT(entity.HasComponent<IDComponent>());
 
@@ -253,7 +253,7 @@ namespace StarEngine {
 			if (scriptEngine.IsValidScript(sc.ScriptHandle))
 			{
 				const auto& scriptMetadata = scriptEngine.GetScriptMetadata(sc.ScriptHandle);
-				const auto& entityStorage = scene->m_ScriptStorage.EntityStorage.at(entity.GetEntityHandle());
+				const auto& entityStorage = scene->GetScriptStorage().EntityStorage.at(entity.GetUUID());
 
 				out << YAML::Key << "ScriptHandle" << YAML::Value << sc.ScriptHandle;
 				out << YAML::Key << "ScriptName" << YAML::Value << scriptMetadata.FullName;
@@ -566,7 +566,7 @@ namespace StarEngine {
 			if (!entity)
 				continue;
 
-			SerializeEntity(out, entity);
+			SerializeEntity(out, entity, m_Scene);
 		}
 
 		out << YAML::EndSeq;

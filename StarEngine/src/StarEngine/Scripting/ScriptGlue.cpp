@@ -843,7 +843,7 @@ namespace StarEngine {
 		bool Entity_HasComponent(uint64_t entityID, Coral::ReflectionType componentType)
 		{
 			auto entity = GetEntity(entityID);
-			SE_ICALL_VALIDATE_PARAM_V(entity, entityID);
+			//SE_ICALL_VALIDATE_PARAM_V(entity, entityID);
 
 			if (!entity)
 				return false;

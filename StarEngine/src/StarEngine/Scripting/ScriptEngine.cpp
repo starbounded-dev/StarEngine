@@ -73,7 +73,9 @@ namespace StarEngine {
 		if (!m_AppAssemblyData)
 			return false;
 
-		return m_AppAssemblyData->CachedTypes.contains(scriptID) && m_ScriptMetadata.contains(scriptID);
+		return m_AppAssemblyData->CachedTypes.find(scriptID) != m_AppAssemblyData->CachedTypes.end() &&
+			m_ScriptMetadata.find(scriptID) != m_ScriptMetadata.end();
+
 	}
 
 	void OnCoralMessage(std::string_view message, Coral::MessageLevel level)
@@ -95,7 +97,7 @@ namespace StarEngine {
 
 	const ScriptMetadata& ScriptEngine::GetScriptMetadata(UUID scriptID) const
 	{
-		SE_CORE_VERIFY(m_ScriptMetadata.contains(scriptID));
+		SE_CORE_VERIFY(m_ScriptMetadata.find(scriptID) != m_ScriptMetadata.end());
 		return m_ScriptMetadata.at(scriptID);
 	}
 
@@ -136,12 +138,10 @@ namespace StarEngine {
 	{
 		m_Host = std::make_unique<Coral::HostInstance>();
 
-		Coral::HostSettings settings =
-		{
-			.CoralDirectory = (std::filesystem::current_path() / "DotNet").string(),
-			.MessageCallback = OnCoralMessage,
-			.ExceptionCallback = OnCSharpException
-		};
+		Coral::HostSettings settings;
+		settings.CoralDirectory = (std::filesystem::current_path() / "DotNet").string();
+		settings.MessageCallback = OnCoralMessage;
+		settings.ExceptionCallback = OnCSharpException;
 
 		SE_CORE_VERIFY(m_Host->Initialize(settings) == Coral::CoralInitStatus::Success, "Failed to initialize Coral");
 	}
@@ -279,7 +279,7 @@ namespace StarEngine {
 
 					auto typeName = fieldInfo.GetType().GetFullName();
 
-					if (!s_DataTypeLookup.contains(typeName))
+					if (s_DataTypeLookup.find(typeName) == s_DataTypeLookup.end())
 						continue;
 
 					if (fieldInfo.GetAccessibility() != Coral::TypeAccessibility::Public)
