@@ -26,3 +26,6 @@
 [submodule "StarEngine/vendor/msdf-atlas-gen"]
 	path = StarEngine/vendor/msdf-atlas-gen
 	url = https://github.com/sheazywi/msdf-atlas-gen
+[submodule "StarEngine/vendor/Coral"]
+	path = StarEngine/vendor/Coral
+	url = https://github.com/StudioCherno/Coral.git

@@ -6,6 +6,7 @@
 #include "StarEngine/Renderer/EditorCamera.h"
 
 #include "entt.hpp"
+#include "StarEngine/Scripting/ScriptEntityStorage.h"
 
 class b2World;
 
@@ -40,6 +41,22 @@ namespace StarEngine {
 
 		Entity DuplicateEntity(Entity entity);
 
+		void SetSceneTransitionCallback(const std::function<void(AssetHandle)>& callback) { m_OnSceneTransitionCallback = callback; }
+
+		Entity FindEntityByTag(const std::string& tag);
+		Entity FindEntityByName(std::string_view name);
+		Entity GetEntityByID(uint64_t id);
+		Entity TryGetEntityWithID(uint64_t id) const;
+
+		void OnSceneTransition(AssetHandle handle);
+
+		glm::vec2 GetPhysics2DGravity();
+		void SetPhysics2DGravity(const glm::vec2& gravity);
+
+		/*
+		void RenderHoveredEntityOutline(Entity entity, glm::vec4 color);
+		void RenderSelectedEntityOutline(Entity entity, glm::vec4 color);*/
+
 		Entity FindEntityByName(std::string_view name);
 		Entity GetEntityByUUID(UUID uuid);
 
@@ -58,6 +75,16 @@ namespace StarEngine {
 		{
 			return m_Registry.view<Components...>();
 		}
+
+		void SetName(const std::string& name) { m_Name = name; }
+		const std::string& GetName() const { return m_Name; }
+
+		void ShouldGameBePaused(bool shouldPause) { s_SetPaused = shouldPause; }
+		bool IsGamePaused() { return s_SetPaused; }
+
+		ScriptStorage& GetScriptStorage() { return m_ScriptStorage; }
+		const ScriptStorage& GetScriptStorage() const { return m_ScriptStorage; }
+
 	private:
 		template<typename T>
 		void OnComponentAdded(Entity entity, T& component);
@@ -68,16 +95,26 @@ namespace StarEngine {
 		void RenderScene(EditorCamera& camera);
 	private:
 		entt::registry m_Registry;
+
+		std::function<void(AssetHandle)> m_OnSceneTransitionCallback;
+
 		uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
+		std::string m_Name = "Untitled";
 
 		bool m_IsRunning = false;
-
 		bool m_IsPaused = false;
+
+		static bool s_SetPaused;
+		
 		int m_StepFrames = 0;
+
+		static glm::vec2 s_Gravity;
 
 		b2World* m_PhysicsWorld = nullptr;
 
 		std::unordered_map<UUID, entt::entity> m_EntityMap;
+
+		ScriptStorage m_ScriptStorage;
 
 		friend class Entity;
 		friend class SceneSerializer;

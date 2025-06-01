@@ -1,10 +1,12 @@
 #pragma once
 
-#include <cstdint>
+#include <stdint.h>
 #include <cstring>
+#include <memory>
 
 namespace StarEngine {
 
+	// Non-owning raw buffer class
 	struct Buffer
 	{
 		uint8_t* Data = nullptr;
@@ -28,6 +30,7 @@ namespace StarEngine {
 		{
 			Buffer result(other.Size);
 			memcpy(result.Data, other.Data, other.Size);
+
 			return result;
 		}
 
@@ -46,10 +49,36 @@ namespace StarEngine {
 			Size = 0;
 		}
 
-		template<typename T>
-		T* As()
+		void ZeroInitialize()
 		{
-			return (T*)Data;
+			if (Data)
+				memset(Data, 0, Size);
+		}
+
+		template<typename T>
+		T& Read(uint64_t offset = 0)
+		{
+			return *(T*)((byte*)Data + offset);
+		}
+
+		template<typename T>
+		const T& Read(uint64_t offset = 0) const
+		{
+			return *(T*)((byte*)Data + offset);
+		}
+
+		std::unique_ptr<uint8_t[]> ReadBytes(uint32_t size, uint32_t offset)
+		{
+			SE_CORE_ASSERT(offset + size <= Size, "Buffer overflow!");
+			std::unique_ptr<uint8_t[]> buffer = std::make_unique<uint8_t[]>(size);
+			memcpy(buffer.get(), (uint8_t*)Data + offset, size);
+			return buffer;
+		}
+
+		void Write(const void* data, uint64_t size, uint64_t offset = 0)
+		{
+			SE_CORE_ASSERT(offset + size <= Size, "Buffer overflow!");
+			memcpy((uint8_t*)Data + offset, data, size);
 		}
 
 		operator bool() const
@@ -57,6 +86,27 @@ namespace StarEngine {
 			return (bool)Data;
 		}
 
+		template<typename T>
+		T* As() const
+		{
+			return (T*)Data;
+		}
+	};
+
+	struct BufferSafe : public Buffer
+	{
+		~BufferSafe()
+		{
+			Release();
+		}
+
+		static BufferSafe Copy(const void* data, uint64_t size)
+		{
+			BufferSafe buffer;
+			buffer.Allocate(size);
+			memcpy(buffer.Data, data, size);
+			return buffer;
+		}
 	};
 
 	struct ScopedBuffer
@@ -76,7 +126,7 @@ namespace StarEngine {
 			m_Buffer.Release();
 		}
 
-		uint8_t* Data() { return m_Buffer.Data; }
+		uint8_t* Data() { return (uint8_t*)m_Buffer.Data; }
 		uint64_t Size() { return m_Buffer.Size; }
 
 		template<typename T>
@@ -86,9 +136,9 @@ namespace StarEngine {
 		}
 
 		operator bool() const { return m_Buffer; }
+
 	private:
 		Buffer m_Buffer;
 	};
-
 
 }
