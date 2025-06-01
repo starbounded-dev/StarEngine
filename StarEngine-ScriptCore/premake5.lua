@@ -4,13 +4,14 @@ project "StarEngine-ScriptCore"
 	dotnetframework "net9.0"
 	clr "Unsafe"
 
+	namespace "StarEngine"
+
 	targetdir ("../StarEditor/Resources/Scripts")
 	objdir ("../StarEditor/Resources/Scripts/Intermediates")
 
 	files 
 	{
-		"Source/**.cs",
-		"Properties/**.cs"
+		"Source/**.cs"
 	}
 
 	links
