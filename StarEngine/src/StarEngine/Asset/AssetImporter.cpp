@@ -5,6 +5,7 @@
 #include "SceneImporter.h"
 #include "AudioImporter.h"
 
+
 /*
 #include "FontImporter.h"
 #include "ObjModelImporter.h"*/
@@ -19,7 +20,7 @@ namespace StarEngine {
 		{ AssetType::Texture2D, TextureImporter::ImportTexture2D },
 		{ AssetType::Audio, AudioImporter::ImportAudio },
 //		{ AssetType::ObjModel, ObjModelImporter::ImportObjModel },
-	//	{ AssetType::ScriptFile, SceneImporter::ImportScript }
+		{ AssetType::ScriptFile, SceneImporter::ImportScript }
 	};
 
 	Ref<Asset> AssetImporter::ImportAsset(AssetHandle handle, const AssetMetadata& metadata)

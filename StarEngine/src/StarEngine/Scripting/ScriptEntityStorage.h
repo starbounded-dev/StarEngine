@@ -3,6 +3,8 @@
 #include "StarEngine/Core/UUID.h"
 #include "StarEngine/Core/Buffer.h"
 
+#include "ScriptEngine.h"
+
 #include <Coral/ManagedObject.hpp>
 #include <Coral/Type.hpp>
 #include <Coral/Array.hpp>
@@ -129,7 +131,7 @@ namespace StarEngine {
 				// Declare managedObjects in the scope
 				extern Coral::StableVector<Coral::ManagedObject> managedObjects;
 
-				return GetInstancePtr(*managedObjects)->GetFieldValue<T>(m_Name);
+				return managedObjects[m_InstanceIndex].GetFieldValue<T>(m_Name);
 			}
 			else
 			{

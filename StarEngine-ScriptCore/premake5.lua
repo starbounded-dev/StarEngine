@@ -1,7 +1,7 @@
 project "StarEngine-ScriptCore"
 	kind "SharedLib"
 	language "C#"
-	dotnetframework "net9.0"
+	dotnetframework "net8.0"
 	clr "Unsafe"
 
 	namespace "StarEngine"

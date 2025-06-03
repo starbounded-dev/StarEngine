@@ -1,4 +1,6 @@
-﻿namespace StarEngine
+﻿using StarEngine;
+
+namespace StarEngine;
 {
 	public class Camera : Entity
 	{

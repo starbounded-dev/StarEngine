@@ -15,7 +15,7 @@ namespace StarEngine {
 		Texture2D,
 		Audio,
 		//ObjModel,
-		//ScriptFile,
+		ScriptFile,
 	};
 
 	std::string_view AssetTypeToString(AssetType type);

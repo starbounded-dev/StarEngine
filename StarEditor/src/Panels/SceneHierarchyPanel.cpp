@@ -112,11 +112,16 @@ namespace StarEngine {
 
 		if (entityDeleted)
 		{
-			m_Context->DestroyEntity(entity);
-			if (m_SelectionContext == entity)
-				m_SelectionContext = {};
+			// Explicitly capture 'this' in the lambda function
+			[this, entity]()
+				{
+					m_Context->DestroyEntity(entity);
+					if (m_SelectionContext == entity)
+						m_SelectionContext = {};
+				}();
 		}
 	}
+
 
 	static void DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f)
 	{
@@ -364,80 +369,134 @@ namespace StarEngine {
 
 		DrawComponent<ScriptComponent>("Script", entity, [entity, scene = m_Context](auto& component) mutable
 			{
-				bool scriptClassExists = ScriptEngine::EntityClassExists(component.ClassName);
+				ImGui::Columns(2);
 
-				static char buffer[64];
-				strcpy_s(buffer, sizeof(buffer), component.ClassName.c_str());
+				ImGui::Text("Script");
+				ImGui::NextColumn();
+				ImGui::PushItemWidth(-1);
 
-				UI::ScopedStyleColor textColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.3f, 1.0f), !scriptClassExists);
+				auto& scriptEngine = ScriptEngine::GetMutable();
+				bool isError = !scriptEngine.IsValidScript(component.ScriptHandle);
 
-				if (ImGui::InputText("Class", buffer, sizeof(buffer)))
+				std::string label = "None";
+				bool isScriptValid = false;
+				if (component.ScriptHandle != 0)
 				{
-					component.ClassName = buffer;
-					return;
-				}
-
-				// Fields
-				bool sceneRunning = scene->IsRunning();
-				if (sceneRunning)
-				{
-					Ref<ScriptInstance> scriptInstance = ScriptEngine::GetEntityScriptInstance(entity.GetUUID());
-					if (scriptInstance)
+					if (AssetManager::IsAssetHandleValid(component.ScriptHandle) && AssetManager::GetAssetType(component.ScriptHandle) == AssetType::ScriptFile)
 					{
-						const auto& fields = scriptInstance->GetScriptClass()->GetFields();
-						for (const auto& [name, field] : fields)
-						{
-							if (field.Type == ScriptFieldType::Float)
-							{
-								float data = scriptInstance->GetFieldValue<float>(name);
-								if (ImGui::DragFloat(name.c_str(), &data))
-								{
-									scriptInstance->SetFieldValue(name, data);
-								}
-							}
-						}
+						const AssetMetadata& metadata = Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.ScriptHandle);
+						label = metadata.FilePath.filename().string();
+						isScriptValid = true;
+					}
+					else
+					{
+						label = "Invalid";
 					}
 				}
-				else
+
+				ImVec2 buttonLabelSize = ImGui::CalcTextSize(label.c_str());
+				buttonLabelSize.x += 20.0f;
+				float buttonLabelWidth = std::max<float>(100.0f, buttonLabelSize.x);
+
+				ImGui::Button(label.c_str(), ImVec2(buttonLabelWidth, 0.0f));
+				if (ImGui::BeginDragDropTarget())
 				{
-					if (scriptClassExists)
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
 					{
-						Ref<ScriptComponent> entityClass = ScriptEngine::GetEntityClass(component.ClassName);
-						const auto& fields = entityClass->GetFields();
+						AssetHandle handle = *(AssetHandle*)payload->Data;
 
-						auto& entityFields = ScriptEngine::GetScriptFieldMap(entity);
-						for (const auto& [name, field] : fields)
+						if (AssetManager::GetAssetType(handle) == AssetType::ScriptFile)
 						{
-							// Field has been set in editor
-							if (entityFields.find(name) != entityFields.end())
-							{
-								ScriptFieldInstance& scriptField = entityFields.at(name);
-
-								// Display control to set it maybe
-								if (field.Type == ScriptFieldType::Float)
-								{
-									float data = scriptField.GetValue<float>();
-									if (ImGui::DragFloat(name.c_str(), &data))
-										scriptField.SetValue(data);
-								}
-							}
-							else
-							{
-								// Display control to set it maybe
-								if (field.Type == ScriptFieldType::Float)
-								{
-									float data = 0.0f;
-									if (ImGui::DragFloat(name.c_str(), &data))
-									{
-										ScriptFieldInstance& fieldInstance = entityFields[name];
-										fieldInstance.Field = field;
-										fieldInstance.SetValue(data);
-									}
-								}
-							}
+							component.ScriptHandle = handle;
+						}
+						else
+						{
+							SE_CORE_WARN("Wrong asset type!");
 						}
 					}
+					ImGui::EndDragDropTarget();
 				}
+
+				if (isScriptValid)
+				{
+					ImGui::SameLine();
+					ImVec2 xLabelSize = ImGui::CalcTextSize("X");
+					float buttonSize = xLabelSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
+					if (ImGui::Button("X", ImVec2(buttonSize, buttonSize)))
+					{
+						m_Context->GetScriptStorage().ShutdownEntityStorage(component.ScriptHandle, entity.GetEntityHandle());
+						AssetHandle result = 0;
+						component.ScriptHandle = result;
+						component.HasInitializedScript = false;
+					}
+				}
+
+				ImGui::PopItemWidth();
+				ImGui::NextColumn();
+				ImGui::Spacing();
+
+				if (component.ScriptHandle != 0)
+				{
+					isError = !scriptEngine.IsValidScript(component.ScriptHandle);
+
+					if (!isError && !component.HasInitializedScript)
+					{
+						m_Context->GetScriptStorage().InitializeEntityStorage(component.ScriptHandle, entity.GetEntityHandle());
+						component.HasInitializedScript = true;
+					}
+					else if (isError && component.HasInitializedScript)
+					{
+						auto oldScriptHandle = component.ScriptHandle;
+						bool wasCleared = component.ScriptHandle == 0;
+
+						if (wasCleared)
+							component.ScriptHandle = oldScriptHandle;
+
+						m_Context->GetScriptStorage().ShutdownEntityStorage(component.ScriptHandle, entity.GetEntityHandle());
+
+						if (wasCleared)
+							component.ScriptHandle = 0;
+
+						component.HasInitializedScript = false;
+					}
+				}
+
+				// NOTE(Peter): Editing fields doesn't really work if there's inconsistencies with the script classes...
+				if (component.ScriptHandle != 0 && component.HasInitializedScript)
+				{
+					auto& entityStorage = m_Context->GetScriptStorage().EntityStorage.at(entity.GetEntityHandle());
+
+					for (auto& [fieldID, fieldStorage] : entityStorage.Fields)
+					{
+						// TODO(Peter): Update field input to display "---" when there's mixed values
+						//if (field->IsArray())
+						//{
+						//	if (UI::DrawFieldArray(m_Context, fieldName, storage.As<ArrayFieldStorage>()))
+						//	{
+						//		for (auto entityID : entities)
+						//		{
+						//			/*Entity entity = m_Context->GetEntityWithID(entityID);
+						//			const auto& sc = entity.GetComponent<ScriptComponent>();
+						//			storage->CopyData(firstComponent.ManagedInstance, sc.ManagedInstance);*/
+						//		}
+						//	}
+						//}
+						//else
+						//{
+						if (UI::DrawFieldValue(fieldStorage.GetName(), fieldStorage))
+						{
+							/*for (auto entityID : entities)
+							{
+								Entity entity = m_Context->GetEntityWithID(entityID);
+								const auto& sc = entity.GetComponent<ScriptComponent>();
+								storage->CopyData(firstComponent.ManagedInstance, sc.ManagedInstance);
+							}*/
+						}
+						//}
+					}
+				}
+
+				ImGui::Columns(1);
 			});
 
 		DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](auto& component)
@@ -891,7 +950,7 @@ namespace StarEngine {
 				}
 			});
 
-			DrawComponent<AudioListenerComponent>("Audio Listener", entity, [](AudioListenerComponent& component)
+		DrawComponent<AudioListenerComponent>("Audio Listener", entity, [](AudioListenerComponent& component)
 				{
 					auto& config = component.Config;
 

@@ -12,7 +12,7 @@ namespace StarEngine {
 		case AssetType::Texture2D:   return "Texture2D";
 		case AssetType::Audio:       return "Audio";
 		//case AssetType::ObjModel:    return "ObjModel";
-		//case AssetType::ScriptFile:  return "ScriptFile";
+		case AssetType::ScriptFile:  return "ScriptFile";
 		}
 
 		return "<Invalid>";
@@ -25,7 +25,7 @@ namespace StarEngine {
 		if (assetType == "Texture2D") return AssetType::Texture2D;
 		if (assetType == "Audio")     return AssetType::Audio;
 		//if (assetType == "ObjModel")  return AssetType::ObjModel;
-		//if (assetType == "ScriptFile")  return AssetType::ScriptFile;
+		if (assetType == "ScriptFile")  return AssetType::ScriptFile;
 
 		return AssetType::None;
 	}
