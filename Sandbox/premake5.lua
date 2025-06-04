@@ -20,12 +20,15 @@ project "Sandbox"
 		"%{wks.location}/StarEngine/vendor",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.entt}",
-		"%{IncludeDir.miniaudio}"
+		"%{IncludeDir.miniaudio}",
+		"%{IncludeDir.Coral}",
 	}
 
 	links
 	{
-		"StarEngine"
+		"StarEngine",
+		"yaml-cpp",
+		"%{Library.Coral}",
 	}
 
 	filter "system:windows" 

@@ -3,8 +3,6 @@
 #include <string>
 #include <filesystem>
 
-#include "StarEngine/Core/Base.h"
-
 #include "StarEngine/Asset/RuntimeAssetManager.h"
 #include "StarEngine/Asset/EditorAssetManager.h"
 
@@ -27,7 +25,6 @@ namespace StarEngine {
 		const std::filesystem::path& GetProjectDirectory() { return m_ProjectDirectory; }
 		std::filesystem::path GetAssetDirectory() { return GetProjectDirectory() / s_ActiveProject->m_Config.AssetDirectory; }
 		std::filesystem::path GetAssetRegistryPath() { return GetAssetDirectory() / s_ActiveProject->m_Config.AssetRegistryPath; }
-		// TODO: move to asset manager when we have one
 		std::filesystem::path GetAssetFileSystemPath(const std::filesystem::path& path) { return GetAssetDirectory() / path; }
 
 		std::filesystem::path GetAssetAbsolutePath(const std::filesystem::path& path);
@@ -50,15 +47,27 @@ namespace StarEngine {
 			return s_ActiveProject->GetAssetRegistryPath();
 		}
 
-		// TODO: move to asset manager when we have one
 		static std::filesystem::path GetActiveAssetFileSystemPath(const std::filesystem::path& path)
 		{
 			SE_CORE_ASSERT(s_ActiveProject);
 			return s_ActiveProject->GetAssetFileSystemPath(path);
 		}
 
+		static std::filesystem::path GetScriptModulePath()
+		{
+			SE_CORE_ASSERT(s_ActiveProject);
+			return std::filesystem::path(s_ActiveProject->m_ProjectDirectory) / s_ActiveProject->GetConfig().AssetDirectory / s_ActiveProject->GetConfig().ScriptModulePath;
+		}
+
+		static std::filesystem::path GetScriptModuleFilePath()
+		{
+			SE_CORE_ASSERT(s_ActiveProject);
+			return GetScriptModulePath();
+		}
 
 		ProjectConfig& GetConfig() { return m_Config; }
+
+		void ReloadScriptEngine();
 
 		static Ref<Project> GetActive() { return s_ActiveProject; }
 		std::shared_ptr<AssetManagerBase> GetAssetManager() { return m_AssetManager; }
@@ -68,10 +77,13 @@ namespace StarEngine {
 		static Ref<Project> New();
 		static Ref<Project> Load(const std::filesystem::path& path);
 		static bool SaveActive(const std::filesystem::path& path);
+		static void UpdateEditorAssetManager();
+
 	private:
 		ProjectConfig m_Config;
 		std::filesystem::path m_ProjectDirectory;
 		std::shared_ptr<AssetManagerBase> m_AssetManager;
+		inline static bool m_HasInitializedScriptEngine = false;
 
 		inline static Ref<Project> s_ActiveProject;
 	};

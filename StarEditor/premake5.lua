@@ -22,21 +22,22 @@ project "StarEditor"
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.entt}",
 		"%{IncludeDir.ImGuizmo}",
-		"%{IncludeDir.miniaudio}"
+		"%{IncludeDir.miniaudio}",
+		"%{IncludeDir.Coral}",
 	}
 
 	links
 	{
-		"StarEngine"
+		"StarEngine",
+		
+		"yaml-cpp",
+
+		"%{Library.Coral}",
 	}
 
 	filter "system:windows" 
 		systemversion "latest"
-		postbuildcommands {
-			"{COPYDIR} %{wks.location}/StarEditor/assets %{wks.location}/bin/" .. outputdir .. "/StarEditor/assets",
-			"{COPYDIR} %{wks.location}/StarEditor/Resources %{wks.location}/bin/" .. outputdir .. "/StarEditor/Resources",
-			"{COPYFILE} %{wks.location}/StarEditor/imgui.ini %{wks.location}/bin/" .. outputdir .. "/StarEditor/imgui.ini",
-		}
+		postbuildcommands {}
 
 	filter "configurations:Debug"
 		defines "SE_DEBUG"
@@ -55,3 +56,25 @@ project "StarEditor"
 
 	filter "action:vs2022"
     	buildoptions { "/utf-8" }
+
+
+project "Coral.Native"
+	dependson "Coral.Managed"
+
+	filter { "configurations:Debug" }
+		postbuildcommands
+		{
+			'{COPYFILE} "%{wks.location}StarEngine/vendor/Coral/Coral.Managed/Coral.Managed.runtimeconfig.json" "%{wks.location}StarEditor/DotNet/Coral.Managed.runtimeconfig.json"',
+			'{COPYFILE} "%{wks.location}StarEngine/vendor/Coral/Build/Debug/Coral.Managed.dll" "%{wks.location}StarEditor/DotNet/Coral.Managed.dll"',
+			'{COPYFILE} "%{wks.location}StarEngine/vendor/Coral/Build/Debug/Coral.Managed.pdb" "%{wks.location}StarEditor/DotNet/Coral.Managed.pdb"',
+			'{COPYFILE} "%{wks.location}StarEngine/vendor/Coral/Build/Debug/Coral.Managed.deps.json" "%{wks.location}StarEditor/DotNet/Coral.Managed.deps.json"',
+		}
+
+	filter { "configurations:Release" }
+		postbuildcommands
+		{
+			'{COPYFILE} "%{wks.location}StarEngine/vendor/Coral/Coral.Managed/Coral.Managed.runtimeconfig.json" "%{wks.location}StarEditor/DotNet/Coral.Managed.runtimeconfig.json"',
+			'{COPYFILE} "%{wks.location}StarEngine/vendor/Coral/Build/Release/Coral.Managed.dll" "%{wks.location}StarEditor/DotNet/Coral.Managed.dll"',
+			'{COPYFILE} "%{wks.location}StarEngine/vendor/Coral/Build/Release/Coral.Managed.pdb" "%{wks.location}StarEditor/DotNet/Coral.Managed.pdb"',
+			'{COPYFILE} "%{wks.location}StarEngine/vendor/Coral/Build/Release/Coral.Managed.deps.json" "%{wks.location}StarEditor/DotNet/Coral.Managed.deps.json"',
+		}

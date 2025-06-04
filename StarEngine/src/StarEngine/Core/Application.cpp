@@ -28,6 +28,7 @@ namespace StarEngine
 		m_Window->SetEventCallback(SE_BIND_EVENT_FN(Application::OnEvent));
 
 		Renderer::Init();
+		ScriptEngine::GetMutable().InitializeHost();
 
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
@@ -37,7 +38,7 @@ namespace StarEngine
 	{
 		SE_PROFILE_FUNCTION();
 
-		ScriptEngine::Shutdown();
+		ScriptEngine::GetMutable().ShutdownHost();
 		Renderer::Shutdown();
 	}
 

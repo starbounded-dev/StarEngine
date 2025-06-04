@@ -5,6 +5,7 @@
 #include "SceneImporter.h"
 #include "AudioImporter.h"
 
+
 /*
 #include "FontImporter.h"
 #include "ObjModelImporter.h"*/
@@ -17,9 +18,9 @@ namespace StarEngine {
 	static std::map<AssetType, AssetImportFunction> s_AssetImportFunctions = {
 		{ AssetType::Scene, SceneImporter::ImportScene },
 		{ AssetType::Texture2D, TextureImporter::ImportTexture2D },
-		{ AssetType::Audio, AudioImporter::ImportAudio },/*
-		{ AssetType::ObjModel, ObjModelImporter::ImportObjModel },
-		{ AssetType::ScriptFile, SceneImporter::ImportScript }*/
+		{ AssetType::Audio, AudioImporter::ImportAudio },
+//		{ AssetType::ObjModel, ObjModelImporter::ImportObjModel },
+		{ AssetType::ScriptFile, SceneImporter::ImportScript }
 	};
 
 	Ref<Asset> AssetImporter::ImportAsset(AssetHandle handle, const AssetMetadata& metadata)

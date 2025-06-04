@@ -1,15 +1,22 @@
 project "StarEngine-ScriptCore"
 	kind "SharedLib"
 	language "C#"
-	dotnetframework "4.7.2"
+	dotnetframework "net8.0"
+	clr "Unsafe"
+
+	namespace "StarEngine"
 
 	targetdir ("../StarEditor/Resources/Scripts")
 	objdir ("../StarEditor/Resources/Scripts/Intermediates")
 
 	files 
 	{
-		"Source/**.cs",
-		"Properties/**.cs"
+		"Source/**.cs"
+	}
+
+	links
+	{
+		"Coral.Managed"
 	}
 	
 	filter "configurations:Debug"

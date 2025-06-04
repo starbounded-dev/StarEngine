@@ -49,6 +49,8 @@ namespace StarEngine
 		void OnSceneStop();
 		void OnScenePause();
 
+		void ReloadCSharp();
+
 		void OnDuplicateEntity();
 
 		// UI Panels
