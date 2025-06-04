@@ -82,6 +82,7 @@ namespace StarEngine {
 		const std::unordered_map<UUID, ScriptMetadata>& GetAllScripts() const { return m_ScriptMetadata; }
 
 		const Coral::Type* GetTypeByName(std::string_view name) const;
+
 	public:
 		static const ScriptEngine& GetInstance();
 
@@ -97,9 +98,9 @@ namespace StarEngine {
 		void BuildAssemblyCache(AssemblyData* assemblyData);
 
 		template<typename... TArgs>
-		CSharpObject Instantiate(UUID entityID, ScriptStorage& storage, TArgs&&... args)
+		CSharpObject Instantiate(UUID entityID, StarEngine::ScriptStorage& storage, TArgs&&... args)
 		{
-			SE_CORE_VERIFY(storage.EntityStorage.find(entityID) != storage.EntityStorage.end());
+			SE_CORE_VERIFY(storage.EntityStorage.contains(entityID));
 
 			auto& entityStorage = storage.EntityStorage.at(entityID);
 
@@ -110,7 +111,7 @@ namespace StarEngine {
 			auto instance = type->CreateInstance(std::forward<TArgs>(args)...);
 			auto [index, handle] = m_ManagedObjects.Insert(std::move(instance));
 
-			entityStorage.InstanceIndex = index;
+			entityStorage.Instance = &handle;
 
 			for (auto& [fieldID, fieldStorage] : entityStorage.Fields)
 			{
@@ -160,7 +161,7 @@ namespace StarEngine {
 					handle.SetFieldValueRaw(fieldStorage.GetName(), fieldStorage.m_ValueBuffer.Data);
 				}
 
-				fieldStorage.m_InstanceIndex = index;
+				fieldStorage.m_Instance = &handle;
 			}
 
 			CSharpObject result;
@@ -170,7 +171,7 @@ namespace StarEngine {
 
 		void DestroyInstance(UUID entityID, ScriptStorage& storage)
 		{
-			SE_CORE_VERIFY(storage.EntityStorage.find(entityID) != storage.EntityStorage.end());
+			SE_CORE_VERIFY(storage.EntityStorage.contains(entityID));
 
 			auto& entityStorage = storage.EntityStorage.at(entityID);
 

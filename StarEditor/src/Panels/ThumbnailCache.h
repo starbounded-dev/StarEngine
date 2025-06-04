@@ -1,5 +1,7 @@
 #pragma once
 
+#include "StarEngine/Core/Base.h"
+
 #include "StarEngine/Project/Project.h"
 #include "StarEngine/Renderer/Texture.h"
 

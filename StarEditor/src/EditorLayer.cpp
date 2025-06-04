@@ -1,5 +1,7 @@
 #include "EditorLayer.h"
 
+#include "StarEngine/Core/Base.h"
+
 #include "StarEngine/Scene/SceneSerializer.h"
 #include "StarEngine/Utils/PlatformUtils.h"
 #include "StarEngine/Math/Math.h"

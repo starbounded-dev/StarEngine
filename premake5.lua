@@ -2,7 +2,6 @@ include "./vendor/premake/premake_customization/solution_items.lua"
 include "Dependencies.lua"
 
 workspace "StarEngine"
-	architecture "x86_64"
 	startproject "StarEditor"
 
 	configurations
@@ -21,6 +20,12 @@ workspace "StarEngine"
 	{
 		"MultiProcessorCompile"
 	}
+
+	filter "language:C++ or language:C"
+		architecture "x86_64"
+
+	filter "files:**.c"
+		flags {"NoPCH"}
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarEngine/Core/Base.h"
 #include "StarEngine/Renderer/Texture.h"
 
 #include "ThumbnailCache.h"

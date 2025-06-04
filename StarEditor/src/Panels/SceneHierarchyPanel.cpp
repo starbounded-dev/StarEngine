@@ -73,6 +73,12 @@ namespace StarEngine {
 		}
 
 		ImGui::End();
+
+		if (entityDeleted)
+		{
+			m_Context->DestroyEntity(m_SelectionContext);
+			m_SelectionContext = {};
+		}
 	}
 
 	void SceneHierarchyPanel::SetSelectedEntity(Entity entity)
@@ -87,38 +93,30 @@ namespace StarEngine {
 		ImGuiTreeNodeFlags flags = ((m_SelectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
 		flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 		bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity, flags, tag.c_str());
-		if (ImGui::IsItemClicked())
+		if (ImGui::IsMouseReleased(0))
 		{
-			m_SelectionContext = entity;
+			if (ImGui::IsItemHovered())
+			{
+				m_SelectionContext = entity;
+			}
 		}
 
 		bool entityDeleted = false;
 		if (ImGui::BeginPopupContextItem())
 		{
+			if (ImGui::MenuItem("Create Empty Entity"))
+			{
+				m_SelectionContext = m_Context->CreateEntity("Empty Entity");
+			}
+
+			ImGui::Separator();
+
 			if (ImGui::MenuItem("Delete Entity"))
+			{
 				entityDeleted = true;
+			}
 
 			ImGui::EndPopup();
-		}
-
-		if (opened)
-		{
-			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-			bool opened = ImGui::TreeNodeEx((void*)9817239, flags, tag.c_str());
-			if (opened)
-				ImGui::TreePop();
-			ImGui::TreePop();
-		}
-
-		if (entityDeleted)
-		{
-			// Explicitly capture 'this' in the lambda function
-			[this, entity]()
-				{
-					m_Context->DestroyEntity(entity);
-					if (m_SelectionContext == entity)
-						m_SelectionContext = {};
-				}();
 		}
 	}
 
@@ -367,10 +365,8 @@ namespace StarEngine {
 				}
 			});
 
-		DrawComponent<ScriptComponent>("Script", entity, [entity, scene = m_Context](auto& component) mutable
+		DrawComponent<ScriptComponent>("Script", entity, [=](ScriptComponent& component) mutable
 			{
-				ImGui::Columns(2);
-
 				ImGui::Text("Script");
 				ImGui::NextColumn();
 				ImGui::PushItemWidth(-1);
@@ -424,7 +420,7 @@ namespace StarEngine {
 					float buttonSize = xLabelSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
 					if (ImGui::Button("X", ImVec2(buttonSize, buttonSize)))
 					{
-						m_Context->GetScriptStorage().ShutdownEntityStorage(component.ScriptHandle, entity.GetEntityHandle());
+						m_Context->GetScriptStorage().ShutdownEntityStorage(component.ScriptHandle, entity.GetUUID());
 						AssetHandle result = 0;
 						component.ScriptHandle = result;
 						component.HasInitializedScript = false;
@@ -441,7 +437,7 @@ namespace StarEngine {
 
 					if (!isError && !component.HasInitializedScript)
 					{
-						m_Context->GetScriptStorage().InitializeEntityStorage(component.ScriptHandle, entity.GetEntityHandle());
+						m_Context->GetScriptStorage().InitializeEntityStorage(component.ScriptHandle, entity.GetUUID());
 						component.HasInitializedScript = true;
 					}
 					else if (isError && component.HasInitializedScript)
@@ -452,47 +448,12 @@ namespace StarEngine {
 						if (wasCleared)
 							component.ScriptHandle = oldScriptHandle;
 
-						m_Context->GetScriptStorage().ShutdownEntityStorage(component.ScriptHandle, entity.GetEntityHandle());
+						m_Context->GetScriptStorage().ShutdownEntityStorage(component.ScriptHandle, entity.GetUUID());
 
 						if (wasCleared)
 							component.ScriptHandle = 0;
 
 						component.HasInitializedScript = false;
-					}
-				}
-
-				// NOTE(Peter): Editing fields doesn't really work if there's inconsistencies with the script classes...
-				if (component.ScriptHandle != 0 && component.HasInitializedScript)
-				{
-					auto& entityStorage = m_Context->GetScriptStorage().EntityStorage.at(entity.GetEntityHandle());
-
-					for (auto& [fieldID, fieldStorage] : entityStorage.Fields)
-					{
-						// TODO(Peter): Update field input to display "---" when there's mixed values
-						//if (field->IsArray())
-						//{
-						//	if (UI::DrawFieldArray(m_Context, fieldName, storage.As<ArrayFieldStorage>()))
-						//	{
-						//		for (auto entityID : entities)
-						//		{
-						//			/*Entity entity = m_Context->GetEntityWithID(entityID);
-						//			const auto& sc = entity.GetComponent<ScriptComponent>();
-						//			storage->CopyData(firstComponent.ManagedInstance, sc.ManagedInstance);*/
-						//		}
-						//	}
-						//}
-						//else
-						//{
-						if (UI::DrawFieldValue(fieldStorage.GetName(), fieldStorage))
-						{
-							/*for (auto entityID : entities)
-							{
-								Entity entity = m_Context->GetEntityWithID(entityID);
-								const auto& sc = entity.GetComponent<ScriptComponent>();
-								storage->CopyData(firstComponent.ManagedInstance, sc.ManagedInstance);
-							}*/
-						}
-						//}
 					}
 				}
 
