@@ -14,6 +14,8 @@
 #include <Coral/Attribute.hpp>
 #include <Coral/Array.hpp>
 
+#include "ScriptEntityStorage.h"
+
 namespace Coral {
 
 	class HostInstance;
