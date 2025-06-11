@@ -22,7 +22,8 @@ project "StarEditor"
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.entt}",
 		"%{IncludeDir.ImGuizmo}",
-		"%{IncludeDir.miniaudio}"
+		"%{IncludeDir.miniaudio}",
+		"%{IncludeDir.nvrhi}",
 	}
 
 	links

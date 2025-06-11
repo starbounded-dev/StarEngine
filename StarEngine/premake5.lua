@@ -47,6 +47,7 @@ project "StarEngine"
 		"%{IncludeDir.yaml_cpp}",
 		"%{IncludeDir.ImGuizmo}",
 		"%{IncludeDir.VulkanSDK}",
+		"%{IncludeDir.nvrhi}",
 
 		"%{IncludeDir.mono}",
 		"%{IncludeDir.miniaudio}"
@@ -62,7 +63,9 @@ project "StarEngine"
 		"yaml-cpp",
 		"msdf-atlas-gen",
 		"Box2D",
-		"dwmapi.lib"
+		"dwmapi.lib",
+		"d3d12",
+		"nvrhi"
 	}
 
 	filter "files:vendor/imguizmo/**.cpp"
