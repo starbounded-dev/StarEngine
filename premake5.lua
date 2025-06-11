@@ -33,6 +33,10 @@ group "Dependencies"
 	include "StarEngine/vendor/yaml-cpp"
 group ""
 
+group "Dependencies - NVRHI"
+		include "StarEngine/vendor/nvrhi"
+group ""
+
 group "Dependencies - Text"
 		include "StarEngine/vendor/msdf-atlas-gen"
 group ""
