@@ -11,15 +11,15 @@ namespace StarEngine {
 		return GetAssetDirectory() / path;
 	}
 
-	Ref<Project> Project::New()
+	RefPtr<Project> Project::New()
 	{
-		s_ActiveProject = CreateRef<Project>();
+		s_ActiveProject = RefPtr<Project>::Create();
 		return s_ActiveProject;
 	}
 
-	Ref<Project> Project::Load(const std::filesystem::path& path)
+	RefPtr<Project> Project::Load(const std::filesystem::path& path)
 	{
-		Ref<Project> project = CreateRef<Project>();
+		RefPtr<Project> project = RefPtr<Project>::Create();
 
 		ProjectSerializer serializer(project);
 		if (serializer.Deserialize(path))
@@ -33,7 +33,7 @@ namespace StarEngine {
 			project->m_ProjectDirectory = path.parent_path();
 			s_ActiveProject = project;
 
-			Ref<EditorAssetManager> editorAssetManager = std::make_shared<EditorAssetManager>();
+			RefPtr<EditorAssetManager> editorAssetManager = std::make_shared<EditorAssetManager>();
 			s_ActiveProject->m_AssetManager = editorAssetManager;
 			editorAssetManager->DeserializeAssetRegistry();
 

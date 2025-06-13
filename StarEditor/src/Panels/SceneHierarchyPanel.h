@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarEngine/Core/Base.h"
+#include "StarEngine/Core/Ref.h"
 #include "StarEngine/Scene/Scene.h"
 #include "StarEngine/Scene/Entity.h"
 
@@ -10,9 +10,9 @@ namespace StarEngine {
 	{
 	public:
 		SceneHierarchyPanel() = default;
-		SceneHierarchyPanel(const Ref<Scene>& scene);
+		SceneHierarchyPanel(const RefPtr<Scene>& scene);
 
-		void SetContext(const Ref<Scene>& scene);
+		void SetContext(const RefPtr<Scene>& scene);
 
 		void OnImGuiRender();
 
@@ -25,7 +25,7 @@ namespace StarEngine {
 		void DrawEntityNode(Entity entity);
 		void DrawComponents(Entity entity);
 	private:
-		Ref<Scene> m_Context;
+		RefPtr<Scene> m_Context;
 		Entity m_SelectionContext;
 	};
 

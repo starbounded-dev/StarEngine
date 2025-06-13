@@ -23,6 +23,7 @@ project "StarEditor"
 		"%{IncludeDir.entt}",
 		"%{IncludeDir.ImGuizmo}",
 		"%{IncludeDir.miniaudio}",
+		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.nvrhi}",
 	}
 

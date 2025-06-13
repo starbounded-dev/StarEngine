@@ -3,7 +3,8 @@
 #include <string>
 #include <filesystem>
 
-#include "StarEngine/Core/Base.h"
+#include "StarEngine/Core/Ref.h"
+#include "StarEngine/Core/Core.h"
 
 #include "StarEngine/Asset/RuntimeAssetManager.h"
 #include "StarEngine/Asset/EditorAssetManager.h"
@@ -21,7 +22,7 @@ namespace StarEngine {
 		std::filesystem::path ScriptModulePath;
 	};
 
-	class Project
+	class Project : public RefCounted
 	{
 	public:
 		const std::filesystem::path& GetProjectDirectory() { return m_ProjectDirectory; }
@@ -60,20 +61,20 @@ namespace StarEngine {
 
 		ProjectConfig& GetConfig() { return m_Config; }
 
-		static Ref<Project> GetActive() { return s_ActiveProject; }
+		static RefPtr<Project> GetActive() { return s_ActiveProject; }
 		std::shared_ptr<AssetManagerBase> GetAssetManager() { return m_AssetManager; }
 		std::shared_ptr<RuntimeAssetManager> GetRuntimeAssetManager() { return std::static_pointer_cast<RuntimeAssetManager>(m_AssetManager); }
 		std::shared_ptr<EditorAssetManager> GetEditorAssetManager() { return std::static_pointer_cast<EditorAssetManager>(m_AssetManager); }
 
-		static Ref<Project> New();
-		static Ref<Project> Load(const std::filesystem::path& path);
+		static RefPtr<Project> New();
+		static RefPtr<Project> Load(const std::filesystem::path& path);
 		static bool SaveActive(const std::filesystem::path& path);
 	private:
 		ProjectConfig m_Config;
 		std::filesystem::path m_ProjectDirectory;
 		std::shared_ptr<AssetManagerBase> m_AssetManager;
 
-		inline static Ref<Project> s_ActiveProject;
+		inline static RefPtr<Project> s_ActiveProject;
 	};
 
 }

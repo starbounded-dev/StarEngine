@@ -2,19 +2,33 @@
 #include "StarEngine/Renderer/Framebuffer.h"
 
 #include "StarEngine/Renderer/Renderer.h"
-#include "Platform/OpenGL/OpenGLFramebuffer.h"
 
 namespace StarEngine
 {
-	Ref<Framebuffer> Framebuffer::Create(const FramebufferSpecification& spec)
+	nvrhi::IFramebuffer* Framebuffer::GetFramebuffer(const nvrhi::TextureSubresourceSet& subresources)
 	{
-		switch (Renderer::GetAPI())
+		nvrhi::FramebufferHandle& item = m_FramebufferCache[subresources];
+
+		if (!item)
 		{
-			case RendererAPI::API::None:    SE_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-			case RendererAPI::API::OpenGL:  return CreateRef<OpenGLFramebuffer>(spec);
+			nvrhi::FramebufferDesc desc;
+			for (auto renderTarget : RenderTargets)
+				desc.addColorAttachment(renderTarget, subresources);
+
+			if (DepthTarget)
+				desc.setDepthAttachment(DepthTarget, subresources);
+
+			if (ShadingRateSurface)
+				desc.setShadingRateAttachment(ShadingRateSurface, subresources);
+
+			item = m_Device->createFramebuffer(desc);
 		}
 
-		SE_CORE_ASSERT(false, "Unknown RendererAPI!");
-		return nullptr;
+		return item;
+	}
+
+	nvrhi::IFramebuffer* Framebuffer::GetFramebuffer(const IView& view)
+	{
+		return GetFramebuffer(view.GetSubresources());
 	}
 }

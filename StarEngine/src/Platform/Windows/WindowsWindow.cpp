@@ -9,8 +9,6 @@
 
 #include "StarEngine/Renderer/Renderer.h"
 
-#include "Platform/OpenGL/OpenGLContext.h"
-
 namespace StarEngine {
 
 	float Window::s_HighDPIScaleFactor = 1.0f;

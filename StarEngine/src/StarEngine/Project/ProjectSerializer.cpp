@@ -6,7 +6,7 @@
 
 namespace StarEngine {
 
-	ProjectSerializer::ProjectSerializer(Ref<Project> project)
+	ProjectSerializer::ProjectSerializer(RefPtr<Project> project)
 		: m_Project(project)
 	{
 	}

@@ -10,18 +10,18 @@ namespace StarEngine {
 	struct ThumbnailImage
 	{
 		uint64_t Timestamp;
-		Ref<Texture2D> Image;
+		RefPtr<Texture2D> Image;
 	};
 
-	class ThumbnailCache
+	class ThumbnailCache : public RefCounted
 	{
 	public:
-		ThumbnailCache(Ref<Project> project);
+		ThumbnailCache(RefPtr<Project> project);
 
-		Ref<Texture2D> GetOrCreateThumbnail(const std::filesystem::path& path);
+		RefPtr<Texture2D> GetOrCreateThumbnail(const std::filesystem::path& path);
 		void OnUpdate();
 	private:
-		Ref<Project> m_Project;
+		RefPtr<Project> m_Project;
 
 		uint32_t m_ThumbnailSize = 128;
 

@@ -11,7 +11,7 @@ namespace StarEngine {
 	public:
 		enum class API
 		{
-			None = 0, OpenGL = 1
+			None = 0, OpenGL = 1, Vulkan = 2
 		};
 	public:
 		virtual ~RendererAPI() = default;
@@ -21,8 +21,8 @@ namespace StarEngine {
 		virtual void SetClearColor(const glm::vec4& color) = 0;
 		virtual void Clear() = 0;
 
-		virtual void DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
-		virtual void DrawLines(const Ref<VertexArray>& vertexArray, uint32_t vertexCount = 0) = 0;
+		virtual void DrawIndexed(const RefPtr<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
+		virtual void DrawLines(const RefPtr<VertexArray>& vertexArray, uint32_t vertexCount = 0) = 0;
 
 		virtual void SetLineWidth(float width) = 0;
 

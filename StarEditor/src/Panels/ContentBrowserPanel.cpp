@@ -9,8 +9,8 @@
 
 namespace StarEngine {
 
-	ContentBrowserPanel::ContentBrowserPanel(Ref<Project> project)
-		: m_Project(project), m_ThumbnailCache(CreateRef<ThumbnailCache>(project)), m_BaseDirectory(m_Project->GetAssetDirectory()), m_CurrentDirectory(m_BaseDirectory)
+	ContentBrowserPanel::ContentBrowserPanel(RefPtr<Project> project)
+		: m_Project(project), m_ThumbnailCache(RefPtr<ThumbnailCache>::Create(project)), m_BaseDirectory(m_Project->GetAssetDirectory()), m_CurrentDirectory(m_BaseDirectory)
 	{
 		m_TreeNodes.push_back(TreeNode(".", 0));
 
@@ -86,7 +86,7 @@ namespace StarEngine {
 				std::string itemStr = item.generic_string();
 
 				ImGui::PushID(itemStr.c_str());
-				Ref<Texture2D> icon = isDirectory ? m_DirectoryIcon : m_FileIcon;
+				RefPtr<Texture2D> icon = isDirectory ? m_DirectoryIcon : m_FileIcon;
 				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 				ImGui::ImageButton("##icon", (ImTextureID)icon->GetRendererID(), { thumbnailSize, thumbnailSize }, { 0, 1 }, { 1, 0 });
 
@@ -163,7 +163,7 @@ namespace StarEngine {
 
 						// THUMBNAIL
 						auto relativePath = std::filesystem::relative(path, Project::GetActiveAssetDirectory());
-						Ref<Texture2D> thumbnail = m_DirectoryIcon;
+						RefPtr<Texture2D> thumbnail = m_DirectoryIcon;
 						if (!directoryEntry.is_directory())
 						{
 							thumbnail = m_ThumbnailCache->GetOrCreateThumbnail(relativePath);
@@ -236,7 +236,7 @@ namespace StarEngine {
 
 				// THUMBNAIL
 				auto relativePath = std::filesystem::relative(path, Project::GetActiveAssetDirectory());
-				Ref<Texture2D> thumbnail = m_DirectoryIcon;
+				RefPtr<Texture2D> thumbnail = m_DirectoryIcon;
 				if (!directoryEntry.is_directory())
 				{
 					thumbnail = m_ThumbnailCache->GetOrCreateThumbnail(relativePath);

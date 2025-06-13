@@ -20,7 +20,7 @@ ExampleLayer::ExampleLayer()
 		 0.0f,  0.5f, 0.0f, 0.8f, 0.8f, 0.2f, 1.0f
 	};
 
-	StarEngine::Ref<StarEngine::VertexBuffer> vertexBuffer = StarEngine::VertexBuffer::Create(vertices, sizeof(vertices));
+	StarEngine::RefPtr<StarEngine::VertexBuffer> vertexBuffer = StarEngine::VertexBuffer::Create(vertices, sizeof(vertices));
 	StarEngine::BufferLayout layout = {
 		{ StarEngine::ShaderDataType::Float3, "a_Position" },
 		{ StarEngine::ShaderDataType::Float4, "a_Color" }
@@ -30,7 +30,7 @@ ExampleLayer::ExampleLayer()
 	m_VertexArray->AddVertexBuffer(vertexBuffer);
 
 	uint32_t indices[3] = { 0, 1, 2 };
-	StarEngine::Ref<StarEngine::IndexBuffer> indexBuffer = StarEngine::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t));
+	StarEngine::RefPtr<StarEngine::IndexBuffer> indexBuffer = StarEngine::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t));
 	m_VertexArray->SetIndexBuffer(indexBuffer);
 
 	m_SquareVA = StarEngine::VertexArray::Create();
@@ -42,7 +42,7 @@ ExampleLayer::ExampleLayer()
 		-0.5f,  0.5f, 0.0f, 0.0f, 1.0f
 	};
 
-	StarEngine::Ref<StarEngine::VertexBuffer> squareVB = StarEngine::VertexBuffer::Create(squareVertices, sizeof(squareVertices));
+	StarEngine::RefPtr<StarEngine::VertexBuffer> squareVB = StarEngine::VertexBuffer::Create(squareVertices, sizeof(squareVertices));
 	squareVB->SetLayout({
 		{ StarEngine::ShaderDataType::Float3, "a_Position" },
 		{ StarEngine::ShaderDataType::Float2, "a_TexCoord" }
@@ -51,7 +51,7 @@ ExampleLayer::ExampleLayer()
 	m_SquareVA->AddVertexBuffer(squareVB);
 
 	uint32_t squareIndices[6] = { 0, 1, 2, 2, 3, 0 };
-	StarEngine::Ref<StarEngine::IndexBuffer> squareIB = StarEngine::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t));
+	StarEngine::RefPtr<StarEngine::IndexBuffer> squareIB = StarEngine::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t));
 	m_SquareVA->SetIndexBuffer(squareIB);
 
 	std::string vertexSrc = R"(

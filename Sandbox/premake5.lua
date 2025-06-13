@@ -20,6 +20,7 @@ project "Sandbox"
 		"%{wks.location}/StarEngine/vendor",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.entt}",
+		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.miniaudio}"
 	}
 

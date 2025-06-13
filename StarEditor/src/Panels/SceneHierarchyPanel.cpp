@@ -26,12 +26,12 @@
 
 namespace StarEngine {
 
-	SceneHierarchyPanel::SceneHierarchyPanel(const Ref<Scene>& context)
+	SceneHierarchyPanel::SceneHierarchyPanel(const RefPtr<Scene>& context)
 	{
 		SetContext(context);
 	}
 
-	void SceneHierarchyPanel::SetContext(const Ref<Scene>& context)
+	void SceneHierarchyPanel::SetContext(const RefPtr<Scene>& context)
 	{
 		m_Context = context;
 		m_SelectionContext = {};
@@ -380,7 +380,7 @@ namespace StarEngine {
 				bool sceneRunning = scene->IsRunning();
 				if (sceneRunning)
 				{
-					Ref<ScriptInstance> scriptInstance = ScriptEngine::GetEntityScriptInstance(entity.GetUUID());
+					RefPtr<ScriptInstance> scriptInstance = ScriptEngine::GetEntityScriptInstance(entity.GetUUID());
 					if (scriptInstance)
 					{
 						const auto& fields = scriptInstance->GetScriptClass()->GetFields();
@@ -401,7 +401,7 @@ namespace StarEngine {
 				{
 					if (scriptClassExists)
 					{
-						Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(component.ClassName);
+						RefPtr<ScriptClass> entityClass = ScriptEngine::GetEntityClass(component.ClassName);
 						const auto& fields = entityClass->GetFields();
 
 						auto& entityFields = ScriptEngine::GetScriptFieldMap(entity);
@@ -632,7 +632,7 @@ namespace StarEngine {
 
 				if (component.Audio != 0)
 				{
-					Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(component.Audio);
+					RefPtr<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(component.Audio);
 
 					float volumeMultiplier = config.VolumeMultiplier;
 					if (ImGui::SliderFloat("Volume Multiplier", &config.VolumeMultiplier, 0.0f, 2.0f, "%.2f"))

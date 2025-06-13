@@ -26,12 +26,12 @@ namespace StarEngine
 			s_RendererAPI->Clear();
 		}
 
-		static void DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount = 0)
+		static void DrawIndexed(const RefPtr<VertexArray>& vertexArray, uint32_t indexCount = 0)
 		{
 			s_RendererAPI->DrawIndexed(vertexArray, indexCount);
 		}
 
-		static void DrawLines(const Ref<VertexArray>& vertexArray, uint32_t vertexCount = 0)
+		static void DrawLines(const RefPtr<VertexArray>& vertexArray, uint32_t vertexCount = 0)
 		{
 			s_RendererAPI->DrawLines(vertexArray, vertexCount);
 		}
@@ -41,6 +41,6 @@ namespace StarEngine
 			s_RendererAPI->SetLineWidth(width);
 		}
 	private:
-		static Scope<RendererAPI> s_RendererAPI;
+		static std::unique_ptr<RendererAPI> s_RendererAPI;
 	};
 }

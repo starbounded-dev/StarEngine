@@ -4,7 +4,7 @@
 
 namespace StarEngine
 {
-	class Camera
+	class Camera : public RefCounted
 	{
 	public:
 		Camera() = default;

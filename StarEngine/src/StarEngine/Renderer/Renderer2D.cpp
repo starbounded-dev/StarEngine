@@ -66,22 +66,22 @@ namespace StarEngine {
 		static const uint32_t MaxIndices = MaxQuads * 6;
 		static const uint32_t MaxTextureSlots = 32; // TODO: RenderCaps
 
-		Ref<VertexArray> QuadVertexArray;
-		Ref<VertexBuffer> QuadVertexBuffer;
-		Ref<Shader> QuadShader;
-		Ref<Texture2D> WhiteTexture;
+		RefPtr<VertexArray> QuadVertexArray;
+		RefPtr<VertexBuffer> QuadVertexBuffer;
+		RefPtr<Shader> QuadShader;
+		RefPtr<Texture2D> WhiteTexture;
 
-		Ref<VertexArray> CircleVertexArray;
-		Ref<VertexBuffer> CircleVertexBuffer;
-		Ref<Shader> CircleShader;
+		RefPtr<VertexArray> CircleVertexArray;
+		RefPtr<VertexBuffer> CircleVertexBuffer;
+		RefPtr<Shader> CircleShader;
 
-		Ref<VertexArray> LineVertexArray;
-		Ref<VertexBuffer> LineVertexBuffer;
-		Ref<Shader> LineShader;
+		RefPtr<VertexArray> LineVertexArray;
+		RefPtr<VertexBuffer> LineVertexBuffer;
+		RefPtr<Shader> LineShader;
 
-		Ref<VertexArray> TextVertexArray;
-		Ref<VertexBuffer> TextVertexBuffer;
-		Ref<Shader> TextShader;
+		RefPtr<VertexArray> TextVertexArray;
+		RefPtr<VertexBuffer> TextVertexBuffer;
+		RefPtr<Shader> TextShader;
 
 		uint32_t QuadIndexCount = 0;
 		QuadVertex* QuadVertexBufferBase = nullptr;
@@ -101,10 +101,10 @@ namespace StarEngine {
 
 		float LineWidth = 2.0f;
 
-		std::array<Ref<Texture2D>, MaxTextureSlots> TextureSlots;
+		std::array<RefPtr<Texture2D>, MaxTextureSlots> TextureSlots;
 		uint32_t TextureSlotIndex = 1; // 0 = white texture
 
-		Ref<Texture2D> FontAtlasTexture;
+		RefPtr<Texture2D> FontAtlasTexture;
 
 		glm::vec4 QuadVertexPositions[4];
 
@@ -115,7 +115,7 @@ namespace StarEngine {
 			glm::mat4 ViewProjection;
 		};
 		CameraData CameraBuffer;
-		Ref<UniformBuffer> CameraUniformBuffer;
+		RefPtr<UniformBuffer> CameraUniformBuffer;
 	};
 
 	static Renderer2DData s_Data;
@@ -155,7 +155,7 @@ namespace StarEngine {
 			offset += 4;
 		}
 
-		Ref<IndexBuffer> quadIB = IndexBuffer::Create(quadIndices, s_Data.MaxIndices);
+		RefPtr<IndexBuffer> quadIB = IndexBuffer::Create(quadIndices, s_Data.MaxIndices);
 		s_Data.QuadVertexArray->SetIndexBuffer(quadIB);
 		delete[] quadIndices;
 
@@ -360,12 +360,12 @@ namespace StarEngine {
 		DrawQuad(transform, color);
 	}
 
-	void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const RefPtr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
 	{
 		DrawQuad({ position.x, position.y, 0.0f }, size, texture, tilingFactor, tintColor);
 	}
 
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const RefPtr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
 	{
 		SE_PROFILE_FUNCTION();
 
@@ -403,7 +403,7 @@ namespace StarEngine {
 		s_Data.Stats.QuadCount++;
 	}
 
-	void Renderer2D::DrawQuad(const glm::mat4& transform, const Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor, int entityID)
+	void Renderer2D::DrawQuad(const glm::mat4& transform, const RefPtr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor, int entityID)
 	{
 		SE_PROFILE_FUNCTION();
 		SE_CORE_VERIFY(texture);
@@ -466,12 +466,12 @@ namespace StarEngine {
 		DrawQuad(transform, color);
 	}
 
-	void Renderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const RefPtr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
 	{
 		DrawRotatedQuad({ position.x, position.y, 0.0f }, size, rotation, texture, tilingFactor, tintColor);
 	}
 
-	void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const RefPtr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
 	{
 		SE_PROFILE_FUNCTION();
 
@@ -552,7 +552,7 @@ namespace StarEngine {
 	{
 		if (src.Texture)
 		{
-			Ref<Texture2D> texture = AssetManager::GetAsset<Texture2D>(src.Texture);
+			RefPtr<Texture2D> texture = AssetManager::GetAsset<Texture2D>(src.Texture);
 			DrawQuad(transform, texture, src.TilingFactor, src.Color, entityID);
 		}
 		else
@@ -561,11 +561,11 @@ namespace StarEngine {
 		}
 	}
 
-	void Renderer2D::DrawString(const std::string& string, Ref<Font> font, const glm::mat4& transform, const TextParams& textParams, int entityID)
+	void Renderer2D::DrawString(const std::string& string, RefPtr<Font> font, const glm::mat4& transform, const TextParams& textParams, int entityID)
 	{
 		const auto& fontGeometry = font->GetMSDFData()->FontGeometry;
 		const auto& metrics = fontGeometry.getMetrics();
-		Ref<Texture2D> fontAtlas = font->GetAtlasTexture();
+		RefPtr<Texture2D> fontAtlas = font->GetAtlasTexture();
 
 		s_Data.FontAtlasTexture = fontAtlas;
 

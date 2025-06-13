@@ -147,11 +147,11 @@ namespace StarEngine {
 
 		ScriptClass EntityClass;
 
-		std::unordered_map<std::string, Ref<ScriptClass>> EntityClasses;
-		std::unordered_map<UUID, Ref<ScriptInstance>> EntityInstances;
+		std::unordered_map<std::string, RefPtr<ScriptClass>> EntityClasses;
+		std::unordered_map<UUID, RefPtr<ScriptInstance>> EntityInstances;
 		std::unordered_map<UUID, ScriptFieldMap> EntityScriptFields;
 
-		Scope<filewatch::FileWatch<std::string>> AppAssemblyFileWatcher;
+		std::unique_ptr<filewatch::FileWatch<std::string>> AppAssemblyFileWatcher;
 		bool AssemblyReloadPending = false;
 
 		#if SE_DEBUG
@@ -280,7 +280,7 @@ namespace StarEngine {
 			return false;
 		s_Data->AppAssemblyImage = mono_assembly_get_image(s_Data->AppAssembly);
 
-		s_Data->AppAssemblyFileWatcher = CreateScope<filewatch::FileWatch<std::string>>(filepath.string(), OnAppAssemblyFileSystemEvent);
+		s_Data->AppAssemblyFileWatcher = std::make_unique<filewatch::FileWatch<std::string>>(filepath.string(), OnAppAssemblyFileSystemEvent);
 		s_Data->AssemblyReloadPending = false;
 
 		return true;
@@ -319,7 +319,7 @@ namespace StarEngine {
 		{
 			UUID entityID = entity.GetUUID();
 
-			Ref<ScriptInstance> instance = CreateRef<ScriptInstance>(s_Data->EntityClasses[sc.ClassName], entity);
+			RefPtr<ScriptInstance> instance = RefPtr<ScriptInstance>::Create(s_Data->EntityClasses[sc.ClassName], entity);
 			s_Data->EntityInstances[entityID] = instance;
 
 			// Copy field values
@@ -338,7 +338,7 @@ namespace StarEngine {
 		UUID entityUUID = entity.GetUUID();
 		if (s_Data->EntityInstances.find(entityUUID) != s_Data->EntityInstances.end())
 		{
-			Ref<ScriptInstance> instance = s_Data->EntityInstances[entityUUID];
+			RefPtr<ScriptInstance> instance = s_Data->EntityInstances[entityUUID];
 			instance->InvokeOnUpdate((float)ts);
 		}
 		else
@@ -352,7 +352,7 @@ namespace StarEngine {
 		return s_Data->SceneContext;
 	}
 
-	Ref<ScriptInstance> ScriptEngine::GetEntityScriptInstance(UUID entityID)
+	RefPtr<ScriptInstance> ScriptEngine::GetEntityScriptInstance(UUID entityID)
 	{
 		auto it = s_Data->EntityInstances.find(entityID);
 		if (it == s_Data->EntityInstances.end())
@@ -361,7 +361,7 @@ namespace StarEngine {
 		return it->second;
 	}
 
-	Ref<ScriptClass> ScriptEngine::GetEntityClass(const std::string& name)
+	RefPtr<ScriptClass> ScriptEngine::GetEntityClass(const std::string& name)
 	{
 		if (s_Data->EntityClasses.find(name) == s_Data->EntityClasses.end())
 			return nullptr;
@@ -376,7 +376,7 @@ namespace StarEngine {
 		s_Data->EntityInstances.clear();
 	}
 
-	std::unordered_map<std::string, Ref<ScriptClass>> ScriptEngine::GetEntityClasses()
+	std::unordered_map<std::string, RefPtr<ScriptClass>> ScriptEngine::GetEntityClasses()
 	{
 		return s_Data->EntityClasses;
 	}
@@ -419,7 +419,7 @@ namespace StarEngine {
 			if (!isEntity)
 				continue;
 
-			Ref<ScriptClass> scriptClass = CreateRef<ScriptClass>(nameSpace, className);
+			RefPtr<ScriptClass> scriptClass = RefPtr<ScriptClass>::Create (nameSpace, className);
 			s_Data->EntityClasses[fullName] = scriptClass;
 
 
@@ -497,7 +497,7 @@ namespace StarEngine {
 		return mono_runtime_invoke(method, instance, params, &exception);
 	}
 
-	ScriptInstance::ScriptInstance(Ref<ScriptClass> scriptClass, Entity entity)
+	ScriptInstance::ScriptInstance(RefPtr<ScriptClass> scriptClass, Entity entity)
 		: m_ScriptClass(scriptClass)
 	{
 		m_Instance = scriptClass->Instantiate();

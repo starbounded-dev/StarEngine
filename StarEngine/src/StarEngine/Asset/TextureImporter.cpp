@@ -7,14 +7,14 @@
 
 namespace StarEngine {
 
-	Ref<Texture2D> TextureImporter::ImportTexture2D(AssetHandle handle, const AssetMetadata& metadata)
+	RefPtr<Texture2D> TextureImporter::ImportTexture2D(AssetHandle handle, const AssetMetadata& metadata)
 	{
 		//SE_PROFILE_FUNCTION();
 
 		return LoadTexture2D(Project::GetActiveAssetDirectory() / metadata.FilePath);
 	}
 
-	Ref<Texture2D> TextureImporter::LoadTexture2D(const std::filesystem::path& path)
+	RRefPtref<Texture2D> TextureImporter::LoadTexture2D(const std::filesystem::path& path)
 	{
 		//SE_PROFILE_FUNCTION();
 		int width, height, channels;
@@ -50,7 +50,7 @@ namespace StarEngine {
 			break;
 		}
 
-		Ref<Texture2D> texture = Texture2D::Create(spec, data);
+		RefPtr<Texture2D> texture = Texture2D::Create(spec, data);
 		data.Release();
 		return texture;
 	}

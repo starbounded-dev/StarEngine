@@ -42,7 +42,7 @@ namespace StarEngine
 		void SaveScene();
 		void SaveSceneAs();
 
-		void SerializeScene(Ref<Scene> scene, const std::filesystem::path& filepath);
+		void SerializeScene(RefPtr<Scene> scene, const std::filesystem::path& filepath);
 
 		void OnScenePlay();
 		void OnSceneSimulate();
@@ -60,12 +60,12 @@ namespace StarEngine
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
 
 		// Temp
-		Ref<VertexArray> m_SquareVA;
-		Ref<Shader> m_FlatColorShader;
-		Ref<Framebuffer> m_Framebuffer;
+		RefPtr<VertexArray> m_SquareVA;
+		RefPtr<Shader> m_FlatColorShader;
+		RefPtr<Framebuffer> m_Framebuffer;
 
-		Ref<Scene> m_ActiveScene;
-		Ref<Scene> m_EditorScene;
+		RefPtr<Scene> m_ActiveScene;
+		RefPtr<Scene> m_EditorScene;
 		std::filesystem::path m_EditorScenePath;
 		Entity m_SquareEntity;
 		Entity m_CameraEntity;
@@ -77,7 +77,7 @@ namespace StarEngine
 
 		EditorCamera m_EditorCamera;
 
-		Ref<Texture2D> m_CheckerboardTexture;
+		RefPtr<Texture2D> m_CheckerboardTexture;
 
 		glm::vec2 m_ViewportSize = {0.0f, 0.0f};
 		glm::vec2 m_ViewportBounds[2];
@@ -96,10 +96,10 @@ namespace StarEngine
 
 		// Panels
 		SceneHierarchyPanel m_SceneHierarchyPanel;
-		Scope<ContentBrowserPanel> m_ContentBrowserPanel;
+		std::unique_ptr<ContentBrowserPanel> m_ContentBrowserPanel;
 
 		// Editor resources
-		Ref<Texture2D> m_IconPlay, m_IconPause, m_IconStep, m_IconSimulate, m_IconStop;
+		RefPtr<Texture2D> m_IconPlay, m_IconPause, m_IconStep, m_IconSimulate, m_IconStop;
 	};
 }
 

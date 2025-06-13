@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarEngine/Core/Base.h"
+#include "StarEngine/Core/Ref.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/string_cast.hpp"
@@ -11,16 +11,29 @@
 #pragma warning(pop)
 
 namespace StarEngine {
+
+	enum class LogSeverity
+	{
+		Trace,
+		Info,
+		Warn,
+		Error,
+		Critical
+	};
+
 	class Log
 	{
 	public:
 		static void Init();
 
-		static Ref<spdlog::logger>& GetCoreLogger() { return s_CoreLogger; }
-		static Ref<spdlog::logger>& GetClientLogger() { return s_ClientLogger; }
+		static RefPtr<spdlog::logger>& GetCoreLogger() { return s_CoreLogger; }
+		static RefPtr<spdlog::logger>& GetClientLogger() { return s_ClientLogger; }
+
+
+		static void LogMessage(LogSeverity severity, const std::string& message, bool core = false);
 	private:
-		static Ref<spdlog::logger> s_CoreLogger;
-		static Ref<spdlog::logger> s_ClientLogger;
+		static RefPtr<spdlog::logger> s_CoreLogger;
+		static RefPtr<spdlog::logger> s_ClientLogger;
 	};
 }
 

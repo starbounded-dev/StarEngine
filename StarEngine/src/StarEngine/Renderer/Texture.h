@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarEngine/Core/Base.h"
+#include "StarEngine/Core/Ref.h"
 #include "StarEngine/Core/Buffer.h"
 
 #include "StarEngine/Asset/Asset.h"
@@ -52,7 +52,7 @@ namespace StarEngine {
 	class Texture2D : public Texture
 	{
 	public:
-		static Ref<Texture2D> Create(const TextureSpecification& specification, Buffer data = Buffer());
+		static RefPtr<Texture2D> Create(const TextureSpecification& specification, Buffer data = Buffer());
 
 		virtual void ChangeSize(uint32_t newWidth, uint32_t newHeight) = 0;
 

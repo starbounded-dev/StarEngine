@@ -176,7 +176,7 @@ namespace StarEngine {
 		return RigidBody2DComponent::BodyType::Static;
 	}
 
-	SceneSerializer::SceneSerializer(const Ref<Scene>& scene)
+	SceneSerializer::SceneSerializer(const RefPtr<Scene>& scene)
 		: m_Scene(scene)
 	{
 
@@ -247,7 +247,7 @@ namespace StarEngine {
 			out << YAML::Key << "ClassName" << YAML::Value << scriptComponent.ClassName;
 
 			// Fields
-			Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(scriptComponent.ClassName);
+			RefPtr<ScriptClass> entityClass = ScriptEngine::GetEntityClass(scriptComponent.ClassName);
 			const auto& fields = entityClass->GetFields();
 			if (fields.size() > 0)
 			{
@@ -548,7 +548,7 @@ namespace StarEngine {
 					auto scriptFields = scriptComponent["ScriptFields"];
 					if (scriptFields)
 					{
-						Ref<ScriptClass> entityClass = ScriptEngine::GetEntityClass(sc.ClassName);
+						RefPtr<ScriptClass> entityClass = ScriptEngine::GetEntityClass(sc.ClassName);
 						if (entityClass)
 						{
 							const auto& fields = entityClass->GetFields();
@@ -721,7 +721,7 @@ namespace StarEngine {
 
 					if (component.Audio != 0)
 					{
-						Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(component.Audio);
+						RefPtr<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(component.Audio);
 						audioSource->SetConfig(component.Config);
 					}
 

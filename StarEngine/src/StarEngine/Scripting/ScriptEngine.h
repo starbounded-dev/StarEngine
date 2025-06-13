@@ -69,7 +69,7 @@ namespace StarEngine {
 
 	using ScriptFieldMap = std::unordered_map<std::string, ScriptFieldInstance>;
 
-	class ScriptClass
+	class ScriptClass : public RefCounted
 	{
 	public:
 		ScriptClass() = default;
@@ -94,12 +94,12 @@ namespace StarEngine {
 	class ScriptInstance
 	{
 	public:
-		ScriptInstance(Ref<ScriptClass> scriptClass, Entity entity);
+		ScriptInstance(RefPtr<ScriptClass> scriptClass, Entity entity);
 
 		void InvokeOnCreate();
 		void InvokeOnUpdate(float ts);
 
-		Ref<ScriptClass> GetScriptClass() { return m_ScriptClass; }
+		RefPtr<ScriptClass> GetScriptClass() { return m_ScriptClass; }
 
 		template<typename T>
 		T GetFieldValue(const std::string& name)
@@ -126,7 +126,7 @@ namespace StarEngine {
 		bool GetFieldValueInternal(const std::string& name, void* buffer);
 		bool SetFieldValueInternal(const std::string& name, const void* value);
 	private:
-		Ref<ScriptClass> m_ScriptClass;
+		RefPtr<ScriptClass> m_ScriptClass;
 
 		MonoObject* m_Instance = nullptr;
 		MonoMethod* m_Constructor = nullptr;
@@ -158,10 +158,10 @@ namespace StarEngine {
 		static void OnUpdateEntity(Entity entity, Timestep ts);
 
 		static Scene* GetSceneContext();
-		static Ref<ScriptInstance> GetEntityScriptInstance(UUID entityID);
+		static RefPtr<ScriptInstance> GetEntityScriptInstance(UUID entityID);
 
-		static Ref<ScriptClass> GetEntityClass(const std::string& name);
-		static std::unordered_map<std::string, Ref<ScriptClass>> GetEntityClasses();
+		static RefPtr<ScriptClass> GetEntityClass(const std::string& name);
+		static std::unordered_map<std::string, RefPtr<ScriptClass>> GetEntityClasses();
 		static ScriptFieldMap& GetScriptFieldMap(Entity entity);
 
 		static MonoImage* GetCoreAssemblyImage();
