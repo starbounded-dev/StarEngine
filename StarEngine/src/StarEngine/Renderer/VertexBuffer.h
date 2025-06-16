@@ -113,13 +113,8 @@ namespace StarEngine {
 	class VertexBuffer : public RefCounted
 	{
 	public:
-		static RefPtr<VertexBuffer> Create(const Buffer& buffer) {
-			return std::make_shared<VertexBuffer>(buffer);
-		}
-
-		static RefPtr<VertexBuffer> Create(uint64_t size) {
-			return std::make_shared<VertexBuffer>(size);
-		}
+		static RefPtr<VertexBuffer> Create(const Buffer& buffer) { return RefPtr<VertexBuffer>::Create(buffer); }
+		static RefPtr<VertexBuffer> Create(uint64_t size) { return RefPtr<VertexBuffer>::Create(size); }
 
 		void SetData(Buffer buffer, uint64_t offset = 0);
 		void RT_SetData(Buffer buffer, uint64_t offset = 0);

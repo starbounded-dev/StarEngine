@@ -24,6 +24,10 @@ namespace StarEngine {
 	{
 		ApplicationSpecification spec;
 		spec.Name = "StarEditor";
+		//spec.WindowWidth = 1600;
+		//spec.WindowHeight = 900;
+		//spec.StartMaximized = true;
+		//spec.VSync = true;
 		spec.CommandLineArgs = args;
 
 		return new StarEditor(spec);;

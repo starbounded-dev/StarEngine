@@ -6,6 +6,8 @@
 
 #include "StarEngine/Core/Application.h"
 
+#include "StarEngine/Core/Input.h"
+
 #include "StarEngine/Renderer/DeviceManager.h"
 
 #include <imgui.h>
@@ -20,12 +22,6 @@
 #include "ImGuizmo.h"
 
 namespace StarEngine {
-
-	ImGuiLayer::ImGuiLayer()
-		: Layer("ImGuiLayer")
-	{
-
-	}
 
 	void ImGuiLayer::OnAttach()
 	{
@@ -66,7 +62,7 @@ namespace StarEngine {
 		SetDarkThemeColors();
 
 		ImGui_ImplGlfw_InitForVulkan((GLFWwindow*)Application::Get().GetWindow().GetNativeWindow(), true);
-		m_ImGuiRenderer.Init();
+		m_ImGuiRenderer->Init();
 
 		InitPlatformInterface();
 	}
@@ -78,6 +74,7 @@ namespace StarEngine {
 
 	static void ImGuiRenderer_CreateWindow(ImGuiViewport* viewport)
 	{
+#if 0
 		ImGuiViewportData* data = IM_NEW(ImGuiViewportData)();
 		viewport->RendererUserData = data;
 
@@ -89,19 +86,20 @@ namespace StarEngine {
 		ImGuiPlatformIO& platform_IO = ImGui::GetPlatformIO();
 		VkResult err = (VkResult)platform_IO.Platform_CreateVkSurface(viewport, (ImU64)v->Instance, (const void*)v-Allocator);
 		check_vk_result(err);
+#endif
 	}
 
 	void ImGuiLayer::InitPlatformInterface()
 	{
 		ImGuiPlatformIO& platform_IO = ImGui::GetPlatformIO();
 		if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-			//IM_ASSERT(platform_IO.Platform_CreateVkSurface /= NULL && "Platform need...");
+			IM_ASSERT(platform_IO.Platform_CreateVkSurface != NULL && "Platform needs to set up the CreateVkSurfaceHandler.");
 
-		platform_IO.Renderer_CreateWindow = ImGui_ImplVulkan_CreateWindow;
-		platform_IO.Renderer_DestroyWindow = ImGui_ImplVulkan_DestroyWindow;
-		platform_IO.Renderer_SetWindowSize = ImGui_ImplVulkan_SetWindowSize;
-		platform_IO.Renderer_RenderWindow = ImGui_ImplVulkan_RenderWindow;
-		platform_IO.Renderer_SwapBuffers = ImGui_ImplVulkan_SwapBuffers;
+		platform_IO.Renderer_CreateWindow = ImGuiRenderer_CreateWindow;
+		//platform_IO.Renderer_DestroyWindow = ImGui_ImplVulkan_DestroyWindow;
+		//platform_IO.Renderer_SetWindowSize = ImGui_ImplVulkan_SetWindowSize;
+		//platform_IO.Renderer_RenderWindow = ImGui_ImplVulkan_RenderWindow;
+		//platform_IO.Renderer_SwapBuffers = ImGui_ImplVulkan_SwapBuffers;
 	}
 
 	void ImGuiLayer::OnDetach()
@@ -117,7 +115,7 @@ namespace StarEngine {
 
 		ImGui::SetMouseCursor(Input::GetCursorMode() == CursorMode::Normal ? ImGuiMouseCursor_Arrow : ImGuiMouseCursor_None);
 
-		m_ImGuiRenderer.UpdateFontTexture();
+		m_ImGuiRenderer->UpdateFontTexture();
 		ImGui_ImplGlfw_NewFrame();
 
 		ImGui::NewFrame();
@@ -130,8 +128,9 @@ namespace StarEngine {
 
 		ImGui::Render();
 
-		m_ImGuiRenderer.Render(Application::GetGraphicsDeviceManager()->GetCurrentFramebuffer());
+		m_ImGuiRenderer->Render(Application::GetGraphicsDeviceManager()->GetCurrentFramebuffer());
 
+#if TODO
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -139,6 +138,7 @@ namespace StarEngine {
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault();
 		}
+#endif
 	}
 
 	void ImGuiLayer::SetDarkThemeColors()

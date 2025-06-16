@@ -19,7 +19,7 @@ namespace StarEngine {
 	class RegisteredFont
 	{
 	protected:
-		friend class ImGui_Renderer;
+		friend class ImGuiRenderer;
 
 		std::shared_ptr<IBlob> m_data;
 		bool const m_isDefault;
@@ -69,11 +69,11 @@ namespace StarEngine {
 	};
 
 	// base class to build IRenderPass-based UIs using ImGui through NVRHI
-	class ImGui_Renderer : public IRenderPass
+	class ImGuiRenderer : public IRenderPass
 	{
 	protected:
 
-		std::unique_ptr<ImGui_NVRHI> imgui_nvrhi;
+		std::unique_ptr<ImGuiNVRHI> imgui_nvrhi;
 
 		// buffer mouse click and keypress events to make sure we don't lose events which last less than a full frame
 		std::array<bool, 3> mouseDown = { false };
@@ -87,9 +87,9 @@ namespace StarEngine {
 		bool m_beginFrameCalled = false;
 
 	public:
-		ImGui_Renderer(DeviceManager* devManager);
-		~ImGui_Renderer();
-		bool Init(std::shared_ptr<ShaderFactory> shaderFactory);
+		ImGuiRenderer(DeviceManager* devManager);
+		~ImGuiRenderer();
+		bool Init();
 
 		// Loads a TTF font from file and registers it with the ImGui_Renderer.
 		// To use the font with ImGUI at runtime, call RegisteredFont::GetScaledFont().

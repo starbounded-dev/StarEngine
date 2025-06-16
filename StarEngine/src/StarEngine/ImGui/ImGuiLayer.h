@@ -26,7 +26,7 @@ namespace StarEngine {
 	private:
 		void InitPlatformInterface();
 	private:
-		ImGuiRenderer m_ImGuiRenderer;
+		RefPtr<ImGuiRenderer> m_ImGuiRenderer;
 	};
 
 }

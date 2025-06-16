@@ -11,6 +11,8 @@
 
 #include "StarEngine/ImGui/ImGuiLayer.h"
 
+#include "StarEngine/Renderer/DeviceManager.h"
+
 int main(int argc, char** argv);
 
 namespace StarEngine
@@ -40,6 +42,8 @@ namespace StarEngine
 			Application(const ApplicationSpecification& specification);
 			virtual ~Application();
 
+
+
 			void OnEvent(Event& e);
 
 			void PushLayer(Layer* layer);
@@ -56,6 +60,10 @@ namespace StarEngine
 			const ApplicationSpecification& GetSpecification() const { return m_Specification; }
 
 			void SubmitToMainThread(const std::function<void()>& function);
+
+			static nvrhi::DeviceHandle GetGraphicsDevice();
+
+			DeviceManager* GetGraphicsDeviceManager() const { return m_GraphicsDeviceManager->GetDevice(); }
 		private:
 			void Run();
 
@@ -65,12 +73,15 @@ namespace StarEngine
 			void ExecuteMainThreadQueue();
 		private:
 			ApplicationSpecification m_Specification;
-			Scope<Window> m_Window;
+			std::unique_ptr<Window> m_Window;
 			ImGuiLayer* m_ImGuiLayer;
 			bool m_Running = true;
 			bool m_Minimized = false;
 			LayerStack m_LayerStack;
 			float m_LastFrameTime = 0.0f;
+
+			static nvrhi::DeviceHandle s_GraphicsDevice; // Add this member to store the graphics device
+			RefPtr<DeviceManager> m_GraphicsDeviceManager; // Add this member to store the device manager
 
 			std::vector<std::function<void()>> m_MainThreadQueue;
 			std::mutex m_MainThreadQueueMutex;

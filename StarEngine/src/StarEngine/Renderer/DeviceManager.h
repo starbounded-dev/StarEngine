@@ -170,7 +170,7 @@ namespace StarEngine
 		static DeviceManager* Create(nvrhi::GraphicsAPI api);
 
 		bool CreateHeadlessDevice(const DeviceCreationParameters& params);
-		bool CreateWindowDeviceAndSwapChain(const DeviceCreationParameters& params, const char* windowTitle);
+		bool CreateDeviceAndSwapChain(const DeviceCreationParameters& params, const char* windowTitle);
 
 		// Initializes device-independent objects (DXGI factory, Vulkan instnace).
 		// Calling CreateInstance() is required before EnumerateAdapters(), but optional if you don't use EnumerateAdapters().

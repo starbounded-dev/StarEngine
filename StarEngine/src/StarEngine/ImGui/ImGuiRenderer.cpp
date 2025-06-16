@@ -4,13 +4,13 @@
 // Add this include to ImGuiRenderer.cpp
 
 #include "StarEngine/Core/FileSystem.h"
-#include "StarEngine/Core/Base.h"
+#include "StarEngine/Core/Core.h"
 
 
 namespace StarEngine 
 {
 
-	ImGui_Renderer::ImGui_Renderer(DeviceManager* devManager)
+	ImGuiRenderer::ImGuiRenderer(DeviceManager* devManager)
 		: IRenderPass(devManager)
 		, m_supportExplicitDisplayScaling(devManager->GetDeviceParams().supportExplicitDisplayScaling)
 	{
@@ -20,12 +20,12 @@ namespace StarEngine
 		m_fonts.push_back(m_defaultFont);
 	}
 
-	ImGui_Renderer::~ImGui_Renderer()
+	ImGuiRenderer::~ImGuiRenderer()
 	{
 		ImGui::DestroyContext();
 	}
 
-	bool ImGui_Renderer::Init(std::shared_ptr<ShaderFactory> shaderFactory)
+	bool ImGuiRenderer::Init()
 	{
 		// Set up keyboard mapping using AddKeyEvent.
 		ImGuiIO& io = ImGui::GetIO();
@@ -51,12 +51,12 @@ namespace StarEngine
 		io.AddKeyEvent(ImGuiKey_Y, 'Y');
 		io.AddKeyEvent(ImGuiKey_Z, 'Z');
 
-		imgui_nvrhi = std::make_unique<ImGui_NVRHI>();
+		imgui_nvrhi = std::make_unique<ImGuiNVRHI>();
 		return imgui_nvrhi->Init();
 	}
 
 
-	std::shared_ptr<RegisteredFont> ImGui_Renderer::CreateFontFromFile(IFileSystem& fs,
+	std::shared_ptr<RegisteredFont> ImGuiRenderer::CreateFontFromFile(IFileSystem& fs,
 		const std::filesystem::path& fontFile, float fontSize)
 	{
 		auto fontData = fs.readFile(fontFile);
@@ -69,7 +69,7 @@ namespace StarEngine
 		return std::move(font);
 	}
 
-	std::shared_ptr<RegisteredFont> ImGui_Renderer::CreateFontFromMemoryInternal(void const* pData, size_t size,
+	std::shared_ptr<RegisteredFont> ImGuiRenderer::CreateFontFromMemoryInternal(void const* pData, size_t size,
 		bool compressed, float fontSize)
 	{
 		if (!pData || !size)
@@ -86,18 +86,18 @@ namespace StarEngine
 		return std::move(font);
 	}
 
-	std::shared_ptr<RegisteredFont> ImGui_Renderer::CreateFontFromMemory(void const* pData, size_t size, float fontSize)
+	std::shared_ptr<RegisteredFont> ImGuiRenderer::CreateFontFromMemory(void const* pData, size_t size, float fontSize)
 	{
 		return CreateFontFromMemoryInternal(pData, size, false, fontSize);
 	}
 
-	std::shared_ptr<RegisteredFont> ImGui_Renderer::CreateFontFromMemoryCompressed(void const* pData, size_t size,
+	std::shared_ptr<RegisteredFont> ImGuiRenderer::CreateFontFromMemoryCompressed(void const* pData, size_t size,
 		float fontSize)
 	{
 		return CreateFontFromMemoryInternal(pData, size, true, fontSize);
 	}
 
-	bool ImGui_Renderer::KeyboardUpdate(int key, int scancode, int action, int mods)
+	bool ImGuiRenderer::KeyboardUpdate(int key, int scancode, int action, int mods)
 	{
 		auto& io = ImGui::GetIO();
 
@@ -126,7 +126,7 @@ namespace StarEngine
 		return io.WantCaptureKeyboard;
 	}
 
-	bool ImGui_Renderer::KeyboardCharInput(unsigned int unicode, int mods)
+	bool ImGuiRenderer::KeyboardCharInput(unsigned int unicode, int mods)
 	{
 		auto& io = ImGui::GetIO();
 
@@ -135,7 +135,7 @@ namespace StarEngine
 		return io.WantCaptureKeyboard;
 	}
 
-	bool ImGui_Renderer::MousePosUpdate(double xpos, double ypos)
+	bool ImGuiRenderer::MousePosUpdate(double xpos, double ypos)
 	{
 		auto& io = ImGui::GetIO();
 		io.MousePos.x = float(xpos);
@@ -144,7 +144,7 @@ namespace StarEngine
 		return io.WantCaptureMouse;
 	}
 
-	bool ImGui_Renderer::MouseScrollUpdate(double xoffset, double yoffset)
+	bool ImGuiRenderer::MouseScrollUpdate(double xoffset, double yoffset)
 	{
 		auto& io = ImGui::GetIO();
 		io.MouseWheel += float(yoffset);
@@ -152,7 +152,7 @@ namespace StarEngine
 		return io.WantCaptureMouse;
 	}
 
-	bool ImGui_Renderer::MouseButtonUpdate(int button, int action, int mods)
+	bool ImGuiRenderer::MouseButtonUpdate(int button, int action, int mods)
 	{
 		auto& io = ImGui::GetIO();
 
@@ -198,7 +198,7 @@ namespace StarEngine
 		return io.WantCaptureMouse;
 	}
 
-	void ImGui_Renderer::Animate(float elapsedTimeSeconds)
+	void ImGuiRenderer::Animate(float elapsedTimeSeconds)
 	{
 		// multiple Animate may be called before the first Render due to the m_SkipRenderOnFirstFrame extension
 		// ensure each imgui_nvrhi->beginFrame matches with exactly one imgui_nvrhi->Render
@@ -241,7 +241,7 @@ namespace StarEngine
 		m_beginFrameCalled = true;
 	}
 
-	void ImGui_Renderer::Render(nvrhi::IFramebuffer* framebuffer)
+	void ImGuiRenderer::Render(nvrhi::IFramebuffer* framebuffer)
 	{
 		if (!imgui_nvrhi) return;
 
@@ -271,12 +271,12 @@ namespace StarEngine
 		}
 	}
 
-	void ImGui_Renderer::BackBufferResizing()
+	void ImGuiRenderer::BackBufferResizing()
 	{
 		if (imgui_nvrhi) imgui_nvrhi->BackbufferResizing();
 	}
 
-	void ImGui_Renderer::DisplayScaleChanged(float scaleX, float scaleY)
+	void ImGuiRenderer::DisplayScaleChanged(float scaleX, float scaleY)
 	{
 		// Apps that don't implement explicit scaling won't expect the fonts to be resized etc.
 		if (!m_supportExplicitDisplayScaling)
@@ -296,7 +296,7 @@ namespace StarEngine
 		ImGui::GetStyle().ScaleAllSizes(scaleX);
 	}
 
-	void ImGui_Renderer::BeginFullScreenWindow()
+	void ImGuiRenderer::BeginFullScreenWindow()
 	{
 		ImGuiIO const& io = ImGui::GetIO();
 		ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Always);
@@ -309,7 +309,7 @@ namespace StarEngine
 		ImGui::Begin(" ", 0, ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
 	}
 
-	void ImGui_Renderer::DrawScreenCenteredText(const char* text)
+	void ImGuiRenderer::DrawScreenCenteredText(const char* text)
 	{
 		ImGuiIO const& io = ImGui::GetIO();
 		ImVec2 textSize = ImGui::CalcTextSize(text);
@@ -318,7 +318,7 @@ namespace StarEngine
 		ImGui::TextUnformatted(text);
 	}
 
-	void ImGui_Renderer::EndFullScreenWindow()
+	void ImGuiRenderer::EndFullScreenWindow()
 	{
 		ImGui::End();
 		ImGui::PopStyleVar();

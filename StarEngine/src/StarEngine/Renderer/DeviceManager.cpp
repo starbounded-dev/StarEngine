@@ -131,85 +131,27 @@ namespace StarEngine {
 		return CreateDevice();
 	}
 
-	bool DeviceManager::CreateWindowDeviceAndSwapChain(const DeviceCreationParameters& params, const char* windowTitle)
+	bool DeviceManager::CreateDeviceAndSwapChain(const DeviceCreationParameters& params, const char* windowTitle)
 	{
-		m_DeviceParams = params;
-		m_DeviceParams.headlessDevice = false;
-		m_RequestedVSync = params.vsyncEnabled;
-
-		if (!CreateInstance(m_DeviceParams))
-			return false;
-
-		//glfwSetErrorCallback(ErrorCallback_GLFW);
-
-		glfwDefaultWindowHints();
-
-		bool foundFormat = false;
-		for (const auto& info : formatInfo)
-		{
-			if (info.format == params.swapChainFormat)
-			{
-				glfwWindowHint(GLFW_RED_BITS, info.redBits);
-				glfwWindowHint(GLFW_GREEN_BITS, info.greenBits);
-				glfwWindowHint(GLFW_BLUE_BITS, info.blueBits);
-				glfwWindowHint(GLFW_ALPHA_BITS, info.alphaBits);
-				glfwWindowHint(GLFW_DEPTH_BITS, info.depthBits);
-				glfwWindowHint(GLFW_STENCIL_BITS, info.stencilBits);
-				foundFormat = true;
-				break;
-			}
-		}
-
-		assert(foundFormat);
-
-		glfwWindowHint(GLFW_SAMPLES, params.swapChainSampleCount);
-		glfwWindowHint(GLFW_REFRESH_RATE, params.refreshRate);
-		glfwWindowHint(GLFW_SCALE_TO_MONITOR, params.resizeWindowWithDisplayScale);
-
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);   // Ignored for fullscreen
-
-		if (params.startBorderless)
-		{
-			glfwWindowHint(GLFW_DECORATED, GLFW_FALSE); // Borderless window
-		}
-
-		m_Window = glfwCreateWindow(params.backBufferWidth, params.backBufferHeight,
-			windowTitle ? windowTitle : "",
-			params.startFullscreen ? glfwGetPrimaryMonitor() : nullptr,
-			nullptr);
-
-		if (m_Window == nullptr)
-		{
-			return false;
-		}
-
-		if (params.startFullscreen)
-		{
-			glfwSetWindowMonitor(m_Window, glfwGetPrimaryMonitor(), 0, 0,
-				m_DeviceParams.backBufferWidth, m_DeviceParams.backBufferHeight, m_DeviceParams.refreshRate);
-		}
-		else
-		{
-			int fbWidth = 0, fbHeight = 0;
-			glfwGetFramebufferSize(m_Window, &fbWidth, &fbHeight);
-			m_DeviceParams.backBufferWidth = fbWidth;
-			m_DeviceParams.backBufferHeight = fbHeight;
-		}
-
-		if (windowTitle)
-			m_WindowTitle = windowTitle;
-
-		glfwSetWindowUserPointer(m_Window, this);
-
-		if (params.windowPosX != -1 && params.windowPosY != -1)
-		{
-			glfwSetWindowPos(m_Window, params.windowPosX, params.windowPosY);
-		}
+		/*
+		glfwSetWindowPosCallback(m_Window, WindowPosCallback_GLFW);
+		glfwSetWindowCloseCallback(m_Window, WindowCloseCallback_GLFW);
+		glfwSetWindowRefreshCallback(m_Window, WindowRefreshCallback_GLFW);
+		glfwSetWindowFocusCallback(m_Window, WindowFocusCallback_GLFW);
+		glfwSetWindowIconifyCallback(m_Window, WindowIconifyCallback_GLFW);
+		glfwSetKeyCallback(m_Window, KeyCallback_GLFW);
+		glfwSetCharModsCallback(m_Window, CharModsCallback_GLFW);
+		glfwSetCursorPosCallback(m_Window, MousePosCallback_GLFW);
+		glfwSetMouseButtonCallback(m_Window, MouseButtonCallback_GLFW);
+		glfwSetScrollCallback(m_Window, MouseScrollCallback_GLFW);
+		glfwSetJoystickCallback(JoystickConnectionCallback_GLFW);
 
 		// If there are multiple device managers, then this would be called by each one which isn't necessary
 		// but should not hurt.
+		JoyStickManager::Singleton().EnumerateJoysticks();*/
+
+		if (!CreateInstance(m_DeviceParams))
+			return false;
 
 		if (!CreateDevice())
 			return false;

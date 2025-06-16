@@ -667,7 +667,7 @@ namespace StarEngine {
 			AssetHandle startScene = Project::GetActive()->GetConfig().StartScene;
 			if (startScene)
 				OpenScene(startScene);
-			m_ContentBrowserPanel = CreateScope<ContentBrowserPanel>(Project::GetActive());
+			m_ContentBrowserPanel = std::make_unique<ContentBrowserPanel>(Project::GetActive());
 		}
 	}
 

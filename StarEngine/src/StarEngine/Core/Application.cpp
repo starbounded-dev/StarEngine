@@ -13,6 +13,8 @@ namespace StarEngine
 {
 	Application* Application::s_Instance = nullptr;
 
+	nvrhi::DeviceHandle Application::s_GraphicsDevice = nullptr;
+
 	Application::Application(const ApplicationSpecification& specification)
 		: m_Specification(specification)
 	{
@@ -152,6 +154,11 @@ namespace StarEngine
 			func();
 
 		m_MainThreadQueue.clear();
+	}
+
+	nvrhi::DeviceHandle Application::GetGraphicsDevice()
+	{
+		return s_GraphicsDevice;
 	}
 
 }

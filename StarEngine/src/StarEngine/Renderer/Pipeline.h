@@ -13,7 +13,7 @@ namespace StarEngine {
 
 	enum class PrimitiveTolopogy {
 		None = 0,
-		Lights,
+		Points,
 		Lines,
 		Triangles,
 		LineStrip,
@@ -21,7 +21,7 @@ namespace StarEngine {
 		TriangleFan
 	};
 
-	enum class DepthComapreOperator {
+	enum class DepthCompareOperator {
 		None = 0,
 		Never,
 		NotEqual,
@@ -40,7 +40,7 @@ namespace StarEngine {
 		VertexBufferLayout InstanceLayout;
 		VertexBufferLayout BoneInfluenceLayout;
 		PrimitiveTolopogy Topology = PrimitiveTolopogy::Triangles;
-		DepthComapreOperator DepthCompareOperator = DepthComapreOperator::GreaterOrEqual;
+		DepthCompareOperator DepthCompareOperator = DepthCompareOperator::GreaterOrEqual;
 		bool BackfaceCulling = true;
 		bool DepthTest = true;
 		bool DepthWrite = true;
@@ -102,7 +102,7 @@ namespace StarEngine {
 		MemoryWrite = 0x00010000,
 	};
 
-	class Pipeline
+	class Pipeline : public RefCounted
 	{
 	public:
 		static RefPtr<Pipeline> Create(const PipelineSpecification& spec) { return RefPtr<Pipeline>::Create(spec); }
@@ -122,7 +122,8 @@ namespace StarEngine {
 		Pipeline(const PipelineSpecification& spec);
 
 		virtual ~Pipeline() = default;
-	protected:
+	private:
 		nvrhi::GraphicsPipelineHandle m_Handle = nullptr;
+		PipelineSpecification m_Specification;
 	};
 }

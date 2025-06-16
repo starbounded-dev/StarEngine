@@ -34,7 +34,7 @@ namespace StarEngine {
 		float        mvp[4][4];
 	};
 
-	bool ImGui_NVRHI::UpdateFontTexture()
+	bool ImGuiNVRHI::UpdateFontTexture()
 	{
 		ImGuiIO& io = ImGui::GetIO();
 
@@ -78,7 +78,7 @@ namespace StarEngine {
 		return true;
 	}
 
-	bool ImGui_NVRHI::Init()
+	bool ImGuiNVRHI::Init()
 	{
 		nvrhi::IDevice* device = Application::Get().GetWindow().GetDeviceManager()->GetDevice();
 
@@ -160,7 +160,7 @@ namespace StarEngine {
 		return true;
 	}
 
-	bool ImGui_NVRHI::ReallocateBuffer(nvrhi::BufferHandle& buffer, size_t requiredSize, size_t reallocateSize, const bool indexBuffer)
+	bool ImGuiNVRHI::ReallocateBuffer(nvrhi::BufferHandle& buffer, size_t requiredSize, size_t reallocateSize, const bool indexBuffer)
 	{
 		nvrhi::IDevice* device = Application::GetGraphicsDevice();
 
@@ -189,7 +189,7 @@ namespace StarEngine {
 		return true;
 	}
 
-	nvrhi::IGraphicsPipeline* ImGui_NVRHI::getPSO(nvrhi::IFramebuffer* fb)
+	nvrhi::IGraphicsPipeline* ImGuiNVRHI::getPSO(nvrhi::IFramebuffer* fb)
 	{
 		if (pso)
 			return pso;
@@ -200,7 +200,7 @@ namespace StarEngine {
 		return pso;
 	}
 
-	nvrhi::IBindingSet* ImGui_NVRHI::getBindingSet(nvrhi::ITexture* texture)
+	nvrhi::IBindingSet* ImGuiNVRHI::getBindingSet(nvrhi::ITexture* texture)
 	{
 		auto iter = bindingsCache.find(texture);
 		if (iter != bindingsCache.end())
@@ -224,7 +224,7 @@ namespace StarEngine {
 		return binding;
 	}
 
-	bool ImGui_NVRHI::updateGeometry(nvrhi::ICommandList* commandList)
+	bool ImGuiNVRHI::updateGeometry(nvrhi::ICommandList* commandList)
 	{
 		ImDrawData* drawData = ImGui::GetDrawData();
 
@@ -269,7 +269,7 @@ namespace StarEngine {
 		return true;
 	}
 
-	bool ImGui_NVRHI::Render(nvrhi::IFramebuffer* framebuffer)
+	bool ImGuiNVRHI::Render(nvrhi::IFramebuffer* framebuffer)
 	{
 		nvrhi::IDevice* device = Application::GetGraphicsDevice();
 
@@ -358,7 +358,7 @@ namespace StarEngine {
 		return true;
 	}
 
-	void ImGui_NVRHI::BackbufferResizing()
+	void ImGuiNVRHI::BackbufferResizing()
 	{
 		pso = nullptr;
 	}

@@ -13,7 +13,7 @@ namespace StarEngine
 {
 	class ShaderFactory;
 
-	struct ImGui_NVRHI
+	struct ImGuiNVRHI
 	{
 		nvrhi::DeviceHandle m_device;
 		nvrhi::CommandListHandle m_commandList;

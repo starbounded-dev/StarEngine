@@ -29,7 +29,7 @@ namespace StarEngine {
 		virtual void Shutdown();
 	private:
 		GLFWwindow* m_Window;
-		Scope<GraphicsContext> m_Context;
+		std::unique_ptr<GraphicsContext> m_Context;
 
 		struct WindowData
 		{
