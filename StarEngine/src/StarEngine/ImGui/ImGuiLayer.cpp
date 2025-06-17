@@ -62,7 +62,7 @@ namespace StarEngine {
 		SetDarkThemeColors();
 
 		ImGui_ImplGlfw_InitForVulkan((GLFWwindow*)Application::Get().GetWindow().GetNativeWindow(), true);
-		m_ImGuiRenderer->Init();
+		m_ImGuiRenderer.Init(m_Device);
 
 		InitPlatformInterface();
 	}

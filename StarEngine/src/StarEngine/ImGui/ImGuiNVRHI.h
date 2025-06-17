@@ -11,9 +11,7 @@
 
 namespace StarEngine
 {
-	class ShaderFactory;
-
-	struct ImGuiNVRHI
+	struct ImGuiRenderer
 	{
 		nvrhi::DeviceHandle m_device;
 		nvrhi::CommandListHandle m_commandList;
@@ -37,7 +35,7 @@ namespace StarEngine
 		std::vector<ImDrawVert> vtxBuffer;
 		std::vector<ImDrawIdx> idxBuffer;
 
-		bool Init();
+		bool Init(nvrhi::IDevice* device);
 		bool UpdateFontTexture();
 		bool Render(nvrhi::IFramebuffer* framebuffer);
 		void BackbufferResizing();
