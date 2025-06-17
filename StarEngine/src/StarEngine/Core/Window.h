@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarEngine/Core/Base.h"
+#include "StarEngine/Core/Core.h"
 #include "StarEngine/Events/Event.h"
 
 #include <sstream>
@@ -41,7 +41,7 @@ namespace StarEngine {
 
 		virtual void* GetNativeWindow() const = 0;
 
-		static Scope<Window> Create(const WindowProps& props = WindowProps());
+		static std::unique_ptr<Window> Create(const WindowProps& props = WindowProps());
 	public:
 		static float s_HighDPIScaleFactor;
 	};

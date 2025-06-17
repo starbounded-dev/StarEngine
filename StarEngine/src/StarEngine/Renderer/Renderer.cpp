@@ -1,5 +1,7 @@
 #include "sepch.h"
 
+#include "StarEngine/Core/Ref.h"
+
 #include "StarEngine/Renderer/Renderer.h"
 #include "StarEngine/Renderer/Renderer2D.h"
 
@@ -7,7 +9,7 @@
 
 namespace StarEngine {
 
-	Scope<Renderer::SceneData> Renderer::s_SceneData = CreateScope<Renderer::SceneData>();
+	std::unique_ptr<Renderer::SceneData> Renderer::s_SceneData = std::make_unique<Renderer::SceneData>();
 
 	void Renderer::Init()
 	{
@@ -41,7 +43,7 @@ namespace StarEngine {
 
 	}
 
-	void Renderer::Submit(const Ref<Shader>& shader, const Ref<VertexArray>& vertexArray, const glm::mat4& transform)
+	void Renderer::Submit(const RefPtr<Shader>& shader, const RefPtr<VertexArray>& vertexArray, const glm::mat4& transform)
 	{
 		shader->Bind();
 

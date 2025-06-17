@@ -6,15 +6,15 @@
 
 namespace StarEngine
 {
-	class AssetManager
+	class AssetManager : public RefCounted
 	{
 	public:
 		template<typename T>
-		static Ref<T> GetAsset(AssetHandle handle)
+		static RefPtr<T> GetAsset(AssetHandle handle)
 		{
 			//SE_PROFILE_FUNCTION_COLOR("AssetManager::GetAsset", 0x8CCBFF);
 
-			Ref<Asset> asset = Project::GetActive()->GetAssetManager()->GetAsset(handle);
+			RefPtr<Asset> asset = Project::GetActive()->GetAssetManager()->GetAsset(handle);
 			return std::static_pointer_cast<T>(asset);
 		}
 

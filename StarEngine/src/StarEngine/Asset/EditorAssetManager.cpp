@@ -75,7 +75,7 @@ namespace StarEngine {
 		metadata.FilePath = filepath;
 		metadata.Type = GetAssetTypeFromFileExtension(filepath.extension());
 		SE_CORE_ASSERT(metadata.Type != AssetType::None);
-		Ref<Asset> asset = AssetImporter::ImportAsset(handle, metadata);
+		RefPtr<Asset> asset = AssetImporter::ImportAsset(handle, metadata);
 		if (asset)
 		{
 			asset->Handle = handle;
@@ -92,7 +92,7 @@ namespace StarEngine {
 		metadata.FilePath = filepath;
 		metadata.Type = GetAssetTypeFromFileExtension(filepath.extension());
 		SE_CORE_ASSERT(metadata.Type != AssetType::None);
-		Ref<Asset> asset = AssetImporter::ImportAsset(handle, metadata);
+		RefPtr<Asset> asset = AssetImporter::ImportAsset(handle, metadata);
 		if (asset)
 		{
 			asset->Handle = handle;
@@ -119,7 +119,7 @@ namespace StarEngine {
 		return GetMetadata(handle).FilePath;
 	}
 
-	Ref<Asset> EditorAssetManager::GetAsset(AssetHandle handle)
+	RefPtr<Asset> EditorAssetManager::GetAsset(AssetHandle handle)
 	{
 		SE_PROFILE_FUNCTION_COLOR("EditorAssetManager::GetAsset", 0xA3FFA4);
 
@@ -128,7 +128,7 @@ namespace StarEngine {
 			return nullptr;
 
 		// 2. check if asset needs load (and if so, load)
-		Ref<Asset> asset;
+		RefPtr<Asset> asset;
 		if (IsAssetLoaded(handle))
 		{
 			SE_PROFILE_SCOPE_COLOR("EditorAssetManager::GetAsset Scope", 0xFF7200);

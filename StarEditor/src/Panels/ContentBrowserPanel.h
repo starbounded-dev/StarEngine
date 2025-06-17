@@ -10,23 +10,23 @@
 
 namespace StarEngine {
 
-	class ContentBrowserPanel
+	class ContentBrowserPanel : public RefCounted
 	{
 	public:
-		ContentBrowserPanel(Ref<Project> project);
+		ContentBrowserPanel(RefPtr<Project> project);
 
 		void OnImGuiRender();
 	private:
 		void RefreshAssetTree();
 	private:
-		Ref<Project> m_Project;
-		Ref<ThumbnailCache> m_ThumbnailCache;
+		RefPtr<Project> m_Project;
+		RefPtr<ThumbnailCache> m_ThumbnailCache;
 
 		std::filesystem::path m_BaseDirectory;
 		std::filesystem::path m_CurrentDirectory;
 
-		Ref<Texture2D> m_DirectoryIcon;
-		Ref<Texture2D> m_FileIcon;
+		RefPtr<Texture2D> m_DirectoryIcon;
+		RefPtr<Texture2D> m_FileIcon;
 
 		struct TreeNode
 		{

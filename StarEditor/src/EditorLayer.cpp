@@ -19,7 +19,7 @@
 
 namespace StarEngine {
 
-	static Ref<Font> s_Font;
+	static RefPtr<Font> s_Font;
 
 	EditorLayer::EditorLayer()
 		: Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f, true), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f })
@@ -45,7 +45,7 @@ namespace StarEngine {
 		fbSpec.Height = 720;
 		m_Framebuffer = Framebuffer::Create(fbSpec);
 
-		m_EditorScene = CreateRef<Scene>();
+		m_EditorScene = RefPtr<Scene>::Create();
 		m_ActiveScene = m_EditorScene;
 
 		auto commandLineArgs = Application::Get().GetSpecification().CommandLineArgs;
@@ -93,7 +93,7 @@ namespace StarEngine {
 
 		// Render
 		Renderer2D::ResetStats();
-		m_Framebuffer->Bind();
+		//		m_Framebuffer->Bind();
 		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		RenderCommand::Clear();
 
@@ -391,7 +391,7 @@ namespace StarEngine {
 
 		if (hasPlayButton)
 		{
-			Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate) ? m_IconPlay : m_IconStop;
+			RefPtr<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate) ? m_IconPlay : m_IconStop;
 			if (ImGui::ImageButton("##play", (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1))) {
 				if (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate)
 					OnScenePlay();
@@ -405,7 +405,7 @@ namespace StarEngine {
 			if (hasPlayButton)
 				ImGui::SameLine();
 
-			Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play) ? m_IconSimulate : m_IconStop;		//ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+			RefPtr<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play) ? m_IconSimulate : m_IconStop;		//ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
 
 
 			if (ImGui::ImageButton("##simulate", (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1)))
@@ -422,7 +422,7 @@ namespace StarEngine {
 			bool isPaused = m_ActiveScene->IsPaused();
 			ImGui::SameLine();
 			{
-				Ref<Texture2D> icon = m_IconPause;
+				RefPtr<Texture2D> icon = m_IconPause;
 				if (ImGui::ImageButton("##pause", (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1)) && toolbarEnabled)
 				{
 					m_ActiveScene->SetPaused(!isPaused);
@@ -435,7 +435,7 @@ namespace StarEngine {
 			{
 				ImGui::SameLine();
 				{
-					Ref<Texture2D> icon = m_IconStep;
+					RefPtr<Texture2D> icon = m_IconStep;
 					bool isPaused = m_ActiveScene->IsPaused();
 					if (ImGui::ImageButton("##step", (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1)) && toolbarEnabled)
 
@@ -667,7 +667,7 @@ namespace StarEngine {
 			AssetHandle startScene = Project::GetActive()->GetConfig().StartScene;
 			if (startScene)
 				OpenScene(startScene);
-			m_ContentBrowserPanel = CreateScope<ContentBrowserPanel>(Project::GetActive());
+			m_ContentBrowserPanel = std::make_unique<ContentBrowserPanel>(Project::GetActive());
 		}
 	}
 
@@ -688,7 +688,7 @@ namespace StarEngine {
 
 	void EditorLayer::NewScene()
 	{
-		m_ActiveScene = CreateRef<Scene>();
+		m_ActiveScene = RefPtr<Scene>::Create();
 		m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 
@@ -709,8 +709,8 @@ namespace StarEngine {
 		if (m_SceneState != SceneState::Edit)
 			OnSceneStop();
 
-		Ref<Scene> readOnlyScene = AssetManager::GetAsset<Scene>(handle);
-		Ref<Scene> newScene = Scene::Copy(readOnlyScene);
+		RefPtr<Scene> readOnlyScene = AssetManager::GetAsset<Scene>(handle);
+		RefPtr<Scene> newScene = Scene::Copy(readOnlyScene);
 
 		m_EditorScene = newScene;
 		m_SceneHierarchyPanel.SetContext(m_EditorScene);
@@ -737,7 +737,7 @@ namespace StarEngine {
 		}
 	}
 
-	void EditorLayer::SerializeScene(Ref<Scene> scene, const std::filesystem::path& path)
+	void EditorLayer::SerializeScene(RefPtr<Scene> scene, const std::filesystem::path& path)
 	{
 		SceneImporter::SaveScene(scene, path);
 	}

@@ -21,7 +21,7 @@ namespace StarEngine {
 	std::string_view AssetTypeToString(AssetType type);
 	AssetType AssetTypeFromString(std::string_view assetType);
 
-	class Asset
+	class Asset : public RefCounted
 	{
 	public:
 		AssetHandle Handle; // Generate handle

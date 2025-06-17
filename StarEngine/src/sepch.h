@@ -2,6 +2,8 @@
 
 #include "StarEngine/Core/PlatformDetection.h"
 
+#define SE_WITH_VULKAN
+
 #ifdef SE_PLATFORM_WINDOWS
 #ifndef NOMINMAX
 // See github.com/skypjack/entt/wiki/Frequently-Asked-Questions#warning-c4003-the-min-the-max-and-the-macro
@@ -22,11 +24,13 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "StarEngine/Core/Base.h"
-
 #include "StarEngine/Core/Buffer.h"
 
+#include "StarEngine/Core/Core.h"
+
 #include "StarEngine/Core/Log.h"
+
+#include "StarEngine/Core/Ref.h"
 
 #include "StarEngine/Debug/Instrumentor.h"
 

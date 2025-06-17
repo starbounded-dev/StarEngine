@@ -4,15 +4,15 @@
 
 namespace StarEngine {
 
-	class ProjectSerializer
+	class ProjectSerializer : public RefCounted
 	{
 	public:
-		ProjectSerializer(Ref<Project> project);
+		ProjectSerializer(RefPtr<Project> project);
 
 		bool Serialize(const std::filesystem::path& filepath);
 		bool Deserialize(const std::filesystem::path& filepath);
 	private:
-		Ref<Project> m_Project;
+		RefPtr<Project> m_Project;
 	};
 
 }

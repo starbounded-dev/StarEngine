@@ -7,14 +7,14 @@
 namespace StarEngine {
 
 
-	ThumbnailCache::ThumbnailCache(Ref<Project> project)
+	ThumbnailCache::ThumbnailCache(RefPtr<Project> project)
 		: m_Project(project)
 	{
 		// TODO: revisit this path (move to Cache dir)
 		m_ThumbnailCachePath = m_Project->GetAssetDirectory() / "Thumbnail.cache";
 	}
 
-	Ref<Texture2D> ThumbnailCache::GetOrCreateThumbnail(const std::filesystem::path& assetPath)
+	RefPtr<Texture2D> ThumbnailCache::GetOrCreateThumbnail(const std::filesystem::path& assetPath)
 	{
 		// 1. Read file timestamp
 		// 2. Compare hashed timestamp with existing cached image (in memory first, then from cache file)
@@ -56,7 +56,7 @@ namespace StarEngine {
 				}
 			}
 
-			Ref<Texture2D> texture = TextureImporter::LoadTexture2D(thumbnailInfo.AbsolutePath);
+			RefPtr<Texture2D> texture = TextureImporter::LoadTexture2D(thumbnailInfo.AbsolutePath);
 			float thumbnailHeight = m_ThumbnailSize * ((float)texture->GetHeight() / (float)texture->GetWidth());
 			texture->ChangeSize(m_ThumbnailSize, thumbnailHeight);
 			if (!texture) {

@@ -18,13 +18,13 @@ public:
 	void OnEvent(StarEngine::Event& e) override;
 private:
 	StarEngine::ShaderLibrary m_ShaderLibrary;
-	StarEngine::Ref<StarEngine::Shader> m_Shader;
-	StarEngine::Ref<StarEngine::VertexArray> m_VertexArray;
+	StarEngine::RefPtr<StarEngine::Shader> m_Shader;
+	StarEngine::RefPtr<StarEngine::VertexArray> m_VertexArray;
 
-	StarEngine::Ref<StarEngine::Shader> m_FlatColorShader;
-	StarEngine::Ref<StarEngine::VertexArray> m_SquareVA;
+	StarEngine::RefPtr<StarEngine::Shader> m_FlatColorShader;
+	StarEngine::RefPtr<StarEngine::VertexArray> m_SquareVA;
 
-	StarEngine::Ref<StarEngine::Texture2D> m_Texture, m_starLogoTexture;
+	StarEngine::RefPtr<StarEngine::Texture2D> m_Texture, m_starLogoTexture;
 
 	StarEngine::OrthographicCameraController m_CameraController;
 	glm::vec3 m_SquareColor = { 0.2f, 0.3f, 0.8f };

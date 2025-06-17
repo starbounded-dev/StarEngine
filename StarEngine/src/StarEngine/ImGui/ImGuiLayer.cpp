@@ -1,44 +1,39 @@
 #include "sepch.h"
 #include "StarEngine/ImGui/ImGuiLayer.h"
 
+// Include the ImGuiRenderer header file
+#include "StarEngine/ImGui/ImGuiRenderer.h"
+
 #include "StarEngine/Core/Application.h"
+
+#include "StarEngine/Core/Input.h"
+
+#include "StarEngine/Renderer/DeviceManager.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
 
 #include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_opengl3.h>
+#include <backends/imgui_impl_vulkan.h>
 
 // TEMPORARY
 #include <GLFW/glfw3.h>
-#include <glad/glad.h>
 
 #include "ImGuizmo.h"
 
-
-
 namespace StarEngine {
-
-	ImGuiLayer::ImGuiLayer()
-		: Layer("ImGuiLayer")
-	{
-
-	}
 
 	void ImGuiLayer::OnAttach()
 	{
 		SE_PROFILE_FUNCTION();
 
-		// Setup Dear ImGui context
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
-		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
-		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
-		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
-		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
 
 		float fontSize = 18.0f;// *2.0f;
 
@@ -51,8 +46,12 @@ namespace StarEngine {
 
 		// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
 		ImGuiStyle& style = ImGui::GetStyle();
-
-		style.ScaleAllSizes(Window::s_HighDPIScaleFactor);
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			style.WindowRounding = 0.0f;
+			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+		}
+		style.Colors[ImGuiCol_WindowBg] = ImVec4(0.15f, 0.15f, 0.15f, style.Colors[ImGuiCol_WindowBg].w);
 
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
@@ -62,38 +61,63 @@ namespace StarEngine {
 
 		SetDarkThemeColors();
 
-		Application& app = Application::Get();
-		GLFWwindow* window = static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindow());
+		ImGui_ImplGlfw_InitForVulkan((GLFWwindow*)Application::Get().GetWindow().GetNativeWindow(), true);
+		m_ImGuiRenderer.Init(m_Device);
 
-		// Setup Platform/Renderer bindings
-		ImGui_ImplGlfw_InitForOpenGL(window, true);
-		ImGui_ImplOpenGL3_Init("#version 410");
+		InitPlatformInterface();
+	}
+
+	struct ImGuiViewportData {
+		bool WindowOwned = false;
+		std::unique_ptr<DeviceManager> DM;
+	};
+
+	static void ImGuiRenderer_CreateWindow(ImGuiViewport* viewport)
+	{
+#if 0
+		ImGuiViewportData* data = IM_NEW(ImGuiViewportData)();
+		viewport->RendererUserData = data;
+
+		DeviceCreationParameters deviceParams;
+		deviceParams.Decorated = m_Specification.Decorated;
+
+		data->DM = std::make_unique <DeviceManager>();
+
+		ImGuiPlatformIO& platform_IO = ImGui::GetPlatformIO();
+		VkResult err = (VkResult)platform_IO.Platform_CreateVkSurface(viewport, (ImU64)v->Instance, (const void*)v-Allocator);
+		check_vk_result(err);
+#endif
+	}
+
+	void ImGuiLayer::InitPlatformInterface()
+	{
+		ImGuiPlatformIO& platform_IO = ImGui::GetPlatformIO();
+		if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+			IM_ASSERT(platform_IO.Platform_CreateVkSurface != NULL && "Platform needs to set up the CreateVkSurfaceHandler.");
+
+		platform_IO.Renderer_CreateWindow = ImGuiRenderer_CreateWindow;
+		//platform_IO.Renderer_DestroyWindow = ImGui_ImplVulkan_DestroyWindow;
+		//platform_IO.Renderer_SetWindowSize = ImGui_ImplVulkan_SetWindowSize;
+		//platform_IO.Renderer_RenderWindow = ImGui_ImplVulkan_RenderWindow;
+		//platform_IO.Renderer_SwapBuffers = ImGui_ImplVulkan_SwapBuffers;
 	}
 
 	void ImGuiLayer::OnDetach()
 	{
 		SE_PROFILE_FUNCTION();
 
-		ImGui_ImplOpenGL3_Shutdown();
-		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
-	}
-
-	void ImGuiLayer::OnEvent(Event& e)
-	{
-		if (m_BlockEvents) {
-			ImGuiIO& io = ImGui::GetIO();
-			e.Handled |= e.IsInCategory(EventCategoryMouse) & io.WantCaptureMouse;
-			e.Handled |= e.IsInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
-		}
 	}
 
 	void ImGuiLayer::Begin()
 	{
 		SE_PROFILE_FUNCTION();
 
-		ImGui_ImplOpenGL3_NewFrame();
+		ImGui::SetMouseCursor(Input::GetCursorMode() == CursorMode::Normal ? ImGuiMouseCursor_Arrow : ImGuiMouseCursor_None);
+
+		m_ImGuiRenderer->UpdateFontTexture();
 		ImGui_ImplGlfw_NewFrame();
+
 		ImGui::NewFrame();
 		ImGuizmo::BeginFrame();
 	}
@@ -102,21 +126,19 @@ namespace StarEngine {
 	{
 		SE_PROFILE_FUNCTION();
 
-		ImGuiIO& io = ImGui::GetIO();
-		Application& app = Application::Get();
-		io.DisplaySize = ImVec2((float)app.GetWindow().GetWidth(), (float)app.GetWindow().GetHeight());
-
-		// Rendering
 		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		m_ImGuiRenderer->Render(Application::GetGraphicsDeviceManager()->GetCurrentFramebuffer());
+
+#if TODO
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
 
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
-			GLFWwindow* backup_current_context = glfwGetCurrentContext();
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault();
-			glfwMakeContextCurrent(backup_current_context);
 		}
+#endif
 	}
 
 	void ImGuiLayer::SetDarkThemeColors()
@@ -151,10 +173,4 @@ namespace StarEngine {
 		colors[ImGuiCol_TitleBgActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
 		colors[ImGuiCol_TitleBgCollapsed] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
 	}
-
-	uint32_t ImGuiLayer::GetActiveWidgetID() const
-	{
-		return GImGui->ActiveId;
-	}
-
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "StarEngine/Core/Base.h"
+#include "StarEngine/Core/Core.h"
 #include "StarEngine/Core/Application.h"
 
 #ifdef SE_PLATFORM_WINDOWS

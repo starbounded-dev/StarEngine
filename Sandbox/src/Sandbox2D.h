@@ -21,10 +21,10 @@ private:
 	bool m_VSync = true;
 
 	// Temp
-	StarEngine::Ref<StarEngine::VertexArray> m_SquareVA;
-	StarEngine::Ref<StarEngine::Shader> m_FlatColorShader;
+	StarEngine::RefPtr<StarEngine::VertexArray> m_SquareVA;
+	StarEngine::RefPtr<StarEngine::Shader> m_FlatColorShader;
 
-	StarEngine::Ref<StarEngine::Texture2D> m_CheckerboardTexture;
+	StarEngine::RefPtr<StarEngine::Texture2D> m_CheckerboardTexture;
 
 	glm::vec4 m_SquareColor = { 0.2f, 0.3f, 0.8f, 1.0f };
 };

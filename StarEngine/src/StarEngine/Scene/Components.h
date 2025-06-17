@@ -120,7 +120,7 @@ namespace StarEngine {
 		std::string ClassName;
 
 		// Add the missing Instance member
-		Ref<ScriptableEntity> Instance;
+		RefPtr<ScriptableEntity> Instance;
 
 		ScriptComponent() = default;
 		ScriptComponent(const ScriptComponent&) = default;
@@ -199,7 +199,7 @@ namespace StarEngine {
 	struct TextComponent
 	{
 		std::string TextString;
-		Ref<Font> FontAsset = Font::GetDefault();
+		RefPtr<Font> FontAsset = Font::GetDefault();
 		glm::vec4 Color{ 1.0f };
 		float Kerning = 0.0f;
 		float LineSpacing = 0.0f;
@@ -216,7 +216,7 @@ namespace StarEngine {
 		bool Seek = false;
 		uint64_t SeekPosition = 0;
 
-		Ref<AudioSource> GetAudioSource(uint32_t index) const { return AssetManager::GetAsset<AudioSource>(AudioSourceData.Playlist[index]); }
+		RefPtr<AudioSource> GetAudioSource(uint32_t index) const { return AssetManager::GetAsset<AudioSource>(AudioSourceData.Playlist[index]); }
 		void SetAudioSource(uint32_t index) { Audio = AudioSourceData.Playlist[index]; }
 
 		void AddAudioSource(AssetHandle& audio)
@@ -257,7 +257,7 @@ namespace StarEngine {
 		bool Active = true;
 		AudioListenerConfig Config;
 
-		Ref<AudioListener> Listener;
+		RefPtr<AudioListener> Listener;
 	};
 
 	template<typename... Component>

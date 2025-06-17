@@ -7,6 +7,13 @@
 
 namespace StarEngine {
 
+	enum class CursorMode
+	{
+		Normal,
+		Hidden,
+		Disabled
+	};
+
 	class Input
 	{
 	public:
@@ -17,6 +24,8 @@ namespace StarEngine {
 
 		static float GetMouseX();
 		static float GetMouseY();
+
+		static CursorMode GetCursorMode();
 	};
 
 }

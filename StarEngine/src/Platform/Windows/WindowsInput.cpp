@@ -38,4 +38,22 @@ namespace StarEngine {
 	{
 		return GetMousePosition().y;
 	}
+
+	CursorMode Input::GetCursorMode()
+	{
+		GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+		int mode = glfwGetInputMode(window, GLFW_CURSOR);
+
+		switch (mode)
+		{
+		case GLFW_CURSOR_NORMAL:
+			return CursorMode::Normal;
+		case GLFW_CURSOR_HIDDEN:
+			return CursorMode::Hidden;
+		case GLFW_CURSOR_DISABLED:
+			return CursorMode::Disabled;
+		default:
+			return CursorMode::Normal; // Default fallback
+		}
+	}
 }
