@@ -150,6 +150,11 @@ namespace StarEngine {
 		m_Framebuffer->Unbind();
 	}
 
+	/**
+	 * @brief Renders the main ImGui interface for the editor, including dockspace, menu bars, panels, stats, and viewport.
+	 *
+	 * Sets up the ImGui dockspace and menu bars for file and script operations, renders the scene hierarchy and content browser panels, displays renderer and application statistics, toggles VSync and physics collider visibility, shows the font atlas, and manages the viewport window with drag-and-drop scene loading and gizmo manipulation for the selected entity.
+	 */
 	void EditorLayer::OnImGuiRender()
 	{
 		SE_PROFILE_FUNCTION();
@@ -471,6 +476,14 @@ namespace StarEngine {
 		dispatcher.Dispatch<WindowDropEvent>(SE_BIND_EVENT_FN(EditorLayer::OnWindowDrop));
 	}
 
+	/**
+	 * @brief Handles key press events for editor shortcuts and commands.
+	 *
+	 * Processes keyboard shortcuts for file operations (new scene, open project, save scene), entity duplication, gizmo mode switching, script reloading, and entity deletion. Only triggers actions when appropriate modifier keys are pressed and certain UI conditions are met.
+	 *
+	 * @param e The key pressed event.
+	 * @return Always returns false to indicate the event was not fully handled.
+	 */
 	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
 	{
 		// Shortcuts
@@ -660,6 +673,13 @@ namespace StarEngine {
 		Project::New();
 	}
 
+	/**
+	 * @brief Opens a project from the specified path and initializes its content browser.
+	 *
+	 * Loads the project at the given path. If successful, opens the project's start scene (if specified) and sets up the content browser panel for the active project.
+	 *
+	 * @param path Filesystem path to the project file to open.
+	 */
 	void EditorLayer::OpenProject(const std::filesystem::path& path)
 	{
 		if (Project::Load(path))
@@ -786,6 +806,11 @@ namespace StarEngine {
 		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 	}
 
+	/**
+	 * @brief Pauses the active scene if it is currently playing or simulating.
+	 *
+	 * Does nothing if the editor is in edit mode.
+	 */
 	void EditorLayer::OnScenePause()
 	{
 		if (m_SceneState == SceneState::Edit)
@@ -794,6 +819,11 @@ namespace StarEngine {
 		m_ActiveScene->SetPaused(true);
 	}
 
+	/**
+	 * @brief Reloads the C# scripting engine and restores script state for the active scene.
+	 *
+	 * Copies the current script storage to a temporary buffer, clears the original storage, reloads the script engine, restores the script storage, and synchronizes it to ensure script state continuity after reloading.
+	 */
 	void EditorLayer::ReloadCSharp()
 	{
 		ScriptStorage tempStorage;
@@ -810,6 +840,11 @@ namespace StarEngine {
 		scriptStorage.SynchronizeStorage();
 	}
 
+	/**
+	 * @brief Duplicates the currently selected entity in the editor scene.
+	 *
+	 * If the editor is in edit mode and an entity is selected, creates a duplicate of the selected entity and updates the selection to the new entity.
+	 */
 	void EditorLayer::OnDuplicateEntity()
 	{
 		if (m_SceneState != SceneState::Edit)

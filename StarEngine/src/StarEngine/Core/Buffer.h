@@ -4,7 +4,16 @@
 #include <cstring>
 #include <memory>
 
-namespace StarEngine {
+/**
+		 * Represents a non-owning raw byte buffer for storage and manipulation of arbitrary data.
+		 *
+		 * Provides methods for allocation, release, zero-initialization, reading and writing typed data at specified offsets, and copying buffer contents. 
+		 * The buffer does not manage ownership unless explicitly allocated or released.
+		 *
+		 * @param Data Pointer to the raw byte data.
+		 * @param Size Size of the buffer in bytes.
+		 */
+		namespace StarEngine {
 
 	// Non-owning raw buffer class
 	struct Buffer
@@ -93,6 +102,12 @@ namespace StarEngine {
 		}
 	};
 
+	/**
+	 * A buffer that automatically releases its memory when destroyed.
+	 *
+	 * Inherits from Buffer and ensures memory is freed on destruction.
+	 * Provides a static method to create a buffer by copying data from a given source.
+	 */
 	struct BufferSafe : public Buffer
 	{
 		~BufferSafe()
@@ -109,7 +124,11 @@ namespace StarEngine {
 		}
 	};
 
-	struct ScopedBuffer
+	/**
+		 * Returns a pointer to the underlying buffer's data as a `uint8_t*`.
+		 * @returns Pointer to the buffer's data, or `nullptr` if the buffer is empty.
+		 */
+		struct ScopedBuffer
 	{
 		ScopedBuffer(Buffer buffer)
 			: m_Buffer(buffer)
@@ -127,7 +146,11 @@ namespace StarEngine {
 		}
 
 		uint8_t* Data() { return (uint8_t*)m_Buffer.Data; }
-		uint64_t Size() { return m_Buffer.Size; }
+		/**
+ * Returns the size of the underlying buffer in bytes.
+ * @returns The number of bytes in the buffer.
+ */
+uint64_t Size() { return m_Buffer.Size; }
 
 		template<typename T>
 		T* As()

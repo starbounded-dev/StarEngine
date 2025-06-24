@@ -2,6 +2,11 @@
 
 #include <Coral/ManagedObject.hpp>
 
+/**
+ * Invokes a method on the underlying managed object by name, forwarding any provided arguments.
+ * If the managed object handle is invalid, the invocation is skipped.
+ * @param methodName Name of the method to invoke on the managed object.
+ */
 namespace StarEngine {
 
 	class CSharpObject

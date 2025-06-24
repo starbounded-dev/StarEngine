@@ -11,6 +11,30 @@
 
 #include "Coral/StableVector.hpp"
 
+/**
+ * Returns the string name corresponding to the specified DataType.
+ * @param type The DataType to retrieve the name for.
+ * @return The string representation of the DataType.
+ */
+
+/**
+ * Returns the size in bytes of the specified DataType.
+ * @param type The DataType to retrieve the size for.
+ * @return The size in bytes of the DataType.
+ */
+
+/**
+ * Provides storage and access for a single script field, supporting both raw buffer and managed object instances.
+ * Allows querying field metadata, retrieving and setting values, and managing array storage.
+ */
+
+/**
+ * Represents script-related storage for a single entity, including field data and managed object instance tracking.
+ */
+
+/**
+ * Manages script storage for multiple entities, supporting initialization, cleanup, synchronization, copying, and clearing of entity script data.
+ */
 namespace StarEngine {
 
 	enum class DataType

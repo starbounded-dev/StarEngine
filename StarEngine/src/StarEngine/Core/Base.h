@@ -28,6 +28,15 @@
 
 #define SE_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
+/**
+ * Creates a `std::unique_ptr` to an object of type `T`, forwarding the provided arguments to its constructor.
+ * @returns A `Scope<T>` managing the newly constructed object.
+ */
+
+/**
+ * Creates a `std::shared_ptr` to an object of type `T`, forwarding the provided arguments to its constructor.
+ * @returns A `Ref<T>` managing the newly constructed object.
+ */
 namespace StarEngine {
 
 	template<typename T>

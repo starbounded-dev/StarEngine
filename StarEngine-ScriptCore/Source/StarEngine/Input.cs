@@ -1,4 +1,4 @@
-﻿using StarEngine;
+using StarEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +22,11 @@ namespace StarEngine
 
 	public class Input
 	{
+		/// <summary>
+		/// Determines whether the specified key is currently pressed down.
+		/// </summary>
+		/// <param name="keycode">The key to check.</param>
+		/// <returns>True if the key is pressed; otherwise, false.</returns>
 		public static bool IsKeyDown(KeyCode keycode)
 		{
 			unsafe
@@ -29,6 +34,11 @@ namespace StarEngine
 				return InternalCalls.Input_IsKeyDown(keycode);
 			}
 		}
+		/// <summary>
+		/// Determines whether the specified key is currently released.
+		/// </summary>
+		/// <param name="keycode">The key to check.</param>
+		/// <returns>True if the key is not pressed; otherwise, false.</returns>
 		public static bool IsKeyUp(KeyCode keycode)
 		{
 			unsafe
@@ -37,6 +47,11 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Determines whether the specified mouse button is currently pressed.
+		/// </summary>
+		/// <param name="button">The mouse button to check.</param>
+		/// <returns>True if the specified mouse button is pressed; otherwise, false.</returns>
 		public static bool IsMouseButtonPressed(MouseButton button)
 		{
 			unsafe
@@ -45,6 +60,11 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Simulates pressing the specified mouse button.
+		/// </summary>
+		/// <param name="button">The mouse button to press.</param>
+		/// <returns>True if the mouse button press was successfully simulated; otherwise, false.</returns>
 		public static bool PressMouseButton(MouseButton button)
 		{
 			unsafe
@@ -53,6 +73,11 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Attempts to simulate releasing the specified mouse button.
+		/// </summary>
+		/// <param name="button">The mouse button to release.</param>
+		/// <returns>True if the mouse button was successfully released; otherwise, false.</returns>
 		public static bool ReleaseMouseButton(MouseButton button)
 		{
 			unsafe
@@ -61,6 +86,10 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Retrieves the current mouse cursor position in screen coordinates.
+		/// </summary>
+		/// <returns>A <see cref="Vector2"/> representing the X and Y position of the mouse cursor on the screen.</returns>
 		public static Vector2 GetMousePosition()
 		{
 			unsafe
@@ -72,6 +101,10 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Retrieves the current mouse cursor position in world coordinates.
+		/// </summary>
+		/// <returns>A <see cref="Vector2"/> representing the mouse position in world space.</returns>
 		public static Vector2 GetMouseWorldPosition()
 		{
 			unsafe

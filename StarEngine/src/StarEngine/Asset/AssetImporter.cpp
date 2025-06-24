@@ -23,6 +23,16 @@ namespace StarEngine {
 		{ AssetType::ScriptFile, SceneImporter::ImportScript }
 	};
 
+	/**
+	 * @brief Imports an asset using the appropriate importer based on asset metadata.
+	 *
+	 * Attempts to locate and invoke the registered import function for the asset type specified in the metadata.
+	 * If no importer is available for the given asset type, logs an error and returns nullptr.
+	 *
+	 * @param handle The handle identifying the asset to import.
+	 * @param metadata Metadata describing the asset, including its type.
+	 * @return Ref<Asset> Reference-counted pointer to the imported asset, or nullptr if import fails due to missing importer.
+	 */
 	Ref<Asset> AssetImporter::ImportAsset(AssetHandle handle, const AssetMetadata& metadata)
 	{
 		SE_PROFILE_FUNCTION_COLOR("AssetImporter::ImportAsset", 0xF2FA8A);

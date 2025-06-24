@@ -38,6 +38,11 @@ namespace StarEngine {
 		m_SelectionContext = {};
 	}
 
+	/**
+	 * @brief Renders the scene hierarchy and properties panels using ImGui.
+	 *
+	 * Displays all entities in the current scene as a hierarchy, allows selection and context menu actions such as creating or deleting entities, and shows editable properties for the selected entity. Handles entity deletion and selection clearing based on user interaction.
+	 */
 	void SceneHierarchyPanel::OnImGuiRender()
 	{
 		ImGui::Begin("Scene Hierarchy");
@@ -81,11 +86,23 @@ namespace StarEngine {
 		}
 	}
 
+	/**
+	 * @brief Sets the currently selected entity in the scene hierarchy panel.
+	 *
+	 * Updates the selection context to the specified entity, which determines which entity's properties are displayed and editable in the panel.
+	 */
 	void SceneHierarchyPanel::SetSelectedEntity(Entity entity)
 	{
 		m_SelectionContext = entity;
 	}
 
+	/**
+	 * @brief Renders a tree node for the specified entity in the scene hierarchy panel.
+	 *
+	 * Highlights the node if the entity is selected, updates selection on mouse release if hovered, and provides a context menu for creating a new entity or marking the entity for deletion.
+	 *
+	 * @param entity The entity to display in the hierarchy.
+	 */
 	void SceneHierarchyPanel::DrawEntityNode(Entity entity)
 	{
 		auto& tag = entity.GetComponent<TagComponent>().Tag;
@@ -121,6 +138,16 @@ namespace StarEngine {
 	}
 
 
+	/**
+	 * @brief Renders an ImGui control for editing a 3D vector with reset buttons for each axis.
+	 *
+	 * Displays labeled drag controls for the X, Y, and Z components of a glm::vec3, each with a color-coded button to reset the respective value to a specified default.
+	 *
+	 * @param label The label displayed for the vector control.
+	 * @param values Reference to the glm::vec3 to be edited.
+	 * @param resetValue The value to which each component is reset when its button is pressed. Defaults to 0.0f.
+	 * @param columnWidth The width of the label column in the UI. Defaults to 100.0f.
+	 */
 	static void DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f)
 	{
 		ImGuiIO& io = ImGui::GetIO();
@@ -228,6 +255,13 @@ namespace StarEngine {
 		}
 	}
 
+	/**
+	 * @brief Renders the properties panel UI for all components attached to the specified entity.
+	 *
+	 * Displays editable controls for each supported component, allowing users to modify component properties, assign or remove assets (such as scripts, textures, or audio), and manage component-specific settings. Provides an "Add Component" button with a categorized popup menu for adding new components that are not already present on the entity.
+	 *
+	 * @param entity The entity whose components and properties are to be displayed and edited.
+	 */
 	void SceneHierarchyPanel::DrawComponents(Entity entity)
 	{
 		if (entity.HasComponent<TagComponent>())

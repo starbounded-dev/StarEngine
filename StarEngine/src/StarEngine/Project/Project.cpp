@@ -7,11 +7,24 @@
 
 namespace StarEngine {
 
+	/**
+	 * @brief Returns the absolute path to an asset within the project's asset directory.
+	 *
+	 * Combines the project's asset directory with the given relative asset path.
+	 *
+	 * @param path Relative path to the asset within the asset directory.
+	 * @return std::filesystem::path Absolute path to the specified asset.
+	 */
 	std::filesystem::path Project::GetAssetAbsolutePath(const std::filesystem::path& path)
 	{
 		return GetAssetDirectory() / path;
 	}
 
+	/**
+	 * @brief Shuts down and reinitializes the scripting engine with the active project.
+	 *
+	 * Ensures the scripting engine is reset and associated with the current active project instance.
+	 */
 	void Project::ReloadScriptEngine()
 	{
 		auto& scriptEngine = ScriptEngine::GetMutable();
@@ -19,12 +32,25 @@ namespace StarEngine {
 		scriptEngine.Initialize(s_ActiveProject);
 	}
 
+	/**
+	 * @brief Creates a new project instance and sets it as the active project.
+	 *
+	 * @return Reference to the newly created project.
+	 */
 	Ref<Project> Project::New()
 	{
 		s_ActiveProject = CreateRef<Project>();
 		return s_ActiveProject;
 	}
 
+	/**
+	 * @brief Loads a project from the specified file path.
+	 *
+	 * Shuts down the scripting engine if an active project exists, then attempts to load a new project from the given path. If loading succeeds, resets and reinitializes the audio engine, updates the project directory, assigns the new project as active, recreates and deserializes the editor asset manager, and initializes the scripting engine with the loaded project.
+	 *
+	 * @param path Path to the project file to load.
+	 * @return Reference to the loaded project if successful, or nullptr if loading fails.
+	 */
 	Ref<Project> Project::Load(const std::filesystem::path& path)
 	{
 		if (s_ActiveProject)
@@ -63,6 +89,14 @@ namespace StarEngine {
 		return nullptr;
 	}
 
+	/**
+	 * @brief Saves the currently active project to the specified file path.
+	 *
+	 * Updates the project's directory to the parent of the save location upon successful serialization.
+	 *
+	 * @param path The file path where the active project should be saved.
+	 * @return true if the project was saved successfully; false otherwise.
+	 */
 	bool Project::SaveActive(const std::filesystem::path& path)
 	{
 		ProjectSerializer serializer(s_ActiveProject);
@@ -75,6 +109,11 @@ namespace StarEngine {
 		return false;
 	}
 
+	/**
+	 * @brief Updates the editor asset manager for the active project and resets the audio engine.
+	 *
+	 * Shuts down and reinitializes the audio engine, creates a new editor asset manager, assigns it to the active project, and deserializes the asset registry.
+	 */
 	void Project::UpdateEditorAssetManager()
 	{
 		if (AudioEngine::HasInitializedEngine())

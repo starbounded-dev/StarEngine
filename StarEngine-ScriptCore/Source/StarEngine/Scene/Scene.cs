@@ -1,4 +1,4 @@
-﻿using StarEngine;
+using StarEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -59,7 +59,12 @@ namespace StarEngine
 		//    {
 		//        InternalCalls.Scene_ChangeCursor(filepath, hotspot);
 		//    }
-		//}
+		/// <summary>
+		/// Changes the cursor to the specified image file with the given hotspot coordinates.
+		/// </summary>
+		/// <param name="filepath">The file path to the cursor image.</param>
+		/// <param name="hotspotX">The X coordinate of the cursor hotspot.</param>
+		/// <param name="hotspotY">The Y coordinate of the cursor hotspot.</param>
 
 		public static void ChangeCursor(string filepath, float hotspotX, float hotspotY)
 		{
@@ -106,6 +111,9 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Closes the application.
+		/// </summary>
 		public static void Quit()
 		{
 			unsafe
@@ -114,6 +122,10 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Loads a new scene using the specified asset handle if it is valid.
+		/// </summary>
+		/// <param name="assetHandle">The handle of the scene asset to load.</param>
 		public static void LoadScene(AssetHandle assetHandle)
 		{
 			unsafe
@@ -129,6 +141,10 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Returns the name of the currently loaded scene.
+		/// </summary>
+		/// <returns>The current scene's name as a string.</returns>
 		public static string GetCurrentFilename()
 		{
 			unsafe
@@ -150,6 +166,10 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Returns the ID of the entity currently under the cursor, or zero if no entity is hovered.
+		/// </summary>
+		/// <returns>The hovered entity's ID, or zero if none.</returns>
 		public static ulong GetHoveredEntityID()
 		{
 			unsafe
@@ -184,6 +204,10 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Renders an outline around the entity currently hovered by the cursor using the specified RGBA color.
+		/// </summary>
+		/// <param name="outlineColor">The color of the outline, specified as a Vector4 (RGBA).</param>
 		public static void RenderHoveredEntityOutline(Vector4 outlineColor)
 		{
 			unsafe
@@ -193,6 +217,10 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Renders an outline around the currently selected entity using the specified RGBA color.
+		/// </summary>
+		/// <param name="outlineColor">The color of the outline as a Vector4 (RGBA).</param>
 		public static void RenderSelectedEntityOutline(Vector4 outlineColor)
 		{
 			unsafe
@@ -202,6 +230,11 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Returns an Entity instance for the specified entity ID if it is valid; otherwise, returns null.
+		/// </summary>
+		/// <param name="entityID">The unique identifier of the entity to retrieve.</param>
+		/// <returns>The Entity corresponding to the given ID, or null if the entity is not valid.</returns>
 		public static Entity GetEntity(ulong entityID)
 		{
 			unsafe
@@ -211,6 +244,10 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Returns the ID of the currently selected entity in the scene.
+		/// </summary>
+		/// <returns>The unique identifier of the selected entity, or zero if no entity is selected.</returns>
 		public static ulong GetSelectedEntityID()
 		{
 			unsafe

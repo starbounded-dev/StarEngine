@@ -4,7 +4,18 @@
 #include <string_view>
 #include <string>
 
-namespace StarEngine {
+/**
+	 * Computes a 32-bit FNV-1a hash of the given string.
+	 * @param str The input string to hash.
+	 * @return The 32-bit FNV-1a hash value.
+	 */
+	
+	/**
+	 * Computes a 64-bit FNV-1a hash of the given string.
+	 * @param str The input string to hash.
+	 * @return The 64-bit FNV-1a hash value.
+	 */
+	namespace StarEngine {
 
 	class Hash
 	{

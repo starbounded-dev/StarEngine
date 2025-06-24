@@ -2,6 +2,11 @@
 
 #include "StarEngine/Asset/Asset.h"
 
+/**
+ * Represents a script asset within the engine.
+ *
+ * Inherits from Asset and identifies itself as an AssetType::ScriptFile.
+ */
 namespace StarEngine {
 
 	class Script : public Asset

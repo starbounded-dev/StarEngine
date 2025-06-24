@@ -13,6 +13,13 @@ namespace StarEngine
 {
 	Application* Application::s_Instance = nullptr;
 
+	/**
+	 * @brief Constructs the Application, initializing core engine components and the main window.
+	 *
+	 * Initializes the singleton instance, sets the working directory if specified, creates the main window, sets up event handling, and initializes the renderer and scripting engine host. Also creates and attaches the ImGui overlay layer.
+	 *
+	 * @param specification Application configuration, including name and optional working directory.
+	 */
 	Application::Application(const ApplicationSpecification& specification)
 		: m_Specification(specification)
 	{
@@ -34,6 +41,11 @@ namespace StarEngine
 		PushOverlay(m_ImGuiLayer);
 	}
 
+	/**
+	 * @brief Cleans up application resources and shuts down engine subsystems.
+	 *
+	 * Shuts down the scripting engine host and the renderer to ensure proper resource deallocation when the application is destroyed.
+	 */
 	Application::~Application()
 	{
 		SE_PROFILE_FUNCTION();

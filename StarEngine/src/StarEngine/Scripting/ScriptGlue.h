@@ -10,6 +10,11 @@
 
 #include <glm/glm.hpp>
 
+/**
+ * Registers scripting glue code and manages entity selection and cursor state for scripting integration.
+ *
+ * The ScriptGlue class provides static methods to register scripting glue with a managed assembly, as well as to get and set the currently hovered and selected entities within the engine. It also maintains static variables for cursor state and position, enabling scripting environments to interact with engine internals.
+ */
 namespace StarEngine {
 
 	// Forward declarations

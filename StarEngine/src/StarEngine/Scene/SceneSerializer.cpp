@@ -178,12 +178,26 @@ namespace StarEngine {
 		return RigidBody2DComponent::BodyType::Static;
 	}
 
+	/**
+	 * @brief Constructs a SceneSerializer for the specified scene.
+	 *
+	 * Initializes the serializer to operate on the provided scene reference.
+	 */
 	SceneSerializer::SceneSerializer(const Ref<Scene>& scene)
 		: m_Scene(scene)
 	{
 
 	}
 
+	/**
+	 * @brief Serializes an entity and its components to a YAML emitter.
+	 *
+	 * Writes the entity's UUID and all present components to the YAML output, including tag, transform, camera, script, rendering, physics, text, and audio components. Script fields are serialized using script handles and metadata from the scene's script storage. Handles both single and playlist audio sources. Only components present on the entity are serialized.
+	 *
+	 * @param out The YAML emitter to write to.
+	 * @param entity The entity to serialize.
+	 * @param scene Reference to the scene, used for accessing script storage and metadata.
+	 */
 	void SerializeEntity(YAML::Emitter& out, Entity entity, Ref<Scene> scene)
 	{
 		SE_CORE_ASSERT(entity.HasComponent<IDComponent>());
@@ -552,6 +566,13 @@ namespace StarEngine {
 		out << YAML::EndMap; // Entity
 	}
 
+	/**
+	 * @brief Serializes the entire scene and its entities to a YAML file.
+	 *
+	 * Writes all entities with their components and properties to the specified file in YAML format.
+	 *
+	 * @param filepath The path to the output YAML file.
+	 */
 	void SceneSerializer::Serialize(const std::filesystem::path& filepath)
 	{
 		YAML::Emitter out;
@@ -582,6 +603,14 @@ namespace StarEngine {
 		SE_CORE_ASSERT(false);
 	}
 
+	/**
+	 * @brief Deserializes a scene from a YAML file into the current scene.
+	 *
+	 * Loads scene data from the specified file path, reconstructing all entities and their components, including transforms, cameras, scripts, rendering, physics, audio, and text. Supports both current and legacy formats for script field storage. Returns false if the file cannot be parsed or does not contain valid scene data.
+	 *
+	 * @param filepath Path to the YAML scene file to load.
+	 * @return true if deserialization succeeds, false otherwise.
+	 */
 	bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 	{
 		YAML::Node data;

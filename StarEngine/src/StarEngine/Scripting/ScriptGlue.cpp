@@ -51,6 +51,13 @@ namespace StarEngine {
 	std::unordered_map<Coral::TypeId, std::function<void(Entity&)>> s_RemoveComponentFuncs;
 
 	template<typename TComponent>
+	/**
+	 * @brief Registers a C++ component type with its managed counterpart in the scripting assembly.
+	 *
+	 * Associates the specified component type with creation, existence check, and removal functions,
+	 * enabling managed scripts to interact with the component on entities. If the corresponding managed
+	 * type is not found in the assembly, logs an error and halts execution.
+	 */
 	static void RegisterManagedComponent(Coral::ManagedAssembly& coreAssembly)
 	{
 		// NOTE(Peter): Get the demangled type name of TComponent
@@ -79,6 +86,15 @@ namespace StarEngine {
 	}
 
 	template<typename TComponent>
+	/**
+	 * @brief Registers a managed component type with custom creation logic for scripting integration.
+	 *
+	 * Associates the specified add function and default existence/removal functions for the component type with the managed assembly, enabling scripts to add, check, and remove the component on entities.
+	 *
+	 * @tparam TComponent The C++ component type to register.
+	 * @param addFunction Function to add the component to an entity.
+	 * @param coreAssembly The managed assembly containing the corresponding managed component type.
+	 */
 	static void RegisterManagedComponent(std::function<void(Entity&)>&& addFunction, Coral::ManagedAssembly& coreAssembly)
 	{
 		// NOTE(Peter): Get the demangled type name of TComponent
@@ -107,6 +123,11 @@ namespace StarEngine {
 	}
 
 	template<typename... TArgs>
+	/**
+	 * @brief Logs a warning message with a stack trace for debugging purposes.
+	 *
+	 * Formats the warning message using the provided format string and arguments, and appends the current stack trace.
+	 */
 	static void WarnWithTrace(const std::string& inFormat, TArgs&&... inArgs)
 	{
 		/*auto stackTrace = ScriptUtils::GetCurrentStackTrace();
@@ -115,6 +136,11 @@ namespace StarEngine {
 	}
 
 	template<typename... TArgs>
+	/**
+	 * @brief Logs an error message with a stack trace.
+	 *
+	 * Formats the provided message and arguments, appending the current stack trace for debugging purposes.
+	 */
 	static void ErrorWithTrace(const std::string& inFormat, TArgs&&... inArgs)
 	{
 		/*auto stackTrace = ScriptUtils::GetCurrentStackTrace();
@@ -122,6 +148,11 @@ namespace StarEngine {
 		Log::GetEditorConsoleLogger()->error("{}\nStack Trace: {}", formattedMessage, stackTrace);*/
 	}
 
+	/**
+	 * @brief Registers engine component types and internal calls with the managed scripting assembly.
+	 *
+	 * Clears any previously registered component functions, then registers all supported component types and internal calls for scripting integration. Uploads the internal call bindings to the managed assembly to enable script access to engine functionality.
+	 */
 	void ScriptGlue::RegisterGlue(Coral::ManagedAssembly& coreAssembly)
 	{
 		if (!s_CreateComponentFuncs.empty())
@@ -137,6 +168,11 @@ namespace StarEngine {
 		coreAssembly.UploadInternalCalls();
 	}
 
+	/**
+	 * @brief Registers all engine component types with the managed assembly for scripting integration.
+	 *
+	 * Associates each core engine component with its managed counterpart, enabling scripts to interact with these components through the managed assembly.
+	 */
 	void ScriptGlue::RegisterComponentTypes(Coral::ManagedAssembly& coreAssembly)
 	{
 		RegisterManagedComponent<TagComponent>(coreAssembly);
@@ -153,6 +189,11 @@ namespace StarEngine {
 		RegisterManagedComponent<AudioSourceComponent>(coreAssembly);
 	}
 
+	/**
+	 * @brief Registers internal engine calls with the managed scripting assembly.
+	 *
+	 * Binds native engine functions to their managed counterparts, enabling scripts to invoke engine functionality such as input handling, entity queries, component access, and physics operations. Only the internal calls that are currently enabled in the code are registered; others are present but commented out for future or optional use.
+	 */
 	void ScriptGlue::RegisterInternalCalls(Coral::ManagedAssembly& coreAssembly)
 	{
 		SE_ADD_INTERNAL_CALL(AssetHandle_IsValid);
@@ -453,6 +494,12 @@ namespace StarEngine {
 		*/
 	}
 
+	/**
+	 * @brief Retrieves an entity from the current scene by its unique ID.
+	 *
+	 * @param entityID The unique identifier of the entity to retrieve.
+	 * @return The entity corresponding to the given ID, or a null entity if not found.
+	 */
 	static Entity GetEntity(uint64_t entityID)
 	{
 		Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -460,21 +507,41 @@ namespace StarEngine {
 		return scene->TryGetEntityWithID(entityID);
 	}
 
+	/**
+	 * @brief Returns the currently hovered entity in the editor or viewport.
+	 *
+	 * @return Entity that is currently under the cursor, or a null entity if none is hovered.
+	 */
 	Entity ScriptGlue::GetHoveredEntity()
 	{
 		return s_HoveredEntity;
 	}
 
+	/**
+	 * @brief Sets the currently hovered entity in the scripting environment.
+	 *
+	 * Updates the global state to reflect which entity is currently under the cursor or being hovered by the user.
+	 */
 	void ScriptGlue::SetHoveredEntity(Entity entity)
 	{
 		s_HoveredEntity = entity;
 	}
 
+	/**
+	 * @brief Returns the currently selected entity in the editor or scene.
+	 *
+	 * @return Entity The entity that is currently selected.
+	 */
 	Entity ScriptGlue::GetSelectedEntity()
 	{
 		return s_SelectedEntity;
 	}
 
+	/**
+	 * @brief Sets the currently selected entity in the scripting environment.
+	 *
+	 * Updates the global state to mark the specified entity as selected, making it accessible to scripts and editor tools.
+	 */
 	void ScriptGlue::SetSelectedEntity(Entity entity)
 	{
 		s_SelectedEntity = entity;
@@ -485,6 +552,11 @@ namespace StarEngine {
 
 #pragma region AssetHandle
 
+		/**
+		 * @brief Checks whether the specified asset handle is valid.
+		 *
+		 * @return true if the asset handle refers to a valid asset; false otherwise.
+		 */
 		bool AssetHandle_IsValid(AssetHandle assetHandle)
 		{
 			return AssetManager::IsAssetHandleValid(assetHandle);
@@ -494,6 +566,12 @@ namespace StarEngine {
 
 #pragma region Input
 
+		/**
+		 * @brief Checks if a specific key is currently pressed.
+		 *
+		 * @param keycode The key to check.
+		 * @return true if the key is pressed; false otherwise.
+		 */
 		bool Input_IsKeyDown(KeyCode keycode)
 		{
 			return Input::IsKeyPressed(keycode);
@@ -801,44 +879,15 @@ namespace StarEngine {
 #pragma endregion
 
 #pragma region Entity
-		/*
-		static inline Entity GetEntity(uint64_t entityID)
-		{
-			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
-			SE_CORE_VERIFY(scene, "No active scene!");
-			return scene->TryGetEntityWithID(entityID);
-		};
-		
-		void Entity_CreateComponent(uint64_t entityID, Coral::ReflectionType componentType)
-		{
-			auto entity = GetEntity(entityID);
-			SE_ICALL_VALIDATE_PARAM_V(entity, entityID);
-
-			if (!entity)
-				return;
-
-			Coral::Type& type = componentType;
-
-			if (!type)
-				return;
-
-			Coral::ScopedString typeName = type.GetFullName();
-
-			if (!s_CreateComponentFuncs.contains(type.GetTypeId()))
-			{
-				//ErrorWithTrace("Cannot check if entity '{}' has a component of type '{}'. That component hasn't been registered with the engine.", entity.Name(), std::string(typeName));
-				return;
-			}
-
-			if (s_HasComponentFuncs.at(type.GetTypeId())(entity))
-			{
-				//WarnWithTrace("Attempting to add duplicate component '{}' to entity '{}', ignoring.", std::string(typeName), entity.Name());
-				return;
-			}
-
-			return s_CreateComponentFuncs.at(type.GetTypeId())(entity);
-		}
-		*/
+		/**
+		 * @brief Determines whether an entity has a specific component type.
+		 *
+		 * Checks if the entity with the given ID possesses a component of the specified managed type.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @param componentType The managed reflection type representing the component.
+		 * @return true if the entity has the component; false otherwise.
+		 */
 
 		bool Entity_HasComponent(uint64_t entityID, Coral::ReflectionType componentType)
 		{
@@ -864,48 +913,12 @@ namespace StarEngine {
 			return s_HasComponentFuncs.at(type.GetTypeId())(entity);
 		}
 
-		/*
-		bool Entity_RemoveComponent(uint64_t entityID, Coral::ReflectionType componentType)
-		{
-			auto entity = GetEntity(entityID);
-			SE_ICALL_VALIDATE_PARAM_V(entity, entityID);
-
-			if (!entity)
-				return false;
-
-			Coral::Type& type = componentType;
-
-			if (!type)
-				return false;
-
-			Coral::ScopedString typeName = type.GetFullName();
-
-			if (!s_RemoveComponentFuncs.contains(type.GetTypeId()))
-			{
-				//ErrorWithTrace("Cannot remove a component of type '{}' from entity '{}'. That component hasn't been registered with the engine.", std::string(typeName), entity.Name());
-				return false;
-			}
-
-			if (!s_HasComponentFuncs.at(type.GetTypeId())(entity))
-			{
-				//WarnWithTrace("Tried to remove component '{}' from entity '{}' even though it doesn't have that component.", std::string(typeName), entity.Name());
-				return false;
-			}
-
-			s_RemoveComponentFuncs.at(type.GetTypeId())(entity);
-			return true;
-		}
-
-		void Entity_DestroyEntity(uint64_t entityID)
-		{
-			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
-			SE_CORE_ASSERT(scene);
-			Entity entity = scene->GetEntityByID(entityID);
-			SE_CORE_ASSERT(entity);
-
-			entity.DestroyEntity();
-		}
-		*/
+		/**
+		 * @brief Finds an entity in the current scene by its name.
+		 *
+		 * @param name The name of the entity to search for.
+		 * @return The handle of the found entity as a uint64_t, or 0 if no entity with the given name exists.
+		 */
 		uint64_t Entity_FindEntityByName(Coral::String name)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -970,27 +983,12 @@ namespace StarEngine {
 
 #pragma region Transform
 
-		/*
-		bool TransformComponent_GetIsEnabled(uint64_t entityID)
-		{
-			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
-			SE_CORE_ASSERT(scene);
-			Entity entity = scene->GetEntityByID(entityID);
-			SE_CORE_ASSERT(entity);
-
-			return entity.GetComponent<TransformComponent>().Enabled;
-		}
-
-		void TransformComponent_SetIsEnabled(uint64_t entityID, bool isEnabled)
-		{
-			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
-			SE_CORE_ASSERT(scene);
-			Entity entity = scene->GetEntityByID(entityID);
-			SE_CORE_ASSERT(entity);
-
-			entity.GetComponent<TransformComponent>().Enabled = isEnabled;
-		}
-		*/
+		/**
+		 * @brief Copies the TransformComponent of the specified entity to the provided output pointer.
+		 *
+		 * @param entityID The unique identifier of the entity whose transform is to be retrieved.
+		 * @param outTransform Pointer to a TransformComponent structure that will receive the entity's transform data.
+		 */
 
 		void TransformComponent_GetTransform(uint64_t entityID, TransformComponent* outTransform)
 		{
@@ -1002,6 +1000,14 @@ namespace StarEngine {
 			*outTransform = entity.GetComponent<TransformComponent>();
 		}
 
+		/**
+		 * @brief Sets the transform of an entity.
+		 *
+		 * Updates the TransformComponent of the specified entity with the provided transform data.
+		 *
+		 * @param entityID The unique identifier of the entity whose transform will be set.
+		 * @param inTransform Pointer to the TransformComponent containing the new transform values.
+		 */
 		void TransformComponent_SetTransform(uint64_t entityID, TransformComponent* inTransform)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1474,6 +1480,12 @@ namespace StarEngine {
 
 #pragma region TextComponent
 
+		/**
+		 * @brief Retrieves the text string from the TextComponent of the specified entity.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @return Coral::String The text contained in the entity's TextComponent.
+		 */
 		Coral::String TextComponent_GetText(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1484,6 +1496,12 @@ namespace StarEngine {
 			return Coral::String::New(entity.GetComponent<TextComponent>().TextString.c_str());
 		}
 
+		/**
+		 * @brief Sets the text string of the TextComponent for the specified entity.
+		 *
+		 * @param entityID The unique identifier of the entity whose text will be set.
+		 * @param textString The new text string to assign to the entity's TextComponent.
+		 */
 		void TextComponent_SetText(uint64_t entityID, Coral::String textString)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1494,6 +1512,12 @@ namespace StarEngine {
 			entity.GetComponent<TextComponent>().TextString = textString;
 		}
 
+		/**
+		 * @brief Retrieves the X (red) component of the color from the TextComponent of the specified entity.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @return float The X (red) value of the TextComponent's color.
+		 */
 		float TextComponent_GetColorX(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1506,6 +1530,12 @@ namespace StarEngine {
 			return tc.Color.x;
 		}
 
+		/**
+		 * @brief Retrieves the Y (green) component of the color from the TextComponent of the specified entity.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @return float The Y component of the TextComponent's color.
+		 */
 		float TextComponent_GetColorY(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1518,6 +1548,12 @@ namespace StarEngine {
 			return tc.Color.y;
 		}
 
+		/**
+		 * @brief Returns the Z (blue) component of the color in the entity's TextComponent.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @return float The blue channel value of the TextComponent's color.
+		 */
 		float TextComponent_GetColorZ(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1530,6 +1566,12 @@ namespace StarEngine {
 			return tc.Color.z;
 		}
 
+		/**
+		 * @brief Retrieves the alpha (W) component of the color from the TextComponent of the specified entity.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @return float The alpha value of the TextComponent's color.
+		 */
 		float TextComponent_GetColorW(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1542,6 +1584,17 @@ namespace StarEngine {
 			return tc.Color.w;
 		}
 
+		/**
+		 * @brief Sets the color of the TextComponent for the specified entity.
+		 *
+		 * Updates the RGBA color vector of the entity's TextComponent using the provided values.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @param colorX Red component of the color.
+		 * @param colorY Green component of the color.
+		 * @param colorZ Blue component of the color.
+		 * @param colorW Alpha (opacity) component of the color.
+		 */
 		void TextComponent_SetColor(uint64_t entityID, float colorX, float colorY, float colorZ, float colorW)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1554,6 +1607,12 @@ namespace StarEngine {
 			tc.Color = glm::vec4(colorX, colorY, colorZ, colorW);
 		}
 
+		/**
+		 * @brief Retrieves the kerning value from the TextComponent of the specified entity.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @return float The kerning value used for character spacing in the entity's text.
+		 */
 		float TextComponent_GetKerning(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1566,6 +1625,12 @@ namespace StarEngine {
 			return tc.Kerning;
 		}
 
+		/**
+		 * @brief Sets the kerning value of the TextComponent for the specified entity.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @param kerning The new kerning value to apply.
+		 */
 		void TextComponent_SetKerning(uint64_t entityID, float kerning)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1578,6 +1643,12 @@ namespace StarEngine {
 			tc.Kerning = kerning;
 		}
 
+		/**
+		 * @brief Retrieves the line spacing value from the TextComponent of the specified entity.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @return float The line spacing value of the entity's TextComponent.
+		 */
 		float TextComponent_GetLineSpacing(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1590,6 +1661,12 @@ namespace StarEngine {
 			return tc.LineSpacing;
 		}
 
+		/**
+		 * @brief Sets the line spacing value of the TextComponent for the specified entity.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @param lineSpacing The new line spacing value to set.
+		 */
 		void TextComponent_SetLineSpacing(uint64_t entityID, float lineSpacing)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1606,6 +1683,18 @@ namespace StarEngine {
 
 #pragma region RigidBody2D
 
+		/**
+		 * @brief Applies a linear impulse to a 2D rigid body at a specified offset.
+		 *
+		 * Applies the given impulse vector to the entity's Box2D body at a position offset from its center, optionally waking the body.
+		 *
+		 * @param entityID The unique identifier of the entity with the RigidBody2DComponent.
+		 * @param impulseX The X component of the impulse vector.
+		 * @param impulseY The Y component of the impulse vector.
+		 * @param offsetX The X offset from the body's center where the impulse is applied.
+		 * @param offsetY The Y offset from the body's center where the impulse is applied.
+		 * @param wake Whether to wake the body if it is sleeping.
+		 */
 		void RigidBody2DComponent_ApplyLinearImpulse(uint64_t entityID, float impulseX, float impulseY, float offsetX, float offsetY, bool wake)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1618,6 +1707,16 @@ namespace StarEngine {
 			body->ApplyLinearImpulse(b2Vec2(impulseX, impulseY), body->GetWorldCenter() + b2Vec2(offsetX, offsetY), wake);
 		}
 
+		/**
+		 * @brief Applies a linear impulse to the center of a 2D rigid body component.
+		 *
+		 * Applies the specified impulse vector to the center of the entity's Box2D body, optionally waking the body if it is asleep.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @param impulseX The X component of the impulse vector.
+		 * @param impulseY The Y component of the impulse vector.
+		 * @param wake Whether to wake the body if it is currently asleep.
+		 */
 		void RigidBody2DComponent_ApplyLinearImpulseToCenter(uint64_t entityID, float impulseX, float impulseY, bool wake)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1630,6 +1729,14 @@ namespace StarEngine {
 			body->ApplyLinearImpulseToCenter(b2Vec2(impulseX, impulseY), wake);
 		}
 
+		/**
+		 * @brief Returns the X component of the linear velocity of a 2D rigid body.
+		 *
+		 * Retrieves the current X-axis velocity of the Box2D body associated with the entity's RigidBody2DComponent.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @return float The X component of the entity's linear velocity.
+		 */
 		float RigidBody2DComponent_GetLinearVelocityX(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1643,6 +1750,14 @@ namespace StarEngine {
 			return linearVelocity.x;
 		}
 
+		/**
+		 * @brief Returns the Y component of the linear velocity of a 2D rigid body.
+		 *
+		 * Retrieves the current Y-axis linear velocity from the Box2D body associated with the entity's RigidBody2DComponent.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @return float The Y component of the entity's linear velocity.
+		 */
 		float RigidBody2DComponent_GetLinearVelocityY(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1655,19 +1770,14 @@ namespace StarEngine {
 			const b2Vec2& linearVelocity = body->GetLinearVelocity();
 			return linearVelocity.y;
 		}
-		/*
-		void RigidBody2DComponent_SetLinearVelocity(uint64_t entityID, float velocityX, float velocityY)
-		{
-			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
-			SE_CORE_ASSERT(scene);
-			Entity entity = scene->GetEntityByID(entityID);
-			SE_CORE_ASSERT(entity);
-
-			auto& component = entity.GetComponent<RigidBody2DComponent>();
-			b2Body* body = (b2Body*)component.RuntimeBody;
-			body->SetLinearVelocity({ velocityX, velocityY });
-		}
-		*/
+		/**
+		 * @brief Returns the rigid body type of the specified entity's 2D physics body.
+		 *
+		 * Retrieves the Box2D body type of the entity's RigidBody2DComponent and converts it to the engine's RigidBody2DComponent::BodyType enum.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @return RigidBody2DComponent::BodyType The type of the rigid body (e.g., Static, Dynamic, Kinematic).
+		 */
 		RigidBody2DComponent::BodyType RigidBody2DComponent_GetType(uint64_t entityID)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
@@ -1680,6 +1790,14 @@ namespace StarEngine {
 			return Utils::RigidBody2DTypeFromBox2DBody(body->GetType());
 		}
 
+		/**
+		 * @brief Sets the body type of a 2D rigid body component for the specified entity.
+		 *
+		 * Changes the physics body type (e.g., static, dynamic, kinematic) of the entity's RigidBody2D component.
+		 *
+		 * @param entityID The unique identifier of the entity.
+		 * @param bodyType The new body type to assign to the rigid body.
+		 */
 		void RigidBody2DComponent_SetType(uint64_t entityID, RigidBody2DComponent::BodyType bodyType)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();

@@ -6,6 +6,12 @@
 #include "StarEngine/Asset/RuntimeAssetManager.h"
 #include "StarEngine/Asset/EditorAssetManager.h"
 
+/**
+ * Returns the full path to the script module file for the active project.
+ *
+ * Combines the active project's directory, asset directory, and script module path as specified in the project configuration.
+ * @returns The absolute path to the script module file.
+ */
 namespace StarEngine {
 
 	struct ProjectConfig

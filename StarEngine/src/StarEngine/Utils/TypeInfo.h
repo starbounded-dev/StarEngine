@@ -10,7 +10,17 @@
 
 #include "StarEngine/Utils/Hash.h"
 
-namespace StarEngine {
+/**
+	 * Provides utilities for obtaining and handling demangled type names, with optional namespace exclusion, for a given type.
+	 *
+	 * When ABI demangling is supported, converts mangled type names to human-readable strings using platform-specific mechanisms. If `ExcludeNamespace` is true, removes the namespace prefix from the demangled name where supported. On platforms without ABI support, performs string manipulation to approximate demangling and namespace exclusion.
+	 *
+	 * The `TypeInfo` struct caches the demangled type name and provides methods to retrieve the name and a 32-bit hash code derived from it.
+	 *
+	 * @tparam T The type for which type information is provided.
+	 * @tparam ExcludeNamespace If true, the namespace prefix is excluded from the type name.
+	 */
+	namespace StarEngine {
 
 	// NOTE(Peter): StringType is used because on non-MSVC compilers we have to make a copy of the buffer we get back from abi::__cxa_demangle
 	//				This is because that function allocates a heap buffer that we're responsible for freeing.

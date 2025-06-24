@@ -44,12 +44,22 @@ namespace StarEngine {
 		//{ "StarEngine.Scene", DataType::Scene },
 	};
 
+	/**
+	 * @brief Logs a C# exception message as an error.
+	 *
+	 * @param message The exception message received from the C# runtime.
+	 */
 	void OnCSharpException(std::string_view message)
 	{
 		std::string msg = message.data();
 		SE_CORE_ERROR("C# Exception: {}", msg);
 	}
 
+	/**
+	 * @brief Loads the project's C# assembly and caches its types and metadata.
+	 *
+	 * Loads the project assembly from the script module file path using the current Coral assembly load context. If loading succeeds, builds and caches type and field metadata for use by the scripting system.
+	 */
 	void ScriptEngine::LoadProjectAssembly()
 	{
 		// Ensure m_AppAssemblyData is accessed through the current instance
@@ -68,6 +78,14 @@ namespace StarEngine {
 	}
 
 
+	/**
+	 * @brief Checks whether a script with the given UUID is valid and recognized by the engine.
+	 *
+	 * A script is considered valid if it exists in both the cached types of the project assembly and the script metadata map.
+	 *
+	 * @param scriptID The UUID of the script to check.
+	 * @return true if the script is valid and present in both caches; false otherwise.
+	 */
 	bool ScriptEngine::IsValidScript(UUID scriptID) const
 	{
 		if (!m_AppAssemblyData)
@@ -78,6 +96,11 @@ namespace StarEngine {
 
 	}
 
+	/**
+	 * @brief Handles and logs messages from the Coral runtime with appropriate severity.
+	 *
+	 * Routes messages from Coral to the engine's logging system, mapping Coral's message level to the corresponding log severity.
+	 */
 	void OnCoralMessage(std::string_view message, Coral::MessageLevel level)
 	{
 		std::string msg = message.data();
@@ -95,12 +118,28 @@ namespace StarEngine {
 		}
 	}
 
+	/**
+	 * @brief Retrieves the metadata for a script type by its unique identifier.
+	 *
+	 * @param scriptID The unique identifier of the script type.
+	 * @return const ScriptMetadata& Reference to the metadata associated with the script.
+	 *
+	 * @note Asserts if the script metadata does not exist for the given ID.
+	 */
 	const ScriptMetadata& ScriptEngine::GetScriptMetadata(UUID scriptID) const
 	{
 		SE_CORE_VERIFY(m_ScriptMetadata.find(scriptID) != m_ScriptMetadata.end());
 		return m_ScriptMetadata.at(scriptID);
 	}
 
+	/**
+	 * @brief Retrieves a Coral type by its full name from cached assemblies.
+	 *
+	 * Searches both the core and application assembly type caches for a type matching the specified full name.
+	 *
+	 * @param name The full name of the type to search for.
+	 * @return Pointer to the matching Coral::Type if found, otherwise nullptr.
+	 */
 	const Coral::Type* ScriptEngine::GetTypeByName(std::string_view name) const
 	{
 		for (const auto& [id, type] : m_CoreAssemblyData->CachedTypes)
@@ -132,8 +171,20 @@ namespace StarEngine {
 		return nullptr;
 	}
 
-	const ScriptEngine& ScriptEngine::GetInstance() { return GetMutable(); }
+	/**
+ * @brief Returns a const reference to the singleton ScriptEngine instance.
+ *
+ * Use this method to access the global ScriptEngine in a read-only context.
+ *
+ * @return const ScriptEngine& Reference to the singleton ScriptEngine.
+ */
+const ScriptEngine& ScriptEngine::GetInstance() { return GetMutable(); }
 
+	/**
+	 * @brief Initializes the Coral host instance for C# scripting integration.
+	 *
+	 * Sets up the Coral runtime environment with appropriate settings and callbacks for message and exception handling.
+	 */
 	void ScriptEngine::InitializeHost()
 	{
 		m_Host = std::make_unique<Coral::HostInstance>();
@@ -146,6 +197,11 @@ namespace StarEngine {
 		SE_CORE_VERIFY(m_Host->Initialize(settings) == Coral::CoralInitStatus::Success, "Failed to initialize Coral");
 	}
 
+	/**
+	 * @brief Shuts down the Coral host and clears the Coral type cache.
+	 *
+	 * Releases all resources associated with the Coral runtime host and resets the host instance.
+	 */
 	void ScriptEngine::ShutdownHost()
 	{
 		Coral::TypeCache::Get().Clear();
@@ -154,6 +210,13 @@ namespace StarEngine {
 		m_Host.reset();
 	}
 
+	/**
+	 * @brief Initializes the scripting engine for the specified project.
+	 *
+	 * Sets up the Coral assembly load context, loads the core script assembly, builds its type and metadata cache, registers engine glue bindings, and loads the project's script assembly.
+	 *
+	 * @param project Reference to the project for which the scripting environment is initialized.
+	 */
 	void ScriptEngine::Initialize(Ref<Project> project)
 	{
 		m_LoadContext = std::make_unique<Coral::AssemblyLoadContext>(std::move(m_Host->CreateAssemblyLoadContext("StarEngineLoadContext")));
@@ -169,6 +232,11 @@ namespace StarEngine {
 		LoadProjectAssembly();
 	}
 
+	/**
+	 * @brief Shuts down the script engine and releases all loaded script resources.
+	 *
+	 * Releases default values for all script fields, clears script metadata, resets assembly data, unloads the assembly load context, and clears the Coral type cache.
+	 */
 	void ScriptEngine::Shutdown()
 	{
 		for (auto& [scriptID, scriptMetadata] : m_ScriptMetadata)
@@ -187,53 +255,13 @@ namespace StarEngine {
 		Coral::TypeCache::Get().Clear();
 	}
 
-	/*void ScriptEngine::Initialize(Ref<Project> project)
-	{
-		m_Host = std::make_unique<Coral::HostInstance>();
-
-		Coral::HostSettings settings =
-		{
-			.CoralDirectory = (std::filesystem::current_path() / "DotNet").string(),
-			.MessageCallback = OnCoralMessage,
-			.ExceptionCallback = OnCSharpException
-		};
-
-		SE_CORE_VERIFY(m_Host->Initialize(settings), "Failed to initialize Coral");
-
-		m_LoadContext = std::make_unique<Coral::AssemblyLoadContext>(std::move(m_Host->CreateAssemblyLoadContext("StarEngineLoadContext")));
-
-		auto scriptCorePath = (std::filesystem::current_path() / "Resources" / "Scripts" / "net8.0" / "StarEngine-ScriptCore.dll").string();
-
-		SE_CORE_WARN("Filepath: {}", scriptCorePath);
-
-		m_CoreAssemblyData = CreateScope<AssemblyData>();
-
-		m_CoreAssemblyData->Assembly = &m_LoadContext->LoadAssembly(scriptCorePath);
-		BuildAssemblyCache(m_CoreAssemblyData.get());
-
-		ScriptGlue::RegisterGlue(*m_CoreAssemblyData->Assembly);
-
-		LoadProjectAssembly();
-	}
-
-	void ScriptEngine::Shutdown()
-	{
-		for (auto& [scriptID, scriptMetadata] : m_ScriptMetadata)
-		{
-			for (auto& [fieldID, fieldMetadata] : scriptMetadata.Fields)
-			{
-				fieldMetadata.DefaultValue.Release();
-			}
-		}
-		m_ScriptMetadata.clear();
-
-		m_AppAssemblyData.reset();
-		m_CoreAssemblyData.reset();
-		m_Host->UnloadAssemblyLoadContext(*m_LoadContext);
-
-		m_Host->Shutdown();
-		m_Host.reset();
-	}*/
+	/**
+	 * @brief Caches types and script metadata from a loaded assembly.
+	 *
+	 * Iterates through all types in the provided assembly, generating a unique script ID for each. If a script asset does not already exist for a type, attempts to import it from the project's source directory. For types that inherit from `StarEngine.Entity`, extracts public fields with supported data types, generates field metadata including default values, and stores this information for runtime access.
+	 *
+	 * @param assemblyData Pointer to the assembly data structure containing the loaded assembly and type cache.
+	 */
 
 	void ScriptEngine::BuildAssemblyCache(AssemblyData* assemblyData)
 	{
@@ -371,6 +399,13 @@ namespace StarEngine {
 		}
 	}
 
+	/**
+	 * @brief Returns a mutable reference to the singleton ScriptEngine instance.
+	 *
+	 * This method provides access to the single global instance of ScriptEngine, allowing modification of its state.
+	 *
+	 * @return ScriptEngine& Reference to the singleton ScriptEngine instance.
+	 */
 	ScriptEngine& ScriptEngine::GetMutable()
 	{
 		static ScriptEngine s_Instance;

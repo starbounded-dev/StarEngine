@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * Represents a universally unique identifier (UUID) as a 64-bit unsigned integer.
+ *
+ * Provides constructors for default and explicit initialization, as well as conversion operators to retrieve the underlying value.
+ */
 namespace StarEngine {
 
 	class UUID
@@ -17,6 +22,10 @@ namespace StarEngine {
 
 }
 
+/**
+ * Computes a hash value for a StarEngine::UUID.
+ * @return The 64-bit integer value of the UUID as its hash code.
+ */
 namespace std {
 
 	//template <typename T> struct hash;

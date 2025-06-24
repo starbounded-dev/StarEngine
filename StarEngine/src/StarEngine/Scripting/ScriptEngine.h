@@ -16,6 +16,12 @@
 
 #include "ScriptEntityStorage.h"
 
+/****
+ * Forward declarations for Coral managed runtime classes.
+ * - HostInstance: Represents a Coral managed runtime host.
+ * - ManagedAssembly: Represents a loaded managed assembly.
+ * - AssemblyLoadContext: Manages the context for loading managed assemblies.
+ */
 namespace Coral {
 
 	class HostInstance;
@@ -24,7 +30,13 @@ namespace Coral {
 
 }
 
-namespace StarEngine {
+/**
+			* Sets the default value for the field from a temporary managed object.
+			* If the field is a single-dimensional array, copies its contents; otherwise, copies the value directly.
+			* @tparam T The native type corresponding to the managed field.
+			* @param temp Temporary managed object used to extract the field value.
+			*/
+		namespace StarEngine {
 
 	class Scene;
 	class Project;
@@ -70,7 +82,12 @@ namespace StarEngine {
 		std::unordered_map<uint32_t, FieldMetadata> Fields;
 	};
 
-	class ScriptEngine
+	/**
+		 * Returns the metadata for the script identified by the given UUID.
+		 * @param scriptID The unique identifier of the script.
+		 * @returns A constant reference to the metadata associated with the specified script.
+		 */
+		class ScriptEngine
 	{
 	public:
 		Ref<Scene> GetCurrentScene() const { return m_CurrentScene; }
@@ -169,7 +186,13 @@ namespace StarEngine {
 			return result;
 		}
 
-		void DestroyInstance(UUID entityID, ScriptStorage& storage)
+		/**
+ * Destroys the managed script instance associated with the specified entity.
+ *
+ * Clears all field instance pointers for the entity and destroys the managed object instance, releasing its resources.
+ * The entity must exist in the script storage and have a valid script ID.
+ */
+void DestroyInstance(UUID entityID, ScriptStorage& storage)
 		{
 			SE_CORE_VERIFY(storage.EntityStorage.contains(entityID));
 

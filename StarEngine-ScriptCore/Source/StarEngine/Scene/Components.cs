@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -920,6 +920,12 @@ namespace StarEngine
 	{
 		public enum BodyType { Static = 0, Dynamic, Kinematic }
 
+		/// <summary>
+		/// Applies a linear impulse to the rigid body at the specified world position.
+		/// </summary>
+		/// <param name="impulse">The impulse vector to apply.</param>
+		/// <param name="worldPosition">The world position where the impulse is applied.</param>
+		/// <param name="wake">Whether to wake the rigid body if it is sleeping.</param>
 		public void ApplyLinearImpulse(Vector2 impulse, Vector2 worldPosition, bool wake)
 		{
 			unsafe
@@ -928,6 +934,11 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Applies a linear impulse to the center of the 2D rigid body.
+		/// </summary>
+		/// <param name="impulse">The impulse vector to apply.</param>
+		/// <param name="wake">Whether to wake the body if it is sleeping.</param>
 		public void ApplyLinearImpulse(Vector2 impulse, bool wake)
 		{
 			unsafe
@@ -1380,6 +1391,9 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Sets the audio asset handle for this audio source.
+		/// </summary>
 		public void SetAssetHandle(AssetHandle handle)
 		{
 			unsafe
@@ -1662,6 +1676,10 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Determines whether the audio source is currently playing.
+		/// </summary>
+		/// <returns>True if the audio is playing; otherwise, false.</returns>
 		public bool IsPlaying()
 		{
 			unsafe
@@ -1670,6 +1688,9 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Starts playback of the audio source attached to the entity.
+		/// </summary>
 		public void Play()
 		{
 			unsafe
@@ -1678,6 +1699,9 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Pauses audio playback for the associated audio source component.
+		/// </summary>
 		public void Pause()
 		{
 			unsafe
@@ -1686,6 +1710,9 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Resumes playback of the audio source if it is currently paused.
+		/// </summary>
 		public void UnPause()
 		{
 			unsafe
@@ -1694,6 +1721,9 @@ namespace StarEngine
 			}
 		}
 
+		/// <summary>
+		/// Stops audio playback for the associated audio source component.
+		/// </summary>
 		public void Stop()
 		{
 			unsafe

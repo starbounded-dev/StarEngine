@@ -4,6 +4,11 @@
 
 #include <string_view>
 
+/**
+ * Converts an AssetType enum value to its corresponding string representation.
+ * @param type The AssetType value to convert.
+ * @return A string view representing the name of the asset type.
+ */
 namespace StarEngine {
 
 	using AssetHandle = UUID;

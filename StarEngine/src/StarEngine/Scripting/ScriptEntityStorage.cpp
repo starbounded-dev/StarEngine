@@ -4,6 +4,14 @@
 
 namespace StarEngine {
 
+	/**
+	 * @brief Initializes script storage for an entity with the specified script.
+	 *
+	 * Sets up storage for all fields defined in the script's metadata for the given entity. Verifies that the script is valid and the entity does not already have storage initialized.
+	 *
+	 * @param scriptID The unique identifier of the script to associate with the entity.
+	 * @param entityID The unique identifier of the entity to initialize storage for.
+	 */
 	void ScriptStorage::InitializeEntityStorage(UUID scriptID, UUID entityID)
 	{
 		const auto& scriptEngine = ScriptEngine::GetInstance();
@@ -23,6 +31,12 @@ namespace StarEngine {
 		}
 	}
 
+	/**
+	 * @brief Shuts down and removes script storage for a specific entity.
+	 *
+	 * Releases all field value buffers associated with the entity and erases the entity's storage entry.
+	 * Verifies that the script is valid and the entity storage exists before proceeding.
+	 */
 	void ScriptStorage::ShutdownEntityStorage(UUID scriptID, UUID entityID)
 	{
 		const auto& scriptEngine = ScriptEngine::GetInstance();
@@ -36,6 +50,11 @@ namespace StarEngine {
 		EntityStorage.erase(entityID);
 	}
 
+	/**
+	 * @brief Synchronizes all entity script storage with the latest script metadata.
+	 *
+	 * Updates each entity's stored fields to match the current script definition, updating field types and initializing storage for any new fields that have been added to the script.
+	 */
 	void ScriptStorage::SynchronizeStorage()
 	{
 		const auto& scriptEngine = ScriptEngine::GetInstance();
@@ -58,6 +77,15 @@ namespace StarEngine {
 		}
 	}
 
+	/**
+	 * @brief Copies script storage data from one entity to another within a target ScriptStorage instance.
+	 *
+	 * Copies all script field data and metadata from the source entity to the target entity, provided both entities are associated with the same script and the target entity's storage has been initialized. Fields that no longer exist in the script are skipped.
+	 *
+	 * @param entityID The ID of the source entity whose script storage will be copied.
+	 * @param targetEntityID The ID of the target entity to receive the copied script storage.
+	 * @param targetStorage The ScriptStorage instance where the target entity's storage resides.
+	 */
 	void ScriptStorage::CopyEntityStorage(UUID entityID, UUID targetEntityID, ScriptStorage& targetStorage) const
 	{
 		if (targetStorage.EntityStorage.find(targetEntityID) == targetStorage.EntityStorage.end())
@@ -104,6 +132,11 @@ namespace StarEngine {
 		}
 	}
 
+	/**
+	 * @brief Releases all field value buffers and clears all entity script storage.
+	 *
+	 * Frees memory associated with all script field values for every entity and removes all entities from storage.
+	 */
 	void ScriptStorage::Clear()
 	{
 		for (auto& [entityID, entityStorage] : EntityStorage)
@@ -115,6 +148,11 @@ namespace StarEngine {
 		EntityStorage.clear();
 	}
 
+	/**
+	 * @brief Initializes storage for a single script field within an entity.
+	 *
+	 * Sets up the field's name, managed type, data type, and allocates or copies the value buffer based on the field's default value. The field's instance index is set to an invalid state.
+	 */
 	void ScriptStorage::InitializeFieldStorage(EntityScriptStorage& storage, uint32_t fieldID, const FieldMetadata& fieldMetadata)
 	{
 		auto& fieldStorage = storage.Fields[fieldID];

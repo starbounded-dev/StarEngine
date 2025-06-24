@@ -29,6 +29,9 @@ namespace StarEngine {
 
 	static ContactListener2D s_Box2DContactListener;
 
+	/**
+	 * @brief Constructs a new Scene instance with default settings.
+	 */
 	Scene::Scene()
 	{
 	}
@@ -126,6 +129,11 @@ namespace StarEngine {
 		m_Registry.destroy(entity);
 	}
 
+	/**
+	 * @brief Initializes the scene for runtime execution.
+	 *
+	 * Sets the scene as running, starts 2D physics simulation, activates audio listeners and sources (including playlist handling), and initializes all script instances, invoking their "OnCreate" method.
+	 */
 	void Scene::OnRuntimeStart()
 	{
 		m_IsRunning = true;
@@ -218,6 +226,11 @@ namespace StarEngine {
 		}
 	}
 
+	/**
+	 * @brief Stops the runtime, halting physics, audio playback, and script execution.
+	 *
+	 * This method disables the running state, stops the physics simulation, halts all playing audio sources and playlists, and invokes the "OnDestroy" method on all script instances before destroying them and shutting down their associated script storage.
+	 */
 	void Scene::OnRuntimeStop()
 	{
 		m_IsRunning = false;
@@ -281,6 +294,9 @@ namespace StarEngine {
 		}
 	}
 
+	/**
+	 * @brief Initializes the simulation by starting the 2D physics system.
+	 */
 	void Scene::OnSimulationStart()
 	{
 		OnPhysics2DStart();
@@ -291,6 +307,13 @@ namespace StarEngine {
 		OnPhysics2DStop();
 	}
 
+	/**
+	 * @brief Updates the scene during runtime, including scripts, physics, audio, and rendering.
+	 *
+	 * Advances the simulation if not paused or stepping frames remain. Invokes script update methods, steps the physics simulation, synchronizes entity transforms with physics bodies, updates audio listeners and sources (including playlist logic), and renders all visible entities using the primary camera. If paused, updates audio listeners and pauses all playing audio sources and playlists.
+	 *
+	 * @param ts The timestep for the current update.
+	 */
 	void Scene::OnUpdateRuntime(Timestep ts)
 	{
 		if (!m_IsPaused || m_StepFrames-- > 0)
@@ -660,6 +683,14 @@ namespace StarEngine {
 		m_StepFrames = frames;
 	}
 
+	/**
+	 * @brief Creates a duplicate of the specified entity, copying all of its components.
+	 *
+	 * The new entity will have the same name and component data as the original, except for its unique identifier.
+	 *
+	 * @param entity The entity to duplicate.
+	 * @return Entity The newly created duplicate entity.
+	 */
 	Entity Scene::DuplicateEntity(Entity entity)
 	{
 		// Copy name because we're going to modify component data structure
@@ -669,6 +700,12 @@ namespace StarEngine {
 		return newEntity;
 	}
 
+	/**
+	 * @brief Finds and returns the first entity with a matching tag.
+	 *
+	 * @param tag The tag string to search for.
+	 * @return Entity The first entity with the specified tag, or an empty entity if not found.
+	 */
 	Entity Scene::FindEntityByTag(const std::string& tag)
 	{
 		Entity e{};
@@ -685,6 +722,13 @@ namespace StarEngine {
 		return e;
 	}
 
+	/**
+	 * @brief Invokes the scene transition callback with the specified asset handle.
+	 *
+	 * If no transition callback is set, logs a warning indicating that the scene cannot be transitioned.
+	 *
+	 * @param handle The asset handle representing the target scene for transition.
+	 */
 	void Scene::OnSceneTransition(AssetHandle handle)
 	{
 		if (m_OnSceneTransitionCallback)
@@ -697,11 +741,23 @@ namespace StarEngine {
 		}
 	}
 
+	/**
+	 * @brief Returns the current 2D gravity vector used for physics simulation.
+	 *
+	 * @return glm::vec2 The gravity vector applied to the physics world.
+	 */
 	glm::vec2 Scene::GetPhysics2DGravity()
 	{
 		return s_Gravity;
 	}
 
+	/**
+	 * @brief Sets the 2D physics gravity vector for the scene.
+	 *
+	 * Updates the static gravity value and applies it to the Box2D physics world. If the physics world does not exist, it is created with the specified gravity.
+	 *
+	 * @param gravity The new gravity vector to use for 2D physics simulation.
+	 */
 	void Scene::SetPhysics2DGravity(const glm::vec2& gravity)
 	{
 		s_Gravity = gravity;
@@ -712,50 +768,14 @@ namespace StarEngine {
 			m_PhysicsWorld = new b2World({ s_Gravity.x, s_Gravity.y });
 	}
 
-	/*
-	void Scene::RenderHoveredEntityOutline(Entity entity, glm::vec4 color)
-	{
-
-	}
-
-	void Scene::RenderSelectedEntityOutline(Entity entity, glm::vec4 color)
-	{
-		if (entity)
-		{
-			Entity camera = GetPrimaryCameraEntity();
-
-			if (!camera)
-				return;
-
-			Renderer2D::BeginScene(*camera.GetComponent<CameraComponent>().Camera.Raw(), camera.GetComponent<TransformComponent>().GetTransform());
-
-			// Calculate z index for translation
-			float zIndex = 0.001f;
-			glm::vec3 cameraForwardDirection = camera.GetComponent<CameraComponent>().Camera->GetForwardDirection();
-
-			// Calculate z index for translation
-			glm::vec3 projectionCollider = cameraForwardDirection * glm::vec3(zIndex, zIndex, zIndex);
-
-			// Hovered entity outline
-			auto& tc = entity.GetComponent<TransformComponent>();
-
-			if (entity.HasComponent<SpriteRendererComponent>() ||
-				entity.HasComponent<CircleRendererComponent>())
-			{
-				rtmcpp::Vec3 translation = rtmcpp::Vec3{ tc.Translation.X, tc.Translation.Y, tc.Translation.Z + -projectionCollider.Z };
-				rtmcpp::Mat4 rotation = rtmcpp::Mat4Cast(rtmcpp::FromEuler(rtmcpp::Vec3{ tc.Rotation.Y, tc.Rotation.Z, tc.Rotation.X }));
-
-				rtmcpp::Mat4 transform = rtmcpp::Mat4Cast(rtmcpp::Scale(tc.Scale))
-					* rotation
-					* rtmcpp::Mat4Cast(rtmcpp::Translation(rtmcpp::Vec3{ translation.X, translation.Y, translation.Z }));
-
-				Renderer2D::SetLineWidth(2.0f);
-				Renderer2D::DrawRect(transform, color);
-			}
-
-			Renderer2D::EndScene();
-		}
-	}*/
+	/**
+	 * @brief Finds the first entity with the specified name.
+	 *
+	 * Searches all entities for a TagComponent whose tag matches the provided name and returns the corresponding entity. If no entity is found, returns an empty entity.
+	 *
+	 * @param name The name to search for.
+	 * @return Entity with the matching name, or an empty entity if not found.
+	 */
 
 	Entity Scene::FindEntityByName(std::string_view name)
 	{
@@ -769,6 +789,12 @@ namespace StarEngine {
 		return {};
 	}
 
+	/**
+	 * @brief Retrieves an entity by its numeric ID.
+	 *
+	 * @param id The unique numeric identifier of the entity.
+	 * @return Entity corresponding to the given ID, or an empty entity if not found.
+	 */
 	Entity Scene::GetEntityByID(uint64_t id)
 	{
 		// TODO: Maybe should be assert
@@ -782,12 +808,24 @@ namespace StarEngine {
 		return {};
 	}
 
+	/**
+	 * @brief Attempts to retrieve an entity by its numeric ID.
+	 *
+	 * @param id The unique numeric ID of the entity.
+	 * @return The entity with the specified ID if found; otherwise, a null or invalid entity.
+	 */
 	Entity Scene::TryGetEntityWithID(uint64_t id) const
 	{
 		if (const auto iter = m_EntityMap.find(id); iter != m_EntityMap.end())
 			return { iter->second, const_cast<Scene*>(this) };
 	}
 
+	/**
+	 * @brief Retrieves an entity by its UUID.
+	 *
+	 * @param uuid The universally unique identifier of the entity.
+	 * @return The entity associated with the given UUID, or an empty entity if not found.
+	 */
 	Entity Scene::GetEntityByUUID(UUID uuid)
 	{
 		if (m_EntityMap.find(uuid) != m_EntityMap.end())
@@ -935,12 +973,22 @@ namespace StarEngine {
 	}
 
 	template<>
+	/**
+	 * @brief Handles logic when a TagComponent is added to an entity.
+	 *
+	 * This specialization is intentionally left empty as no additional processing is required when a TagComponent is added.
+	 */
 	void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent& component)
 	{
 
 	} 
 
 	template<>
+	/**
+	 * @brief Handles logic when a RigidBody2DComponent is added to an entity.
+	 *
+	 * This specialization is a placeholder for any setup required when a RigidBody2DComponent is attached to an entity. Currently, it performs no actions.
+	 */
 	void Scene::OnComponentAdded<RigidBody2DComponent>(Entity entity, RigidBody2DComponent& component)
 	{
 

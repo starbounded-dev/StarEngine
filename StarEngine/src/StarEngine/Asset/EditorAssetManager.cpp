@@ -33,6 +33,15 @@ namespace StarEngine {
 		{ ".cs", AssetType::ScriptFile },
 	};
 
+	/**
+	 * @brief Returns the asset type associated with a given file extension.
+	 *
+	 * Looks up the provided file extension in the internal asset extension map and returns the corresponding AssetType.
+	 * If the extension is not recognized, logs a warning and returns AssetType::None.
+	 *
+	 * @param extension The file extension to look up (including the dot, e.g., ".png").
+	 * @return AssetType The asset type corresponding to the extension, or AssetType::None if not found.
+	 */
 	static AssetType GetAssetTypeFromFileExtension(const std::filesystem::path& extension)
 	{
 		if (s_AssetExtensionMap.find(extension) == s_AssetExtensionMap.end())

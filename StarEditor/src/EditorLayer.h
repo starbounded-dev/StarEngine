@@ -12,6 +12,11 @@
 
 #include "entt.hpp"
 
+/**
+ * Reloads C# scripts or assemblies used by the editor.
+ *
+ * This function is typically called to refresh the scripting environment after changes to C# code, enabling updated scripts to take effect without restarting the editor.
+ */
 namespace StarEngine
 {
 	class EditorLayer : public Layer

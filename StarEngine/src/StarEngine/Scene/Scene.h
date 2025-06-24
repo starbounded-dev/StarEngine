@@ -10,6 +10,10 @@
 
 class b2World;
 
+/**
+ * Sets the name of the scene.
+ * @param name The new name for the scene.
+ */
 namespace StarEngine {
 
 	class Entity;

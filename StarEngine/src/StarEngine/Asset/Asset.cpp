@@ -3,6 +3,12 @@
 
 namespace StarEngine {
 
+	/**
+	 * @brief Converts an AssetType enum value to its string representation.
+	 *
+	 * @param type The AssetType value to convert.
+	 * @return std::string_view The corresponding string name, or "<Invalid>" if the type is unrecognized.
+	 */
 	std::string_view AssetTypeToString(AssetType type)
 	{
 		switch (type)
@@ -18,6 +24,14 @@ namespace StarEngine {
 		return "<Invalid>";
 	}
 
+	/**
+	 * @brief Converts a string representation of an asset type to its corresponding AssetType enum value.
+	 *
+	 * If the input string does not match any known asset type, returns AssetType::None.
+	 *
+	 * @param assetType The string representation of the asset type.
+	 * @return AssetType The corresponding enum value, or AssetType::None if unrecognized.
+	 */
 	AssetType AssetTypeFromString(std::string_view assetType)
 	{
 		if (assetType == "None")      return AssetType::None;

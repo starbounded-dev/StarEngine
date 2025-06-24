@@ -6,6 +6,10 @@
 
 #include "entt.hpp"
 
+/**
+ * Returns a pointer to the Scene associated with this entity.
+ * @returns Pointer to the owning Scene, or nullptr if none is set.
+ */
 namespace StarEngine
 {
 	class Entity
