@@ -115,7 +115,7 @@ namespace StarEngine {
 
 		ImGui::SetMouseCursor(Input::GetCursorMode() == CursorMode::Normal ? ImGuiMouseCursor_Arrow : ImGuiMouseCursor_None);
 
-		m_ImGuiRenderer->UpdateFontTexture();
+		//m_ImGuiRenderer->UpdateFontTexture();
 		ImGui_ImplGlfw_NewFrame();
 
 		ImGui::NewFrame();
@@ -128,7 +128,7 @@ namespace StarEngine {
 
 		ImGui::Render();
 
-		m_ImGuiRenderer->Render(Application::GetGraphicsDeviceManager()->GetCurrentFramebuffer());
+		//m_ImGuiRenderer->Render(Application::GetGraphicsDeviceManager()->GetCurrentFramebuffer());
 
 #if TODO
 		ImGuiIO& io = ImGui::GetIO(); (void)io;

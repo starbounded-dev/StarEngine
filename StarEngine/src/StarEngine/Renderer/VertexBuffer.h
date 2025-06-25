@@ -35,16 +35,16 @@ namespace StarEngine {
 		return 0;
 	}
 
-	struct BufferElement {
+	struct VertexBufferElement {
 		std::string Name;
 		ShaderDataType Type;
 		uint32_t Size;
 		size_t Offset;
 		bool Normalized;
 
-		BufferElement() = default;
+		VertexBufferElement() = default;
 
-		BufferElement(ShaderDataType type, const std::string& name, bool normalized = false)
+		VertexBufferElement(ShaderDataType type, const std::string& name, bool normalized = false)
 			: Name(name), Type(type), Size(ShaderDataTypeSize(type)), Offset(0), Normalized(normalized) {
 
 		}
@@ -72,24 +72,25 @@ namespace StarEngine {
 
 	};
 
-	class BufferLayout
+	class VertexBufferLayout
 	{
 	public:
-		BufferLayout() {}
+		VertexBufferLayout() {}
 
-		BufferLayout(std::initializer_list<BufferElement> elements)
+		VertexBufferLayout(std::initializer_list<VertexBufferElement> elements)
 			: m_Elements(elements)
 		{
 			CalculateOffsetsAndStride();
 		}
 
 		uint32_t GetStride() const { return m_Stride; }
-		const std::vector<BufferElement>& GetElements() const { return m_Elements; }
+		const std::vector<VertexBufferElement>& GetElements() const { return m_Elements; }
+		uint32_t GetElementCount() const { return (uint32_t)m_Elements.size(); }
 
-		std::vector<BufferElement>::iterator begin() { return m_Elements.begin(); }
-		std::vector<BufferElement>::iterator end() { return m_Elements.end(); }
-		std::vector<BufferElement>::const_iterator begin() const { return m_Elements.begin(); }
-		std::vector<BufferElement>::const_iterator end() const { return m_Elements.end(); }
+		std::vector<VertexBufferElement>::iterator begin() { return m_Elements.begin(); }
+		std::vector<VertexBufferElement>::iterator end() { return m_Elements.end(); }
+		std::vector<VertexBufferElement>::const_iterator begin() const { return m_Elements.begin(); }
+		std::vector<VertexBufferElement>::const_iterator end() const { return m_Elements.end(); }
 
 	private:
 		void CalculateOffsetsAndStride()
@@ -106,8 +107,15 @@ namespace StarEngine {
 		}
 
 	private:
-		std::vector<BufferElement> m_Elements;
+		std::vector<VertexBufferElement> m_Elements;
 		uint32_t m_Stride = 0;
+	};
+
+	enum class VertexBufferUsage
+	{
+		None = 0,
+		Static = 1,
+		Dynamic = 2
 	};
 
 	class VertexBuffer : public RefCounted

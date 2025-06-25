@@ -1,11 +1,27 @@
 #pragma once
 
-#include "StarEngine/Renderer/RenderCommand.h"
+#include "RendererContext.h"
+#include "RenderCommandQueue.h"
+#include "RenderPass.h"
+#include "ComputePass.h"
+#include "RenderCommandBuffer.h"
+#include "PipelineCompute.h"
+#include "UniformBufferSet.h"
+#include "StorageBufferSet.h"
 
-#include "StarEngine/Renderer/OrthographicCamera.h"
-#include "StarEngine/Renderer/Shader.h"
+#include "StarEngine/Core/Application.h"
+#include "StarEngine/Core/RenderThread.h"
+
+#include "RendererCapabilities.h"
+#include "RendererConfig.h"
+
+#include "GPUStats.h"
+
+#include "StarEngine/Scene/Scene.h"
 
 namespace StarEngine {
+
+	class ShaderLibrary;
 
 	class Renderer
 	{

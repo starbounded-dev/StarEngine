@@ -5,15 +5,17 @@
 
 #include <sstream>
 
+#include <nvrhi/nvrhi.h>
+
 namespace StarEngine {
 
-	struct WindowProps
+	struct WindowSpecification
 	{
 		std::string Title;
 		uint32_t Width;
 		uint32_t Height;
 
-		WindowProps(const std::string& title = "StarEngine",
+		WindowSpecification(const std::string& title = "StarEngine",
 			uint32_t width = 1600,
 			uint32_t height = 900)
 			: Title(title), Width(width), Height(height)
@@ -41,7 +43,9 @@ namespace StarEngine {
 
 		virtual void* GetNativeWindow() const = 0;
 
-		static std::unique_ptr<Window> Create(const WindowProps& props = WindowProps());
+		DeviceManager* GetDeviceManager() const;
+
+		static std::unique_ptr<Window> Create(const WindowSpecification& props = WindowSpecification());
 	public:
 		static float s_HighDPIScaleFactor;
 	};

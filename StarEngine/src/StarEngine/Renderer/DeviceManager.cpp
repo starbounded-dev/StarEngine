@@ -24,16 +24,6 @@
 #pragma comment(lib, "shcore.lib")
 #endif
 
-#if defined(SE_PLATFORM_WINDOWS) && SE_FORCE_DISCRETE_GPU
-extern "C"
-{
-	// Declaring this symbol makes the OS run the app on the discrete GPU on NVIDIA Optimus laptops by default
-	__declspec(dllexport) DWORD NvOptimusEnablement = 1;
-	// Same as above, for laptops with AMD GPUs
-	__declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 1;
-}
-#endif
-
 namespace fmt {
 	namespace v11 {
 		namespace detail {

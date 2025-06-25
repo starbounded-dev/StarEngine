@@ -8,44 +8,10 @@
 
 #include <nvrhi/nvrhi.h>
 
-#include <string>
+#include <filesystem>
 
 
 namespace StarEngine {
-
-	namespace Utils {
-		static nvrhi::SamplerAddressMode NVRHISamplerWrap(TextureWrap wrap)
-		{
-			switch (wrap)
-			{
-			case TextureWrap::Clamp: return nvrhi::SamplerAddressMode::Clamp;
-			case TextureWrap::Repeat: return nvrhi::SamplerAddressMode::Repeat;
-			}
-			SE_CORE_ASSERT(false, "Unknown TextureWrap type");
-			return (nvrhi::SamplerAddressMode)0; // Default to 0 if unknown
-		}
-
-		static bool NVRHISamplerWrap(TextureFilter filter)
-		{
-			switch (filter)
-			{
-			case TextureFilter::Linear:
-			case TextureFilter::Cubic: return true;
-			case TextureFilter::Nearest: return false;
-			}
-
-			SE_CORE_ASSERT(false, "Unknown TextureFilter type");
-			return false;
-		}
-
-		static size_t GetMemoryType(ImageFormat format, uint32_t width, uint32_t height)
-		{
-			switch (format)
-			{
-				
-			}
-		}
-	}
 
 	struct TextureSpecification
 	{
@@ -66,8 +32,6 @@ namespace StarEngine {
 	{
 	public:
 		virtual ~Texture() = default;
-
-		virtual void Bind(uint32_t slot = 0) const = 0;
 
 		virtual nvrhi::TextureHandle GetHandle() const = 0;
 

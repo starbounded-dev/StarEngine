@@ -42,7 +42,7 @@ namespace StarEngine
 		m_Data.Height = m_Specification.Height;
 
 		DeviceCreationParameters deviceParams;
-		deviceParams.Decorated = m_Specification.Decorated;
+		deviceParams.decorated = m_Specification.Decorated;
 		deviceParams.swapChainBufferCount = 2;
 		deviceParams.enableRayTracingExtensions = false;
 		deviceParams.backBufferWidth = 1920;
@@ -78,7 +78,7 @@ namespace StarEngine
 
 		m_Window = m_DeviceManager->GetWindow();
 
-		glfwSetErrorCallback(ErrorCallback_GLFW);
+		glfwSetErrorCallback(GLFWErrorCallback);
 
 		glfwDefaultWindowHints();
 
@@ -173,5 +173,10 @@ namespace StarEngine
 				stbi_image_free(icon.pixels);
 			}
 		}
+	}
+
+	DeviceManager* Window::GetDeviceManager() const
+	{
+		return nullptr;
 	}
 }

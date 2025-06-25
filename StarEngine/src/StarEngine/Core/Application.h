@@ -61,9 +61,7 @@ namespace StarEngine
 
 			void SubmitToMainThread(const std::function<void()>& function);
 
-			static nvrhi::DeviceHandle GetGraphicsDevice();
-
-			DeviceManager* GetGraphicsDeviceManager() const { return m_GraphicsDeviceManager->GetDevice(); }
+			static nvrhi::DeviceHandle GetGraphicsDeviceManager() { return Application::Get().GetWindow().GetDeviceManager(); }
 		private:
 			void Run();
 

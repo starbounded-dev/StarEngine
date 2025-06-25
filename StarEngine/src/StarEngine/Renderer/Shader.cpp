@@ -42,7 +42,7 @@ namespace StarEngine {
 		Add(name, shader);
 	}
 
-	RRefPtref<Shader> ShaderLibrary::Load(const std::string& filepath)
+	RefPtr<Shader> ShaderLibrary::Load(const std::string& filepath)
 	{
 		auto shader = Shader::Create(filepath);
 		Add(shader);

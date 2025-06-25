@@ -4,8 +4,6 @@
 #include "StarEngine/Core/Application.h"
 #include "StarEngine/Core/Buffer.h"
 
-#include "StarEngine/Renderer/Renderer.h"
-
 namespace StarEngine {
 
 	IndexBuffer::IndexBuffer(const Buffer& buffer)
