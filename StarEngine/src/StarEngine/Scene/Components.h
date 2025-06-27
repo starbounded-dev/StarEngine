@@ -2,6 +2,7 @@
 
 
 #include "StarEngine/Core/UUID.h"
+#include "StarEngine/Core/Ref.h"
 #include "StarEngine/Audio/AudioListener.h"
 #include "StarEngine/Audio/AudioSource.h"
 #include "StarEngine/Renderer/Texture.h"
@@ -14,9 +15,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#define GLM_ENABLE_EXPERIMENTAL
-
 #include "glm/gtx/quaternion.hpp"
+
+#include <fstream>
 
 namespace StarEngine {
 
@@ -41,11 +42,15 @@ namespace StarEngine {
 
 	struct IDComponent
 	{
-		UUID ID;
+		uint64_t ID = 0;
 
 		IDComponent() = default;
-		IDComponent(const IDComponent&) = default;
+		IDComponent(const uint64_t& id)
+		{
+			ID = id;
+		}
 	};
+
 
 	struct TagComponent
 	{
@@ -105,11 +110,12 @@ namespace StarEngine {
 
 	struct CameraComponent
 	{
-		SceneCamera Camera;
+		Ref<SceneCamera> Camera;
 		bool Primary = true; // TODO: think about moving to Scene
 		bool FixedAspectRatio = false;
 
 		CameraComponent() = default;
+		//CameraComponent(const CameraComponent& other) = default;
 		CameraComponent(const CameraComponent& other)
 		{
 			Camera = other.Camera;
@@ -117,9 +123,10 @@ namespace StarEngine {
 			FixedAspectRatio = other.FixedAspectRatio;
 		}
 
-		operator SceneCamera& () { return Camera; }
-		operator const SceneCamera& () const { return Camera; }
+		operator SceneCamera& () { return *Camera.get(); }
+		operator const SceneCamera& () const { return *Camera.get(); }
 	};
+
 
 	struct ScriptComponent
 	{
@@ -131,9 +138,8 @@ namespace StarEngine {
 		// NOTE: Gets set to true when OnCreate has been called for this entity
 		bool IsRuntimeInitialized = false;
 
-		std::string ClassName; // Added this member to fix the error
-
 		ScriptComponent() = default;
+		//ScriptComponent(const ScriptComponent& other) = default;
 		ScriptComponent(const ScriptComponent& other)
 		{
 			ScriptHandle = other.ScriptHandle;
@@ -141,7 +147,6 @@ namespace StarEngine {
 			FieldIDs = other.FieldIDs;
 			HasInitializedScript = other.HasInitializedScript;
 			IsRuntimeInitialized = other.IsRuntimeInitialized;
-			ClassName = other.ClassName; // Ensure ClassName is copied
 		}
 	};
 

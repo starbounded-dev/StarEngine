@@ -921,22 +921,21 @@ namespace StarEngine {
 
 			return 0;
 		}
-		/*
 		uint64_t Entity_FindEntityByTag(Coral::String tag)
 		{
 			Ref<Scene> scene = ScriptEngine::GetInstance().GetCurrentScene();
 			SE_CORE_ASSERT(scene);
 
-			std::string nameCStr = tag;
-			SE_CORE_WARN("Entity name: {}", nameCStr);
+			std::string tagCStr = tag;
+			SE_CORE_WARN("Entity tag: {}", tagCStr);
 
-			Entity entity = scene->FindEntityByTag(nameCStr);
+			Entity entity = scene->FindEntityByTag(tagCStr);
 
 			if (entity)
-				return entity.GetComponent<IDComponent>().ID;
+				return static_cast<uint64_t>(entity.GetEntityHandle());
 
 			return 0;
-		}*/
+		}
 
 #pragma endregion
 

@@ -20,6 +20,7 @@ IncludeDir["msdfgen"] = "%{wks.location}/StarEngine/vendor/msdf-atlas-gen/msdfge
 IncludeDir["msdf_atlas_gen"] = "%{wks.location}/StarEngine/vendor/msdf-atlas-gen/msdf-atlas-gen"
 IncludeDir["miniaudio"] = "%{wks.location}/StarEngine/vendor/miniaudio/include"
 IncludeDir["Coral"] = "%{wks.location}/StarEngine/vendor/Coral/Coral.Native/Include"
+IncludeDir["MagicEnum"] = "%{wks.location}/StarEngine/vendor/magic_enum/include"
 
 LibraryDir = {}
 

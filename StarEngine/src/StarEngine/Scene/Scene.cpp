@@ -293,19 +293,8 @@ namespace StarEngine {
 
 	void Scene::OnUpdateRuntime(Timestep ts)
 	{
-		if (!m_IsPaused || m_StepFrames-- > 0)
+		if ((!m_IsPaused && !s_SetPaused) || m_StepFrames-- > 0)
 		{
-			{
-				SE_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::ScriptComponent Scope", 0xFF7200);
-
-				// Update Scripts
-				auto filter = m_Registry.view<IDComponent, ScriptComponent>();
-				filter.each([&](IDComponent& id, ScriptComponent& sc)
-					{
-						sc.Instance.Invoke<float>("OnUpdate", ts);
-					});
-			}
-
 			// Physics
 			{
 				const int32_t velocityIterations = 6;
@@ -448,6 +437,7 @@ namespace StarEngine {
 					});
 			}
 		}
+
 		else if (m_IsPaused)
 		{
 			SE_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::AudioListenerComponent 2 Scope", 0xFF7200);
@@ -526,6 +516,18 @@ namespace StarEngine {
 			}
 		}
 
+		if (!m_IsPaused || m_StepFrames-- > 0)
+		{
+			SE_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::ScriptComponent Scope", 0xFF7200);
+
+			// Update Scripts
+			auto filter = m_Registry.view<IDComponent, ScriptComponent>();
+			filter.each([&](IDComponent& id, ScriptComponent& sc)
+				{
+					sc.Instance.Invoke<float>("OnUpdate", ts);
+				});
+		}
+
 		// Render 2D
 		Camera* mainCamera = nullptr;
 		glm::mat4 cameraTransform;
@@ -537,7 +539,7 @@ namespace StarEngine {
 
 				if (camera.Primary)
 				{
-					mainCamera = &camera.Camera;
+					mainCamera = camera.Camera.get();
 					cameraTransform = transform.GetTransform();
 					break;
 				}
@@ -637,7 +639,7 @@ namespace StarEngine {
 		{
 			auto& cameraComponent = view.get<CameraComponent>(entity);
 			if (!cameraComponent.FixedAspectRatio)
-				cameraComponent.Camera.SetViewportSize(width, height);
+				cameraComponent.Camera->SetViewportSize(width, height);
 		}
 
 	}
@@ -914,7 +916,7 @@ namespace StarEngine {
 	void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent& component)
 	{
 		if (m_ViewportWidth > 0 && m_ViewportHeight > 0)
-			component.Camera.SetViewportSize(m_ViewportWidth, m_ViewportHeight);
+			component.Camera->SetViewportSize(m_ViewportWidth, m_ViewportHeight);
 	}
 
 	template<>

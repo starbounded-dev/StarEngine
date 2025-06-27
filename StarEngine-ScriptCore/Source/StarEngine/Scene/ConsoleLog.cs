@@ -9,7 +9,7 @@ namespace StarEngine
 {
 	public class ConsoleLog
 	{
-		public static void Trace(object message)
+		/*public static void Trace(object message)
         {
             InternalCalls.ConsoleLog_Trace(message);
         }
@@ -32,6 +32,6 @@ namespace StarEngine
         public static void Critical(object message)
         {
             InternalCalls.ConsoleLog_Critical(message);
-        }
+        }*/
 	}
 }

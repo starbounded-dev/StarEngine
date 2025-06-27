@@ -2,6 +2,15 @@
 #include "ScriptEntityStorage.h"
 #include "ScriptEngine.h"
 
+namespace fmt::v11::detail {
+	// Define the struct if it is missing
+	template <typename T, typename Char>
+	struct type_is_unformattable_for {
+		// Add a dummy member to avoid empty struct issues
+		int dummy;
+	};
+}
+
 namespace StarEngine {
 
 	void ScriptStorage::InitializeEntityStorage(UUID scriptID, UUID entityID)
@@ -9,12 +18,11 @@ namespace StarEngine {
 		const auto& scriptEngine = ScriptEngine::GetInstance();
 
 		SE_CORE_VERIFY(scriptEngine.IsValidScript(scriptID));
-		SE_CORE_VERIFY(EntityStorage.find(entityID) == EntityStorage.end());
-
+		SE_CORE_VERIFY(!EntityStorage.contains(entityID));
 
 		const auto& scriptMetadata = scriptEngine.GetScriptMetadata(scriptID);
 
-		auto& entityStorage = EntityStorage[entityID];		
+		auto& entityStorage = EntityStorage[entityID];
 		entityStorage.ScriptID = scriptID;
 
 		for (const auto& [fieldID, fieldMetadata] : scriptMetadata.Fields)
@@ -23,12 +31,13 @@ namespace StarEngine {
 		}
 	}
 
+
 	void ScriptStorage::ShutdownEntityStorage(UUID scriptID, UUID entityID)
 	{
 		const auto& scriptEngine = ScriptEngine::GetInstance();
 
 		SE_CORE_VERIFY(scriptEngine.IsValidScript(scriptID));
-		SE_CORE_VERIFY(EntityStorage.find(entityID) != EntityStorage.end());
+		SE_CORE_VERIFY(EntityStorage.contains(entityID));
 
 		for (auto& [fieldID, fieldStorage] : EntityStorage[entityID].Fields)
 			fieldStorage.m_ValueBuffer.Release();
@@ -52,8 +61,43 @@ namespace StarEngine {
 					continue;
 				}
 
-
 				InitializeFieldStorage(entityStorage, fieldID, fieldMetadata);
+			}
+		}
+	}
+
+	void ScriptStorage::CopyTo(ScriptStorage& other) const
+	{
+		const auto& scriptEngine = ScriptEngine::GetInstance();
+
+		for (const auto& [entityID, entityStorage] : EntityStorage)
+		{
+			if (!scriptEngine.IsValidScript(entityStorage.ScriptID))
+			{
+				SE_CORE_WARN("Cannot copy script data for script ID {}. The script is no longer valid", entityStorage.ScriptID);
+				continue;
+			}
+
+			const auto& scriptMetadata = scriptEngine.GetScriptMetadata(entityStorage.ScriptID);
+
+			auto& otherStorage = other.EntityStorage[entityID];
+			otherStorage.ScriptID = entityStorage.ScriptID;
+			otherStorage.Instance = nullptr;
+
+			for (const auto& [fieldID, fieldStorage] : entityStorage.Fields)
+			{
+				if (scriptMetadata.Fields.find(fieldID) == scriptMetadata.Fields.end())
+				{
+					SE_CORE_WARN("Cannot copy script data for field {}. The field is no longer contained in the script.", fieldStorage.GetName());
+					continue;
+				}
+
+				auto& otherFieldStorage = otherStorage.Fields[fieldID];
+				otherFieldStorage.m_Name = fieldStorage.m_Name;
+				otherFieldStorage.m_Type = fieldStorage.m_Type;
+				otherFieldStorage.m_DataType = fieldStorage.m_DataType;
+				otherFieldStorage.m_ValueBuffer = Buffer::Copy(fieldStorage.m_ValueBuffer);
+				otherFieldStorage.m_Instance = nullptr;
 			}
 		}
 	}
@@ -79,13 +123,13 @@ namespace StarEngine {
 
 		if (dstStorage.ScriptID != srcStorage.ScriptID)
 		{
-			SE_CORE_ERROR("Cannot copy script storage from entity {} to entity {} because they have different scripts!", entityID, targetEntityID);
+			SE_CORE_ERROR("Cannot copy script storage from entity {} to entity {} because they have different scritps!", entityID, targetEntityID);
 			return;
 		}
 
 		const auto& scriptMetadata = scriptEngine.GetScriptMetadata(srcStorage.ScriptID);
 
-		dstStorage.InstanceIndex = EntityScriptStorage::InvalidInstanceIndex;
+		dstStorage.Instance = nullptr;
 
 		for (const auto& [fieldID, fieldStorage] : srcStorage.Fields)
 		{
@@ -100,7 +144,7 @@ namespace StarEngine {
 			otherFieldStorage.m_Type = fieldStorage.m_Type;
 			otherFieldStorage.m_DataType = fieldStorage.m_DataType;
 			otherFieldStorage.m_ValueBuffer = Buffer::Copy(fieldStorage.m_ValueBuffer);
-			otherFieldStorage.m_InstanceIndex = FieldStorage::InvalidInstanceIndex;
+			otherFieldStorage.m_Instance = nullptr;
 		}
 	}
 
@@ -131,7 +175,6 @@ namespace StarEngine {
 			fieldStorage.m_ValueBuffer = Buffer::Copy(fieldMetadata.DefaultValue);
 		}
 
-		fieldStorage.m_InstanceIndex = FieldStorage::InvalidInstanceIndex;
+		fieldStorage.m_Instance = nullptr;
 	}
-
 }

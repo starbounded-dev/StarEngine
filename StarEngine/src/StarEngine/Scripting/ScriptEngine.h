@@ -98,9 +98,9 @@ namespace StarEngine {
 		void BuildAssemblyCache(AssemblyData* assemblyData);
 
 		template<typename... TArgs>
-		CSharpObject Instantiate(UUID entityID, StarEngine::ScriptStorage& storage, TArgs&&... args)
+		CSharpObject Instantiate(UUID entityID, ScriptStorage& storage, TArgs&&... args)
 		{
-			SE_CORE_VERIFY(storage.EntityStorage.contains(entityID));
+			SE_CORE_VERIFY(storage.EntityStorage.find(entityID) != storage.EntityStorage.end());
 
 			auto& entityStorage = storage.EntityStorage.at(entityID);
 
@@ -117,7 +117,7 @@ namespace StarEngine {
 			{
 				const auto& fieldMetadata = m_ScriptMetadata[entityStorage.ScriptID].Fields[fieldID];
 
-				auto& editorAssignableAttribType = m_CoreAssemblyData->Assembly->GetType("Nutcrackz.EditorAssignableAttribute");
+				auto& editorAssignableAttribType = m_CoreAssemblyData->Assembly->GetType("StarEngine.EditorAssignableAttribute");
 				if (fieldMetadata.ManagedType->HasAttribute(editorAssignableAttribType))
 				{
 					Coral::ManagedObject value = fieldMetadata.ManagedType->CreateInstance(fieldStorage.GetValue<uint64_t>());
@@ -169,25 +169,7 @@ namespace StarEngine {
 			return result;
 		}
 
-		void DestroyInstance(UUID entityID, ScriptStorage& storage)
-		{
-			SE_CORE_VERIFY(storage.EntityStorage.contains(entityID));
-
-			auto& entityStorage = storage.EntityStorage.at(entityID);
-
-			SE_CORE_VERIFY(IsValidScript(entityStorage.ScriptID));
-
-			// Declare managedObjects in the scope
-			Coral::StableVector<Coral::ManagedObject>& managedObjects = m_ManagedObjects;
-
-			for (auto& [fieldID, fieldStorage] : entityStorage.Fields)
-				fieldStorage.m_Instance = nullptr;
-
-			entityStorage.Instance->Destroy();
-			entityStorage.Instance = nullptr;
-
-			// TODO(Peter): Free-list
-		}
+		void DestroyInstance(UUID entityID, ScriptStorage& storage);
 
 	private:
 		static ScriptEngine& GetMutable();

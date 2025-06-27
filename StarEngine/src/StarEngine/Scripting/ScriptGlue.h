@@ -10,6 +10,9 @@
 
 #include <glm/glm.hpp>
 
+#include <type_traits>
+
+
 namespace StarEngine {
 
 	// Forward declarations
@@ -40,15 +43,12 @@ namespace StarEngine {
 		inline static bool s_IsCursorInViewport = false;
 	};
 
-	namespace InternalCalls
-	{
+	namespace InternalCalls {
 		template<typename T>
-		struct Param
-		{
+		struct Param {
+			static_assert(std::is_default_constructible<T>::value, "T must be default-constructible");
 			std::byte Data[sizeof(T)];
-
-			operator T() const
-			{
+			operator T() const {
 				T result;
 				std::memcpy(&result, Data, sizeof(T));
 				return result;

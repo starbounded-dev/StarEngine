@@ -599,7 +599,8 @@ namespace StarEngine {
 			Entity camera = m_ActiveScene->GetPrimaryCameraEntity();
 			if (!camera)
 				return;
-			Renderer2D::BeginScene(camera.GetComponent<CameraComponent>().Camera, camera.GetComponent<TransformComponent>().GetTransform());
+
+			Renderer2D::BeginScene(*camera.GetComponent<CameraComponent>().Camera.get(), camera.GetComponent<TransformComponent>().GetTransform());
 		}
 		else
 		{

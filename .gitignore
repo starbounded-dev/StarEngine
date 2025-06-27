@@ -31,3 +31,4 @@ StarEngine-ScriptCore/StarEngine-ScriptCore.csproj.user
 StarEditor/DotNet
 StarEditor/SandboxProject/Assets/Scripts/obj
 StarEngine-ScriptCore/obj
+StarEditor/Resources/Scripts/net8.0

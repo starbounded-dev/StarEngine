@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using Coral.Managed.Interop;
-using StarEngine;
 
 namespace StarEngine
 {
@@ -21,7 +20,7 @@ namespace StarEngine
 		internal static delegate*<float> Scene_GetMouseHotSpotX;
 		internal static delegate*<float> Scene_GetMouseHotSpotY;
 		internal static delegate*<float, float, void> Scene_SetMouseHotSpot;
-		internal static delegate*<string, Vector2, void> Scene_ChangeCursor;
+		//internal static delegate*<string, Vector2, void> Scene_ChangeCursor;
 		internal static delegate*<NativeString, float, float, void> Scene_ChangeCursor;
 		internal static delegate*<NativeString> Scene_GetName;
 		internal static delegate*<NativeString, void> Scene_SetName;

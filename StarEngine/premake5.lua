@@ -1,7 +1,7 @@
 project "StarEngine"
 	kind "StaticLib"
 	language "C++"
-	cppdialect "C++17"
+	cppdialect "C++20"
 	staticruntime "off"
 
 	targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
@@ -48,6 +48,7 @@ project "StarEngine"
 		"%{IncludeDir.ImGuizmo}",
 		"%{IncludeDir.VulkanSDK}",
 		"%{IncludeDir.Coral}",
+		"%{IncludeDir.MagicEnum}",
 		"%{IncludeDir.miniaudio}"
 	}
 

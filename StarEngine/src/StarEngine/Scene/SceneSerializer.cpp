@@ -10,6 +10,8 @@
 
 #include <fstream>
 
+#include <magic_enum.hpp>
+
 #include <yaml-cpp/yaml.h>
 
 #include "StarEngine/Utils/Hash.h"
@@ -225,13 +227,13 @@ namespace StarEngine {
 
 			out << YAML::Key << "Camera" << YAML::Value;
 			out << YAML::BeginMap; // Camera
-			out << YAML::Key << "ProjectionType" << YAML::Value << (int)camera.GetProjectionType();
-			out << YAML::Key << "PerspectiveFOV" << YAML::Value << camera.GetPerspectiveVerticalFOV();
-			out << YAML::Key << "PerspectiveNear" << YAML::Value << camera.GetPerspectiveNearClip();
-			out << YAML::Key << "PerspectiveFar" << YAML::Value << camera.GetPerspectiveFarClip();
-			out << YAML::Key << "OrthographicSize" << YAML::Value << camera.GetOrthographicSize();
-			out << YAML::Key << "OrthographicNear" << YAML::Value << camera.GetOrthographicNearClip();
-			out << YAML::Key << "OrthographicFar" << YAML::Value << camera.GetOrthographicFarClip();
+			out << YAML::Key << "ProjectionType" << YAML::Value << (int)camera->GetProjectionType();
+			out << YAML::Key << "PerspectiveFOV" << YAML::Value << camera->GetPerspectiveVerticalFOV();
+			out << YAML::Key << "PerspectiveNear" << YAML::Value << camera->GetPerspectiveNearClip();
+			out << YAML::Key << "PerspectiveFar" << YAML::Value << camera->GetPerspectiveFarClip();
+			out << YAML::Key << "OrthographicSize" << YAML::Value << camera->GetOrthographicSize();
+			out << YAML::Key << "OrthographicNear" << YAML::Value << camera->GetOrthographicNearClip();
+			out << YAML::Key << "OrthographicFar" << YAML::Value << camera->GetOrthographicFarClip();
 			out << YAML::EndMap; // Camera
 
 			out << YAML::Key << "Primary" << YAML::Value << cameraComponent.Primary;
@@ -632,20 +634,36 @@ namespace StarEngine {
 				if (cameraComponent)
 				{
 					auto& cc = deserializedEntity.AddComponent<CameraComponent>();
+					cc.Camera = CreateRef<SceneCamera>();
 
-					auto& cameraProps = cameraComponent["Camera"];
-					cc.Camera.SetProjectionType((SceneCamera::ProjectionType)cameraProps["ProjectionType"].as<int>());
+					auto cameraProps = cameraComponent["Camera"];
 
-					cc.Camera.SetPerspectiveVerticalFOV(cameraProps["PerspectiveFOV"].as<float>());
-					cc.Camera.SetPerspectiveNearClip(cameraProps["PerspectiveNear"].as<float>());
-					cc.Camera.SetPerspectiveFarClip(cameraProps["PerspectiveFar"].as<float>());
+					if (cameraProps["ProjectionType"])
+						cc.Camera->SetProjectionType((SceneCamera::ProjectionType)cameraProps["ProjectionType"].as<int>());
 
-					cc.Camera.SetOrthographicSize(cameraProps["OrthographicSize"].as<float>());
-					cc.Camera.SetOrthographicNearClip(cameraProps["OrthographicNear"].as<float>());
-					cc.Camera.SetOrthographicFarClip(cameraProps["OrthographicFar"].as<float>());
+					if (cameraProps["PerspectiveFOV"])
+						cc.Camera->SetPerspectiveVerticalFOV(cameraProps["PerspectiveFOV"].as<float>());
 
-					cc.Primary = cameraComponent["Primary"].as<bool>();
-					cc.FixedAspectRatio = cameraComponent["FixedAspectRatio"].as<bool>();
+					if (cameraProps["PerspectiveNear"])
+						cc.Camera->SetPerspectiveNearClip(cameraProps["PerspectiveNear"].as<float>());
+
+					if (cameraProps["PerspectiveFar"])
+						cc.Camera->SetPerspectiveFarClip(cameraProps["PerspectiveFar"].as<float>());
+
+					if (cameraProps["OrthographicSize"])
+						cc.Camera->SetOrthographicSize(cameraProps["OrthographicSize"].as<float>());
+
+					if (cameraProps["OrthographicNear"])
+						cc.Camera->SetOrthographicNearClip(cameraProps["OrthographicNear"].as<float>());
+
+					if (cameraProps["OrthographicFar"])
+						cc.Camera->SetOrthographicFarClip(cameraProps["OrthographicFar"].as<float>());
+
+					if (cameraComponent["Primary"])
+						cc.Primary = cameraComponent["Primary"].as<bool>();
+
+					if (cameraComponent["FixedAspectRatio"])
+						cc.FixedAspectRatio = cameraComponent["FixedAspectRatio"].as<bool>();
 				}
 
 				auto scriptComponent = entity["ScriptComponent"];

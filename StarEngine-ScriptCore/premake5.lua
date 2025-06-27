@@ -6,8 +6,8 @@ project "StarEngine-ScriptCore"
 
 	namespace "StarEngine"
 
-	targetdir ("../StarEditor/Resources/Scripts")
-	objdir ("../StarEditor/Resources/Scripts/Intermediates")
+	targetdir ("%{wks.location}/StarEditor/Resources/Scripts")
+	objdir ("%{wks.location}/StarEditor/Resources/Scripts/Intermediates")
 
 	files 
 	{

@@ -1,8 +1,9 @@
 #pragma once
 
+#include "StarEngine/Core/Base.h"
+
 #include <stdint.h>
 #include <cstring>
-#include <memory>
 
 namespace StarEngine {
 
@@ -58,20 +59,20 @@ namespace StarEngine {
 		template<typename T>
 		T& Read(uint64_t offset = 0)
 		{
-			return *(T*)((byte*)Data + offset);
+			return *(T*)((uint8_t*)Data + offset); // Replace 'byte' with 'uint8_t'
 		}
 
 		template<typename T>
 		const T& Read(uint64_t offset = 0) const
 		{
-			return *(T*)((byte*)Data + offset);
+			return *(T*)((uint8_t*)Data + offset);
 		}
 
-		std::unique_ptr<uint8_t[]> ReadBytes(uint32_t size, uint32_t offset)
+		uint8_t* ReadBytes(uint32_t size, uint32_t offset)
 		{
 			SE_CORE_ASSERT(offset + size <= Size, "Buffer overflow!");
-			std::unique_ptr<uint8_t[]> buffer = std::make_unique<uint8_t[]>(size);
-			memcpy(buffer.get(), (uint8_t*)Data + offset, size);
+			uint8_t* buffer = new uint8_t[size];
+			memcpy(buffer, (uint8_t*)Data + offset, size);
 			return buffer;
 		}
 

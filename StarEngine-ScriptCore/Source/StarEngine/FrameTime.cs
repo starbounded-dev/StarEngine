@@ -2,14 +2,9 @@
 {
 	public struct FrameTime
 	{
-		static float FPSDeltaTime;
-		static float MillisecondsDeltaTime;
-		[ThreadStatic]
-		static float FPSDeltaTime;
-		[ThreadStatic]
+		static float DeltaTime;
 		static float FPS;
 		static float Milliseconds;
-
 		public static float GetFPS(float ts)
 		{
 			DeltaTime += ts;
@@ -25,11 +20,11 @@
 
 		public static float GetMilliseconds(float ts)
 		{
-			MillisecondsDeltaTime += ts;
+			DeltaTime += ts;
 
-			if (MillisecondsDeltaTime > 0.1f)
+			if (DeltaTime > 0.1f)
 			{
-				MillisecondsDeltaTime -= 0.1f;
+				DeltaTime -= 0.1f;
 				FPS = 1.0f / ts;
 				Milliseconds = 1000.0f / FPS;
 			}

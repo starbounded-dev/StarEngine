@@ -112,7 +112,7 @@ namespace StarEngine {
 
 		std::unordered_map<UUID, entt::entity> m_EntityMap;
 
-		ScriptStorage m_ScriptStorage;
+		ScriptStorage m_ScriptStorage; // Ensure ScriptStorage is fully declared
 
 		friend class Entity;
 		friend class SceneSerializer;

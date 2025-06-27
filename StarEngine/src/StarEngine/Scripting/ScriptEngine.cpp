@@ -3,6 +3,8 @@
 #include "ScriptGlue.h"
 
 #include "StarEngine/Core/Application.h"
+#include "StarEngine/Core/Base.h"
+#include "StarEngine/Core/Assert.h"
 #include "StarEngine/Utils/Hash.h"
 #include "StarEngine/Project/Project.h"
 #include "StarEngine/Asset/AssetManager.h"
@@ -52,11 +54,11 @@ namespace StarEngine {
 
 	void ScriptEngine::LoadProjectAssembly()
 	{
-		// Ensure m_AppAssemblyData is accessed through the current instance
-		this->m_AppAssemblyData = std::make_unique<AssemblyData>();
+		m_AppAssemblyData.reset();
 
 		auto filepath = std::filesystem::absolute(Project::GetScriptModuleFilePath());
 
+		m_AppAssemblyData = std::make_unique<AssemblyData>();
 		m_AppAssemblyData->Assembly = &m_LoadContext->LoadAssembly(filepath.string());
 
 		if (m_AppAssemblyData->Assembly->GetLoadStatus() != Coral::AssemblyLoadStatus::Success)
@@ -75,8 +77,8 @@ namespace StarEngine {
 
 		return m_AppAssemblyData->CachedTypes.find(scriptID) != m_AppAssemblyData->CachedTypes.end() &&
 			m_ScriptMetadata.find(scriptID) != m_ScriptMetadata.end();
-
 	}
+
 
 	void OnCoralMessage(std::string_view message, Coral::MessageLevel level)
 	{
@@ -95,9 +97,9 @@ namespace StarEngine {
 		}
 	}
 
-	const ScriptMetadata& ScriptEngine::GetScriptMetadata(UUID scriptID) const
+	const StarEngine::ScriptMetadata& ScriptEngine::GetScriptMetadata(UUID scriptID) const
 	{
-		SE_CORE_VERIFY(m_ScriptMetadata.find(scriptID) != m_ScriptMetadata.end());
+		SE_CORE_VERIFY(m_ScriptMetadata.contains(scriptID));
 		return m_ScriptMetadata.at(scriptID);
 	}
 
@@ -186,6 +188,7 @@ namespace StarEngine {
 
 		Coral::TypeCache::Get().Clear();
 	}
+
 
 	/*void ScriptEngine::Initialize(Ref<Project> project)
 	{
@@ -369,6 +372,30 @@ namespace StarEngine {
 				temp.Destroy();
 			}
 		}
+	}
+
+	void ScriptEngine::DestroyInstance(UUID entityID, ScriptStorage& storage)
+	{
+		SE_CORE_VERIFY(storage.EntityStorage.find(entityID) != storage.EntityStorage.end());
+
+		auto& entityStorage = storage.EntityStorage.at(entityID);
+
+		SE_CORE_VERIFY(IsValidScript(entityStorage.ScriptID));
+
+		// Declare managedObjects in the scope
+		Coral::StableVector<Coral::ManagedObject>& managedObjects = m_ManagedObjects;
+
+		for (auto& field : entityStorage.Fields)
+		{
+			auto& fieldID = field.first;
+			auto& fieldStorage = field.second;
+			fieldStorage.m_Instance = nullptr;
+		}
+
+		entityStorage.Instance->Destroy();
+		entityStorage.Instance = nullptr;
+
+		// TODO(Peter): Free-list
 	}
 
 	ScriptEngine& ScriptEngine::GetMutable()
