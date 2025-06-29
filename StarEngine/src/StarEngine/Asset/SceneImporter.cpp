@@ -32,4 +32,16 @@ namespace StarEngine {
 		SceneSerializer serializer(scene);
 		serializer.Serialize(Project::GetActiveAssetDirectory() / path);
 	}
+
+	Ref<Script> SceneImporter::ImportScript(AssetHandle handle, const AssetMetadata& metadata)
+	{
+		return LoadScript(Project::GetActiveAssetDirectory() / metadata.FilePath);
+	}
+
+	Ref<Script> SceneImporter::LoadScript(const std::filesystem::path& path)
+	{
+		Ref<Script> result = std::make_shared<Script>();
+
+		return result;
+	}
 }

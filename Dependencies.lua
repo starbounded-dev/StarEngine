@@ -13,21 +13,22 @@ IncludeDir["ImGuizmo"] = "%{wks.location}/StarEngine/vendor/imguizmo"
 IncludeDir["glm"] = "%{wks.location}/StarEngine/vendor/glm"
 IncludeDir["filewatch"] = "%{wks.location}/StarEngine/vendor/filewatch"
 IncludeDir["entt"] = "%{wks.location}/StarEngine/vendor/entt/include"
-IncludeDir["mono"] = "%{wks.location}/StarEngine/vendor/mono/include"
 IncludeDir["shaderc"] = "%{wks.location}/StarEngine/vendor/shaderc/include"
 IncludeDir["SPIRV_Cross"] = "%{wks.location}/StarEngine/vendor/SPIRV-Cross"
 IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
 IncludeDir["msdfgen"] = "%{wks.location}/StarEngine/vendor/msdf-atlas-gen/msdfgen"
 IncludeDir["msdf_atlas_gen"] = "%{wks.location}/StarEngine/vendor/msdf-atlas-gen/msdf-atlas-gen"
 IncludeDir["miniaudio"] = "%{wks.location}/StarEngine/vendor/miniaudio/include"
+IncludeDir["Coral"] = "%{wks.location}/StarEngine/vendor/Coral/Coral.Native/Include"
+IncludeDir["MagicEnum"] = "%{wks.location}/StarEngine/vendor/magic_enum/include"
 
 LibraryDir = {}
 
 LibraryDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"
-LibraryDir["Mono"] = "%{wks.location}/StarEngine/vendor/mono/lib/%{cfg.buildcfg}"
+LibraryDir["Coral"] = "%{wks.location}/StarEngine/vendor/Coral/Build/%{cfg.buildcfg}"
 
 Library = {}
-Library["mono"] = "%{LibraryDir.Mono}/libmono-static-sgen.lib"
+Library["Coral"] = "%{LibraryDir.Coral}/Coral.Native.lib"
 Library["Vulkan"] = "%{LibraryDir.VulkanSDK}/vulkan-1.lib"
 Library["VulkanUtils"] = "%{LibraryDir.VulkanSDK}/VkLayer_utils.lib"
 

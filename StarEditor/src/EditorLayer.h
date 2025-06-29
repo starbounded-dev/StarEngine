@@ -2,6 +2,8 @@
 
 #include "StarEngine.h"
 
+#include "StarEngine/Core/Base.h"
+
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/ContentBrowserPanel.h"
 
@@ -48,6 +50,8 @@ namespace StarEngine
 		void OnSceneSimulate();
 		void OnSceneStop();
 		void OnScenePause();
+
+		void ReloadCSharp();
 
 		void OnDuplicateEntity();
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "StarEngine/Core/Base.h"
+
 #include "AssetMetadata.h"
 
 namespace StarEngine

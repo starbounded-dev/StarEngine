@@ -2,9 +2,10 @@
 
 // for use by StarEngine applications
 #include "StarEngine/Core/Application.h"
+#include "StarEngine/Core/Assert.h"
+#include "StarEngine/Core/Base.h"
 #include "StarEngine/Core/Layer.h"
 #include "StarEngine/Core/Log.h"
-#include "StarEngine/Core/Assert.h"
 
 #include "StarEngine/Core/Timestep.h"
 
@@ -24,7 +25,6 @@
 #include "StarEngine/Scene/Scene.h"
 #include "StarEngine/Scene/Entity.h"
 #include "StarEngine/Scene/Components.h"
-#include "StarEngine/Scene/ScriptableEntity.h"
 
 #include "StarEngine/Project/Project.h"
 

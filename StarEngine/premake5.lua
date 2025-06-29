@@ -1,7 +1,7 @@
 project "StarEngine"
 	kind "StaticLib"
 	language "C++"
-	cppdialect "C++17"
+	cppdialect "C++20"
 	staticruntime "off"
 
 	targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
@@ -47,8 +47,8 @@ project "StarEngine"
 		"%{IncludeDir.yaml_cpp}",
 		"%{IncludeDir.ImGuizmo}",
 		"%{IncludeDir.VulkanSDK}",
-
-		"%{IncludeDir.mono}",
+		"%{IncludeDir.Coral}",
+		"%{IncludeDir.MagicEnum}",
 		"%{IncludeDir.miniaudio}"
 	}
 
@@ -58,7 +58,7 @@ project "StarEngine"
 		"GLAD",
 		"imgui",
 		"opengl32",
-		"%{Library.mono}",
+		"%{Library.Coral}",
 		"yaml-cpp",
 		"msdf-atlas-gen",
 		"Box2D",

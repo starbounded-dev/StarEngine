@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using StarEngine;
 
-using StarEngine;
-
-namespace Sandbox
+namespace StarEngine;
 {
 	public class Camera : Entity
 	{
@@ -45,6 +39,5 @@ namespace Sandbox
 			translation += velocity * ts;
 			Translation = translation;
 		}
-
 	}
 }

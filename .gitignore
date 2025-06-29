@@ -27,3 +27,9 @@ vendor/premake/bin/
 StarEditor/Resources/Scripts/StarEngine-ScriptCore.dll
 StarEditor/Resources/Scripts/StarEngine-ScriptCore.pdb
 StarEditor/SandboxProject/Assets/Scripts/Binaries
+StarEngine-ScriptCore/StarEngine-ScriptCore.csproj.user
+StarEditor/DotNet
+StarEditor/SandboxProject/Assets/Scripts/obj
+StarEngine-ScriptCore/obj
+StarEditor/Resources/Scripts/net8.0
+StarEngine/vendor/GLAD/bin/Debug-windows-x86_64/GLAD

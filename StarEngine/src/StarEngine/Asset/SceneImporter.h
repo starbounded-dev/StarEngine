@@ -4,6 +4,7 @@
 #include "AssetMetadata.h"
 
 #include "StarEngine/Scene/Scene.h"
+#include "StarEngine/Scripting/ScriptFile.h"
 
 namespace StarEngine {
 
@@ -17,6 +18,10 @@ namespace StarEngine {
 		static Ref<Scene> LoadScene(const std::filesystem::path& path);
 
 		static void SaveScene(Ref<Scene> scene, const std::filesystem::path& path);
+
+		static Ref<Script> ImportScript(AssetHandle handle, const AssetMetadata& metadata);
+
+		static Ref<Script> LoadScript(const std::filesystem::path& path);
 	};
 
 }

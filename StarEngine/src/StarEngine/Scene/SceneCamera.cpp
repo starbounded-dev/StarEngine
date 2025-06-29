@@ -30,7 +30,12 @@ namespace StarEngine {
 
 	void SceneCamera::SetViewportSize(uint32_t width, uint32_t height)
 	{
-		SE_CORE_ASSERT(width > 0 && height > 0);
+		if (width <= 0 && height <= 0)
+			return;
+
+		//SE_CORE_ASSERT(width > 0 && height > 0);
+		m_Width = width;
+		m_Height = height;
 		m_AspectRatio = (float)width / (float)height;
 		RecalculateProjection();
 	}
@@ -48,9 +53,13 @@ namespace StarEngine {
 			float orthoBottom = -m_OrthographicSize * 0.5f;
 			float orthoTop = m_OrthographicSize * 0.5f;
 
-			m_Projection = glm::ortho(orthoLeft, orthoRight, 
-				orthoBottom, orthoTop, m_OrthographicNear, m_OrthographicFar);
+			//m_Projection = rtmcpp::Mat4::Orthographic(orthoLeft, orthoRight, orthoBottom, orthoTop, m_OrthographicNear, m_OrthographicFar);
+			m_Projection = glm::ortho(orthoRight - orthoLeft, orthoTop - orthoBottom, m_OrthographicNear, m_OrthographicFar);
 		}
-		}
+	}
 
+	Ref<SceneCamera> SceneCamera::Create()
+	{
+		return CreateRef<SceneCamera>();
+	}
 }

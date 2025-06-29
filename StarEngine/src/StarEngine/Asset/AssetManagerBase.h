@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Asset.h"
+#include "StarEngine/Core/Base.h"
 
 #include <map>
 

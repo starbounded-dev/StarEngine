@@ -1,5 +1,7 @@
 #include "EditorLayer.h"
 
+#include "StarEngine/Core/Base.h"
+
 #include "StarEngine/Scene/SceneSerializer.h"
 #include "StarEngine/Utils/PlatformUtils.h"
 #include "StarEngine/Math/Math.h"
@@ -231,7 +233,7 @@ namespace StarEngine {
 			if (ImGui::BeginMenu("Script"))
 			{
 				if (ImGui::MenuItem("Reload assembly", "Ctrl+R"))
-					ScriptEngine::ReloadAssembly();
+					ReloadCSharp();
 
 				ImGui::EndMenu();
 			}
@@ -540,7 +542,7 @@ namespace StarEngine {
 			{
 				if (control)
 				{
-					ScriptEngine::ReloadAssembly();
+					ReloadCSharp();
 				}
 				else
 				{
@@ -597,7 +599,8 @@ namespace StarEngine {
 			Entity camera = m_ActiveScene->GetPrimaryCameraEntity();
 			if (!camera)
 				return;
-			Renderer2D::BeginScene(camera.GetComponent<CameraComponent>().Camera, camera.GetComponent<TransformComponent>().GetTransform());
+
+			Renderer2D::BeginScene(*camera.GetComponent<CameraComponent>().Camera.get(), camera.GetComponent<TransformComponent>().GetTransform());
 		}
 		else
 		{
@@ -662,11 +665,10 @@ namespace StarEngine {
 	{
 		if (Project::Load(path))
 		{
-			ScriptEngine::Init();
-
 			AssetHandle startScene = Project::GetActive()->GetConfig().StartScene;
 			if (startScene)
 				OpenScene(startScene);
+
 			m_ContentBrowserPanel = CreateScope<ContentBrowserPanel>(Project::GetActive());
 		}
 	}
@@ -791,6 +793,22 @@ namespace StarEngine {
 			return;
 
 		m_ActiveScene->SetPaused(true);
+	}
+
+	void EditorLayer::ReloadCSharp()
+	{
+		ScriptStorage tempStorage;
+
+		auto& scriptStorage = m_ActiveScene->GetScriptStorage();
+		scriptStorage.CopyTo(tempStorage);
+		scriptStorage.Clear();
+
+		Project::GetActive()->ReloadScriptEngine();
+
+		tempStorage.CopyTo(scriptStorage);
+		tempStorage.Clear();
+
+		scriptStorage.SynchronizeStorage();
 	}
 
 	void EditorLayer::OnDuplicateEntity()

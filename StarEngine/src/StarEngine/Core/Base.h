@@ -17,7 +17,7 @@
 #define SE_ENABLE_ASSERTS
 #endif
 
-#ifndef SE_DIST
+#ifdef SE_DIST
 #define SE_ENABLE_VERIFY
 #endif
 
@@ -45,7 +45,6 @@ namespace StarEngine {
 	{
 		return std::make_shared<T>(std::forward<Args>(args)...);
 	}
-
 }
 
 #include "StarEngine/Core/Log.h"
