@@ -85,7 +85,7 @@ namespace StarEngine
 
 		m_commandList = m_device->createCommandList();
 
-		RefPtr<Shader> imguiShader = Renderer::GetShaderLibrary()->Get("ImGui");
+		Ref<Shader> imguiShader = Renderer::GetShaderLibrary()->Get("ImGui");
 		vertexShader = imguiShader->GetHandle(nvrhi::ShaderType::Vertex);
 		pixelShader = imguiShader->GetHandle(nvrhi::ShaderType::Pixel);
 

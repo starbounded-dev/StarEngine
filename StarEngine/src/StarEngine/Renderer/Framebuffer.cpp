@@ -92,7 +92,7 @@ namespace StarEngine
 			return;
 		}
 
-		RefPtr<Framebuffer> instance = this;
+		Ref<Framebuffer> instance = this;
 		Renderer::Submit([instance, width, height]() mutable
 			{
 				instance->m_Width = (uint32_t)(width * instance->m_Specification.Scale);
@@ -112,14 +112,14 @@ namespace StarEngine
 			callback(this);
 		}
 	}
-	void Framebuffer::AddResizeCallback(const std::function<void(RefPtr<Framebuffer>)>& func)
+	void Framebuffer::AddResizeCallback(const std::function<void(Ref<Framebuffer>)>& func)
 	{
 		m_ResizeCallbacks.push_back(func);
 	}
 
 	void Framebuffer::Invalidate()
 	{
-		RefPtr<Framebuffer> instance = this;
+		Ref<Framebuffer> instance = this;
 		Renderer::Submit([instance]() mutable
 			{
 				instance->RT_Invalidate();

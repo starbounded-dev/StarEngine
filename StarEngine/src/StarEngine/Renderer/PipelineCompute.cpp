@@ -1,15 +1,16 @@
 #include "sepch.h"
 #include "PipelineCompute.h"
 
+#include "StarEngine/Core/Application.h"
 #include "StarEngine/Renderer/RendererAPI.h"
 #include "StarEngine/Renderer/ComputePipeline.h"
 
 namespace StarEngine
 {
-	PipelineCompute::PipelineCompute(RefPtr<Shader> computeShader)
+	PipelineCompute::PipelineCompute(Ref<Shader> computeShader)
 		: m_Shader(computeShader)
 	{
-		RefPtr<PipelineCompute> instance = this;
+		Ref<PipelineCompute> instance = this;
 		Renderer::Submit([instance]() mutable
 			{
 				instance->RT_CreatePipeline();
@@ -27,12 +28,12 @@ namespace StarEngine
 		device->createComputePipeline(desc);
 	}
 
-	void PipelineCompute::Begin(RefPtr<RenderCommandBuffer> renderCommandBuffer /*= nullptr*/)
+	void PipelineCompute::Begin(Ref<RenderCommandBuffer> renderCommandBuffer /*= nullptr*/)
 	{
 
 	}
 
-	void PipelineCompute::RT_Begin(RefPtr<RenderCommandBuffer> renderCommandBuffer /*= nullptr*/)
+	void PipelineCompute::RT_Begin(Ref<RenderCommandBuffer> renderCommandBuffer /*= nullptr*/)
 	{
 
 	}
@@ -42,22 +43,22 @@ namespace StarEngine
 
 	}
 
-	void PipelineCompute::BufferMemoryBarrier(RefPtr<RenderCommandBuffer> renderCommandBuffer, RefPtr<StorageBuffer> storageBuffer, ResourcesAccessFlags fromAccess, ResourcesAccessFlags toAccess)
+	void PipelineCompute::BufferMemoryBarrier(Ref<RenderCommandBuffer> renderCommandBuffer, Ref<StorageBuffer> storageBuffer, ResourcesAccessFlags fromAccess, ResourcesAccessFlags toAccess)
 	{
 
 	}
 
-	void PipelineCompute::BufferMemoryBarrier(RefPtr<RenderCommandBuffer> renderCommandBuffer, RefPtr<StorageBuffer> storageBuffer, PipelineStage fromStage, ResourcesAccessFlags fromAccess, PipelineStage toStage, ResourcesAccessFlags toAccess)
+	void PipelineCompute::BufferMemoryBarrier(Ref<RenderCommandBuffer> renderCommandBuffer, Ref<StorageBuffer> storageBuffer, PipelineStage fromStage, ResourcesAccessFlags fromAccess, PipelineStage toStage, ResourcesAccessFlags toAccess)
 	{
 
 	}
 
-	void PipelineCompute::ImageMemoryBarrier(RefPtr<RenderCommandBuffer> renderCommandBuffer, RefPtr<Image2D> image, ResourcesAccessFlags fromAccess, ResourcesAccessFlags toAccess)
+	void PipelineCompute::ImageMemoryBarrier(Ref<RenderCommandBuffer> renderCommandBuffer, Ref<Image2D> image, ResourcesAccessFlags fromAccess, ResourcesAccessFlags toAccess)
 	{
 
 	}
 
-	void PipelineCompute::ImageMemoryBarrier(RefPtr<RenderCommandBuffer> renderCommandBuffer, RefPtr<Image2D> image, PipelineStage, fromStage, ResourcesAccessFlags fromAccess, PipelineStage toStage, ResourcesAccessFlags toAccess)
+	void PipelineCompute::ImageMemoryBarrier(Ref<RenderCommandBuffer> renderCommandBuffer, Ref<Image2D> image, PipelineStage fromStage, ResourcesAccessFlags fromAccess, PipelineStage toStage, ResourcesAccessFlags toAccess)
 	{
 
 	}
@@ -91,12 +92,12 @@ namespace StarEngine
 
 	}
 
-	RefPtr<Shader> PipelineCompute::GetShader() const
+	Ref<Shader> PipelineCompute::GetShader() const
 	{
 
 	}
 
-	RefPtr<PipelineCompute> PipelineCompute::Create(RefPtr<Shader> computeShader)
+	Ref<PipelineCompute> PipelineCompute::Create(Ref<Shader> computeShader)
 	{
 
 	}

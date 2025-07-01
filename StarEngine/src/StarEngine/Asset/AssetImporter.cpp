@@ -13,7 +13,7 @@
 
 namespace StarEngine {
 
-	using AssetImportFunction = std::function<RefPtr<Asset>(AssetHandle, const AssetMetadata&)>;
+	using AssetImportFunction = std::function<Ref<Asset>(AssetHandle, const AssetMetadata&)>;
 	static std::map<AssetType, AssetImportFunction> s_AssetImportFunctions = {
 		{ AssetType::Scene, SceneImporter::ImportScene },
 		{ AssetType::Texture2D, TextureImporter::ImportTexture2D },
@@ -22,7 +22,7 @@ namespace StarEngine {
 		{ AssetType::ScriptFile, SceneImporter::ImportScript }*/
 	};
 
-	RefPtr<Asset> AssetImporter::ImportAsset(AssetHandle handle, const AssetMetadata& metadata)
+	Ref<Asset> AssetImporter::ImportAsset(AssetHandle handle, const AssetMetadata& metadata)
 	{
 		SE_PROFILE_FUNCTION_COLOR("AssetImporter::ImportAsset", 0xF2FA8A);
 

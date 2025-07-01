@@ -16,12 +16,12 @@ namespace StarEngine {
 		~Font();
 
 		const MSDFData* GetMSDFData() const { return m_Data; }
-		RefPtr<Texture2D> GetAtlasTexture() const { return m_AtlasTexture; }
+		Ref<Texture2D> GetAtlasTexture() const { return m_AtlasTexture; }
 
-		static RefPtr<Font> GetDefault();
+		static Ref<Font> GetDefault();
 	private:
 		MSDFData* m_Data;
-		RefPtr<Texture2D> m_AtlasTexture;
+		Ref<Texture2D> m_AtlasTexture;
 	};
 
 

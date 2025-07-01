@@ -9,7 +9,7 @@ namespace StarEngine {
 	class ImGuiLayer : public Layer
 	{
 	public:
-		static RefPtr<ImGuiLayer> Create() { return RefPtr<ImGuiLayer>::Create(); }
+		static Ref<ImGuiLayer> Create() { return Ref<ImGuiLayer>::Create(); }
 
 		virtual void OnAttach() override;
 		virtual void OnDetach() override;

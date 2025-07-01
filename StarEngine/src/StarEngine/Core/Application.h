@@ -1,9 +1,10 @@
 #pragma once
 
-#include "StarEngine/Core/Core.h"
+#include "StarEngine/Core/Base.h"
 
 #include "StarEngine/Core/Window.h"
 #include "StarEngine/Core/LayerStack.h"
+#include "StarEngine/Core/Thread.h"
 #include "StarEngine/Events/Event.h"
 #include "StarEngine/Events/ApplicationEvent.h"
 
@@ -12,6 +13,8 @@
 #include "StarEngine/ImGui/ImGuiLayer.h"
 
 #include "StarEngine/Renderer/DeviceManager.h"
+#include "StarEngine/Renderer/RenderThread.h"
+#include "StarEngine/Renderer/RendererConfig.h"
 
 int main(int argc, char** argv);
 
@@ -31,9 +34,18 @@ namespace StarEngine
 
 	struct ApplicationSpecification
 	{
-		std::string Name = "StarEngine Application";
+		std::string Name = "StarEngine";
+		uint32_t WindowWidth = 1920, WindowHeight = 1080;
+		bool Fullscreen = false;
+		bool VSync = true;
+		bool StartMaximized = true;
+		bool Resizable = true;
+		bool EnableImGui = true;
+		bool ShowSplashScreen = false;
+		RendererConfig RenderConfig;
+		ThreadingPolicy CoreThreadingPolicy = ThreadingPolicy::MultiThreaded;
+		std::filesystem::path IconPath;
 		std::string WorkingDirectory;
-		ApplicationCommandLineArgs CommandLineArgs;
 	};
 
 	class Application
@@ -42,9 +54,9 @@ namespace StarEngine
 			Application(const ApplicationSpecification& specification);
 			virtual ~Application();
 
-
-
 			void OnEvent(Event& e);
+
+			void Run();
 
 			void PushLayer(Layer* layer);
 			void PushOverlay(Layer* layer);
@@ -61,10 +73,13 @@ namespace StarEngine
 
 			void SubmitToMainThread(const std::function<void()>& function);
 
+			RenderThread& GetRenderThread() { return m_RenderThread; }
+			
 			static nvrhi::DeviceHandle GetGraphicsDeviceManager() { return Application::Get().GetWindow().GetDeviceManager(); }
-		private:
-			void Run();
-
+		
+			static std::thread::id GetMainThreadID();
+			static bool IsMainThread();
+	private:
 			bool OnWindowClose(WindowCloseEvent& e);
 			bool OnWindowResize(WindowResizeEvent& e);
 
@@ -79,17 +94,21 @@ namespace StarEngine
 			float m_LastFrameTime = 0.0f;
 
 			static nvrhi::DeviceHandle s_GraphicsDevice; // Add this member to store the graphics device
-			RefPtr<DeviceManager> m_GraphicsDeviceManager; // Add this member to store the device manager
+			Ref<DeviceManager> m_GraphicsDeviceManager; // Add this member to store the device manager
 
 			std::vector<std::function<void()>> m_MainThreadQueue;
 			std::mutex m_MainThreadQueueMutex;
+
+			RenderThread m_RenderThread;
+
+			static std::thread::id s_MainThreadID;
 		private:
 				static Application* s_Instance;
 				friend int ::main(int argc, char** argv);
 	};
 
-	// To be defined in CLIENT
-	Application* CreateApplication(ApplicationCommandLineArgs args);
+	// Implemented by CLIENT
+	Application* CreateApplication(int argc, char** argv);
 }
 
 

@@ -9,7 +9,7 @@ namespace StarEngine
 	class SceneSerializer
 	{
 	public:
-		SceneSerializer(const RefPtr<Scene>& scene);
+		SceneSerializer(const Ref<Scene>& scene);
 
 		void Serialize(const std::filesystem::path& filepath);
 		void SerializeRuntime(const std::filesystem::path& filepath);
@@ -17,6 +17,6 @@ namespace StarEngine
 		bool Deserialize(const std::filesystem::path& filepath);
 		bool DeserializeRuntime(const std::filesystem::path& filepath);
 	private:
-		RefPtr<Scene> m_Scene;
+		Ref<Scene> m_Scene;
 	};
 }

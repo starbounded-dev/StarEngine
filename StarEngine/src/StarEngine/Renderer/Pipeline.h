@@ -34,8 +34,8 @@ namespace StarEngine {
 	};
 
 	struct PipelineSpecification {
-		RefPtr<Shader> Shader;
-		RefPtr<Framebuffer> TargetFramebuffer;
+		Ref<Shader> Shader;
+		Ref<Framebuffer> TargetFramebuffer;
 		VertexBufferLayout Layout;
 		VertexBufferLayout InstanceLayout;
 		VertexBufferLayout BoneInfluenceLayout;
@@ -105,7 +105,7 @@ namespace StarEngine {
 	class Pipeline : public RefCounted
 	{
 	public:
-		static RefPtr<Pipeline> Create(const PipelineSpecification& spec) { return RefPtr<Pipeline>::Create(spec); }
+		static Ref<Pipeline> Create(const PipelineSpecification& spec) { return Ref<Pipeline>::Create(spec); }
 
 		PipelineSpecification& GetSpecification();
 		const PipelineSpecification& GetSpecification() const;
@@ -115,7 +115,7 @@ namespace StarEngine {
 		void Invalidate();
 		void RT_Invalidate();
 
-		RefPtr<Shader> GetShader() const;
+		Ref<Shader> GetShader() const;
 
 		bool IsDynamicLineWidth() const;
 	public:

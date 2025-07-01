@@ -1,9 +1,14 @@
 #pragma once
 
-#include "StarEngine/Core/Core.h"
+#include "StarEngine/Core/Base.h"
+#include "StarEngine/Core/Window.h"
+
 #include "StarEngine/Events/Event.h"
+#include "StarEngine/Renderer/GraphicsContext.h"
 
 #include <sstream>
+
+#include <GLFW/glfw3.h>
 
 #include <nvrhi/nvrhi.h>
 
@@ -29,25 +34,44 @@ namespace StarEngine {
 	public:
 		using EventCallbackFn = std::function<void(Event&)>;
 
-		virtual ~Window() {}
+		Window(const WindowSpecification& spec);
+		~Window();
 
-		virtual void OnUpdate() = 0;
+		void OnUpdate();
 
-		virtual uint32_t GetWidth() const = 0;
-		virtual uint32_t GetHeight() const = 0;
+		unsigned int GetWidth() const { return m_Specification.Width; }
+		unsigned int GetHeight() const { return m_Specification.Height; }
 
 		// Window attributes
-		virtual void SetEventCallback(const EventCallbackFn& callback) = 0;
-		virtual void SetVSync(bool enabled) = 0;
-		virtual bool IsVSync() const = 0;
+		void SetEventCallback(const EventCallbackFn& callback) { m_Specification.EventCallback = callback; }
+		void SetVSync(bool enabled);
+		bool IsVSync() const;
 
-		virtual void* GetNativeWindow() const = 0;
+		void* GetNativeWindow() const { return m_Window; }
 
-		DeviceManager* GetDeviceManager() const;
+		DeviceManager* GetDeviceManager();
 
-		static std::unique_ptr<Window> Create(const WindowSpecification& props = WindowSpecification());
+		static std::unique_ptr<Window> Create(const WindowSpecification& spec = WindowSpecification());
 	public:
 		static float s_HighDPIScaleFactor;
+	private:
+		void Init(WindowSpecification& spec);
+		void Shutdown();
+	private:
+		GLFWwindow* m_Window;
+		std::unique_ptr<GraphicsContext> m_Context;
+		struct WindowData
+		{
+			std::string Title;
+			unsigned int Width, Height;
+			bool VSync;
+
+			EventCallbackFn EventCallback;
+		};
+
+		WindowData m_Specification;
+
+		Ref<DeviceManager> m_DeviceManager;
 	};
 
 }

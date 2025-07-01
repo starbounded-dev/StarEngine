@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarEngine/Core/Core.h"
+#include "StarEngine/Core/Base.h"
 #include "StarEngine/Core/Ref.h"
 #include "StarEngine/Core/Buffer.h"
 
@@ -121,8 +121,8 @@ namespace StarEngine {
 	class VertexBuffer : public RefCounted
 	{
 	public:
-		static RefPtr<VertexBuffer> Create(const Buffer& buffer) { return RefPtr<VertexBuffer>::Create(buffer); }
-		static RefPtr<VertexBuffer> Create(uint64_t size) { return RefPtr<VertexBuffer>::Create(size); }
+		static Ref<VertexBuffer> Create(const Buffer& buffer) { return Ref<VertexBuffer>::Create(buffer); }
+		static Ref<VertexBuffer> Create(uint64_t size) { return Ref<VertexBuffer>::Create(size); }
 
 		void SetData(Buffer buffer, uint64_t offset = 0);
 		void RT_SetData(Buffer buffer, uint64_t offset = 0);

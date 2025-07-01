@@ -26,10 +26,10 @@ namespace StarEngine
 		if (!m_Specification.WorkingDirectory.empty())
 			std::filesystem::current_path(m_Specification.WorkingDirectory);
 
-		m_Window = Window::Create(WindowProps(m_Specification.Name));
+		m_Window = Window::Create(WindowSpecification(m_Specification.Name));
 		m_Window->SetEventCallback(SE_BIND_EVENT_FN(Application::OnEvent));
 
-		Renderer::Init();
+		//Renderer::Init();
 
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
@@ -39,8 +39,8 @@ namespace StarEngine
 	{
 		SE_PROFILE_FUNCTION();
 
-		ScriptEngine::Shutdown();
-		Renderer::Shutdown();
+		//ScriptEngine::Shutdown();
+		//Renderer::Shutdown();
 	}
 
 	void Application::PushLayer(Layer* layer)
@@ -156,9 +156,11 @@ namespace StarEngine
 		m_MainThreadQueue.clear();
 	}
 
-	nvrhi::DeviceHandle Application::GetGraphicsDevice()
+	std::thread::id Application::GetMainThreadID() { return s_MainThreadID; }
+
+	bool Application::IsMainThread()
 	{
-		return s_GraphicsDevice;
+		return std::this_thread::get_id() == s_MainThreadID;
 	}
 
 }

@@ -10,8 +10,8 @@ namespace StarEngine {
 	class IndexBuffer : public RefCounted
 	{
 	public:
-		static RefPtr<IndexBuffer> Create(const Buffer& buffer) { return RefPtr<IndexBuffer>::Create(buffer); }
-		static RefPtr<IndexBuffer> Create(uint64_t size) { return RefPtr<IndexBuffer>::Create(size); }
+		static Ref<IndexBuffer> Create(const Buffer& buffer) { return Ref<IndexBuffer>::Create(buffer); }
+		static Ref<IndexBuffer> Create(uint64_t size) { return Ref<IndexBuffer>::Create(size); }
 
 		void SetData(void* buffer, uint64_t size, uint64_t offset = 0);
 		

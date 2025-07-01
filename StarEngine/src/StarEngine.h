@@ -28,7 +28,6 @@
 
 #include "StarEngine/Project/Project.h"
 
-#include "StarEngine/Renderer/Buffer.h"
 #include "StarEngine/Renderer/Shader.h"
 #include "StarEngine/Renderer/Texture.h"
 #include "StarEngine/Renderer/Framebuffer.h"

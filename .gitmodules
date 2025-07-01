@@ -30,3 +30,6 @@
 	path = StarEngine/vendor/nvrhi
 	url = https://github.com/starbounded-dev/nvrhi
 	branch = hazel
+[submodule "StarEngine/vendor/tracy/tracy"]
+	path = StarEngine/vendor/tracy/tracy
+	url = https://github.com/wolfpld/tracy/

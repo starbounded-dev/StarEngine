@@ -117,9 +117,9 @@ namespace StarEngine {
 
 		virtual void SetMacro() const = 0;
 
-		static RefPtr<Shader> Create(const std::string& filepath, bool forceCreate = false);
-		static RefPtr<Shader> LoadFromShaderPack(const std::string& filepath, const std::string& vertexSrc, const std::string& fragmentSrc);
-		static RefPtr<Shader> CreateFromString(const std::string& source);
+		static Ref<Shader> Create(const std::string& filepath, bool forceCreate = false);
+		static Ref<Shader> LoadFromShaderPack(const std::string& filepath, const std::string& vertexSrc, const std::string& fragmentSrc);
+		static Ref<Shader> CreateFromString(const std::string& source);
 
 		virtual const std::unordered_map<std::string, ShaderBuffer>& GetShader() const = 0;
 		virtual const std::unordered_map<std::string, ShaderResourceDeclaration>& GetShaderResources() const = 0;
@@ -145,23 +145,23 @@ namespace StarEngine {
 		ShaderLibrary();
 		~ShaderLibrary();
 
-		void Add(const RefPtr<Shader>& shader);
+		void Add(const Ref<Shader>& shader);
 		void Load(std::string_view path, bool forceCompile = false, bool disableCache = false);
 		void Load(std::string_view name, const std::string& path);
 		void LoadShaderPack(const std::filesystem::path& path);
 
-		const RefPtr<Shader>& Get(const std::string& name) const;
+		const Ref<Shader>& Get(const std::string& name) const;
 		size_t GetSize() const { return m_Shaders.size(); }
 		
-		std::unordered_map<std::string, RefPtr<Shader>>& GetShader() {
+		std::unordered_map<std::string, Ref<Shader>>& GetShader() {
 			return m_Shaders;
 		}
 
-		const std::unordered_map<std::string, RefPtr<Shader>>& GetShader() const {
+		const std::unordered_map<std::string, Ref<Shader>>& GetShader() const {
 			return m_Shaders;
 		}
 	private:
-		std::unordered_map<std::string, RefPtr<Shader>> m_Shaders;
-		RefPtr<ShaderPack> m_ShaderPack;
+		std::unordered_map<std::string, Ref<Shader>> m_Shaders;
+		Ref<ShaderPack> m_ShaderPack;
 	};
 }

@@ -11,10 +11,10 @@ namespace StarEngine {
 	{
 	public:
 		// AssetMetadata filepath is relative to project asset directory
-		static RefPtr<AudioSource> ImportAudio(AssetHandle handle, const AssetMetadata& metadata);
+		static Ref<AudioSource> ImportAudio(AssetHandle handle, const AssetMetadata& metadata);
 
 		// Load from filepath
-		static RefPtr<AudioSource> LoadAudio(const std::filesystem::path& path);
+		static Ref<AudioSource> LoadAudio(const std::filesystem::path& path);
 	};
 
 }

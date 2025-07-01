@@ -51,7 +51,7 @@ namespace StarEngine {
 	class Texture2D : public Texture
 	{
 	public:
-		static RefPtr<Texture2D> Create(const TextureSpecification& specification, Buffer data = Buffer());
+		static Ref<Texture2D> Create(const TextureSpecification& specification, Buffer data = Buffer());
 
 		virtual void ChangeSize(uint32_t newWidth, uint32_t newHeight) = 0;
 

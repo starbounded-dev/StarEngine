@@ -74,9 +74,9 @@ namespace StarEngine {
 		CopyComponentIfExists<Component...>(dst, src);
 	}
 
-	RefPtr<Scene> Scene::Copy(RefPtr<Scene> other)
+	Ref<Scene> Scene::Copy(Ref<Scene> other)
 	{
-		RefPtr<Scene> newScene = RefPtr<Scene>::Create();
+		Ref<Scene> newScene = Ref<Scene>::Create();
 
 		newScene->m_ViewportWidth = other->m_ViewportWidth;
 		newScene->m_ViewportHeight = other->m_ViewportHeight;
@@ -136,7 +136,7 @@ namespace StarEngine {
 			auto filter = m_Registry.view<TransformComponent, AudioListenerComponent>();
 			filter.each([&](TransformComponent& transform, AudioListenerComponent& ac)
 				{
-					ac.Listener = RefPtr<AudioListener>::Create();
+					ac.Listener = Ref<AudioListener>::Create();
 					if (ac.Active)
 					{
 						const glm::mat4 inverted = glm::inverse(transform.GetTransform());
@@ -156,7 +156,7 @@ namespace StarEngine {
 					{
 						if (ac.Audio && !ac.AudioSourceData.UsePlaylist)
 						{
-							RefPtr<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(ac.Audio);
+							Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(ac.Audio);
 							const glm::mat4 inverted = glm::inverse(transform.GetTransform());
 							const glm::vec3 forward = glm::normalize(glm::vec3(inverted[2].x, inverted[2].y, inverted[2].z));
 
@@ -176,7 +176,7 @@ namespace StarEngine {
 
 							if (ac.AudioSourceData.CurrentIndex < ac.AudioSourceData.Playlist.size())
 							{
-								RefPtr<AudioSource> playingSourceIndex = AssetManager::GetAsset<AudioSource>(ac.AudioSourceData.Playlist[ac.AudioSourceData.CurrentIndex]);
+								Ref<AudioSource> playingSourceIndex = AssetManager::GetAsset<AudioSource>(ac.AudioSourceData.Playlist[ac.AudioSourceData.CurrentIndex]);
 								const glm::mat4 inverted = glm ::inverse(transform.GetTransform());
 								const glm::vec3 forward = glm::normalize(glm::vec3(inverted[2].x, inverted[2].y, inverted[2].z));
 
@@ -228,7 +228,7 @@ namespace StarEngine {
 					{
 						if (ac.Audio && !ac.AudioSourceData.UsePlaylist)
 						{
-							RefPtr<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(ac.Audio);
+							Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(ac.Audio);
 
 							if (audioSource != nullptr && audioSource->IsPlaying())
 								audioSource->Stop();
@@ -240,7 +240,7 @@ namespace StarEngine {
 
 							for (auto audio : ac.AudioSourceData.Playlist)
 							{
-								RefPtr<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(audio);
+								Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(audio);
 
 								if (audioSource != nullptr && audioSource->IsPlaying())
 									audioSource->Stop();
@@ -348,7 +348,7 @@ namespace StarEngine {
 
 						if (asc.Audio && !asc.AudioSourceData.UsePlaylist)
 						{
-							RefPtr<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(asc.Audio);
+							Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(asc.Audio);
 							if (!audioSource->IsPlaying() && asc.Paused)
 							{
 								audioSource->SetConfig(asc.Config);
@@ -367,7 +367,7 @@ namespace StarEngine {
 						{
 							SE_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::AudioSourceComponent 2 Scope", 0xEE3AFF);
 
-							RefPtr<AudioSource> audioSourceIndex = AssetManager::GetAsset<AudioSource>(asc.AudioSourceData.Playlist[asc.AudioSourceData.OldIndex]);
+							Ref<AudioSource> audioSourceIndex = AssetManager::GetAsset<AudioSource>(asc.AudioSourceData.Playlist[asc.AudioSourceData.OldIndex]);
 
 							//if (ac.AudioSourceData.OldIndex <= ac.AudioSourceData.Playlist.size() - 1)
 							if (asc.AudioSourceData.CurrentIndex < asc.AudioSourceData.Playlist.size() && audioSourceIndex != nullptr && asc.Config.PlayOnAwake && !audioSourceIndex->IsPlaying() && !asc.Paused)
@@ -467,7 +467,7 @@ namespace StarEngine {
 						{
 							if (!asc.AudioSourceData.UsePlaylist)
 							{
-								RefPtr<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(asc.Audio);
+								Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(asc.Audio);
 								if (audioSource->IsPlaying())
 								{
 									audioSource->SetConfig(asc.Config);
@@ -479,7 +479,7 @@ namespace StarEngine {
 							{
 								if (asc.AudioSourceData.OldIndex == 0)
 								{
-									RefPtr<AudioSource> audioSourceIndex = AssetManager::GetAsset<AudioSource>(asc.Audio);
+									Ref<AudioSource> audioSourceIndex = AssetManager::GetAsset<AudioSource>(asc.Audio);
 
 									if (audioSourceIndex->IsPlaying())
 									{
@@ -491,7 +491,7 @@ namespace StarEngine {
 								}
 								else if (asc.AudioSourceData.OldIndex > 0)
 								{
-									RefPtr<AudioSource> audioSourceIndex = AssetManager::GetAsset<AudioSource>(asc.AudioSourceData.Playlist[asc.AudioSourceData.OldIndex]);
+									Ref<AudioSource> audioSourceIndex = AssetManager::GetAsset<AudioSource>(asc.AudioSourceData.Playlist[asc.AudioSourceData.OldIndex]);
 
 									if (asc.AudioSourceData.OldIndex < asc.AudioSourceData.Playlist.size())
 									{
@@ -858,7 +858,7 @@ namespace StarEngine {
 	{
 		if (component.Audio && !component.AudioSourceData.UsePlaylist)
 		{
-			RefPtr<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(component.Audio);
+			Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(component.Audio);
 			if (audioSource != nullptr)
 				audioSource->SetConfig(component.Config);
 		}
@@ -866,7 +866,7 @@ namespace StarEngine {
 		{
 			for (auto audio : component.AudioSourceData.Playlist)
 			{
-				RefPtr<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(audio);
+				Ref<AudioSource> audioSource = AssetManager::GetAsset<AudioSource>(audio);
 				if (audioSource != nullptr)
 					audioSource->SetConfig(component.Config);
 			}

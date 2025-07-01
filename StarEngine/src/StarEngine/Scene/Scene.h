@@ -19,7 +19,7 @@ namespace StarEngine {
 		Scene();
 		~Scene();
 
-		static RefPtr<Scene> Copy(RefPtr<Scene> other);
+		static Ref<Scene> Copy(Ref<Scene> other);
 
 		virtual AssetType GetType() const { return AssetType::Scene; }
 

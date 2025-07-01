@@ -3,8 +3,7 @@
 #include <string>
 #include <filesystem>
 
-#include "StarEngine/Core/Ref.h"
-#include "StarEngine/Core/Core.h"
+#include "StarEngine/Core/Base.h"
 
 #include "StarEngine/Asset/RuntimeAssetManager.h"
 #include "StarEngine/Asset/EditorAssetManager.h"
@@ -61,20 +60,20 @@ namespace StarEngine {
 
 		ProjectConfig& GetConfig() { return m_Config; }
 
-		static RefPtr<Project> GetActive() { return s_ActiveProject; }
+		static Ref<Project> GetActive() { return s_ActiveProject; }
 		std::shared_ptr<AssetManagerBase> GetAssetManager() { return m_AssetManager; }
 		std::shared_ptr<RuntimeAssetManager> GetRuntimeAssetManager() { return std::static_pointer_cast<RuntimeAssetManager>(m_AssetManager); }
 		std::shared_ptr<EditorAssetManager> GetEditorAssetManager() { return std::static_pointer_cast<EditorAssetManager>(m_AssetManager); }
 
-		static RefPtr<Project> New();
-		static RefPtr<Project> Load(const std::filesystem::path& path);
+		static Ref<Project> New();
+		static Ref<Project> Load(const std::filesystem::path& path);
 		static bool SaveActive(const std::filesystem::path& path);
 	private:
 		ProjectConfig m_Config;
 		std::filesystem::path m_ProjectDirectory;
 		std::shared_ptr<AssetManagerBase> m_AssetManager;
 
-		inline static RefPtr<Project> s_ActiveProject;
+		inline static Ref<Project> s_ActiveProject;
 	};
 
 }

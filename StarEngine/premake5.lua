@@ -1,7 +1,7 @@
 project "StarEngine"
 	kind "StaticLib"
 	language "C++"
-	cppdialect "C++17"
+	cppdialect "C++20"
 	staticruntime "off"
 
 	targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
@@ -26,6 +26,9 @@ project "StarEngine"
 	defines
 	{
 		"_CRT_SECURE_NO_WARNINGS",
+		"TRACY_ENABLE",
+		"TRACY_ON_DEMAND",
+		"TRACY_CALLSTACK=10",
 		"GLFW_INCLUDE_NONE",
 		"YAML_CPP_STATIC_DEFINE"
 	}
@@ -48,6 +51,7 @@ project "StarEngine"
 		"%{IncludeDir.ImGuizmo}",
 		"%{IncludeDir.VulkanSDK}",
 		"%{IncludeDir.nvrhi}",
+		"%{IncludeDir.tracy}",
 
 		"%{IncludeDir.mono}",
 		"%{IncludeDir.miniaudio}"
@@ -59,13 +63,15 @@ project "StarEngine"
 		"GLAD",
 		"imgui",
 		"opengl32",
-		"%{Library.mono}",
 		"yaml-cpp",
 		"msdf-atlas-gen",
 		"Box2D",
 		"dwmapi.lib",
 		"d3d12",
-		"nvrhi"
+		"nvrhi",
+
+		"%{Library.mono}",
+		"%{Library.Tracy}",
 	}
 
 	filter "files:vendor/imguizmo/**.cpp"
@@ -88,7 +94,11 @@ project "StarEngine"
 		}
 
 	filter "configurations:Debug"
-		defines "SE_DEBUG"
+		defines {
+			"SE_DEBUG",
+			"SE_TRACK_MEMORY"
+		}
+
 		runtime "Debug"
 		symbols "on"
 
@@ -100,7 +110,10 @@ project "StarEngine"
 		}
 
 	filter "configurations:Release"
-		defines "SE_RELEASE"
+		defines {
+			"SE_RELEASE",
+			"SE_TRACK_MEMORY"
+		}
 		runtime "Release"
 		optimize "on"
 

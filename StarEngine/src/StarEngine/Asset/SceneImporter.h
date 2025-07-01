@@ -11,12 +11,12 @@ namespace StarEngine {
 	{
 	public:
 		// AssetMetadata filepath is relative to project asset directory
-		static RefPtr<Scene> ImportScene(AssetHandle handle, const AssetMetadata& metadata);
+		static Ref<Scene> ImportScene(AssetHandle handle, const AssetMetadata& metadata);
 
 		// Load from filepath
-		static RefPtr<Scene> LoadScene(const std::filesystem::path& path);
+		static Ref<Scene> LoadScene(const std::filesystem::path& path);
 
-		static void SaveScene(RefPtr<Scene> scene, const std::filesystem::path& path);
+		static void SaveScene(Ref<Scene> scene, const std::filesystem::path& path);
 	};
 
 }

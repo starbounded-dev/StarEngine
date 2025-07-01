@@ -3,7 +3,7 @@
 #include "StarEngine/Renderer/VertexBuffer.h"
 #include "StarEngine/Renderer/IndexBuffer.h"
 
-#include "StarEngine/Core/Core.h"
+#include "StarEngine/Core/Base.h"
 
 #include <memory>
 
@@ -18,12 +18,12 @@ namespace StarEngine {
 			virtual void Bind() const = 0;
 			virtual void Unbind() const = 0;
 
-			virtual void AddVertexBuffer(const RefPtr<VertexBuffer>& vertexBuffer) = 0;
-			virtual void SetIndexBuffer(const RefPtr<IndexBuffer>& indexBuffer) = 0;
+			virtual void AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer) = 0;
+			virtual void SetIndexBuffer(const Ref<IndexBuffer>& indexBuffer) = 0;
 
-			virtual const std::vector<RefPtr<VertexBuffer>>& GetVertexBuffers() const = 0;
-			virtual const RefPtr<IndexBuffer>& GetIndexBuffer() const = 0;
+			virtual const std::vector<Ref<VertexBuffer>>& GetVertexBuffers() const = 0;
+			virtual const Ref<IndexBuffer>& GetIndexBuffer() const = 0;
 
-			static RefPtr<VertexArray> Create();
+			static Ref<VertexArray> Create();
 	};
 }

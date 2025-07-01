@@ -11,7 +11,7 @@
 namespace StarEngine {
 
 	template<typename T, typename S, int N, msdf_atlas::GeneratorFunction<S, N> GenFunc>
-	static RefPtr<Texture2D> CreateAndCacheAtlas(const std::string& fontName, float fontSize, const std::vector<msdf_atlas::GlyphGeometry>& glyphs,
+	static Ref<Texture2D> CreateAndCacheAtlas(const std::string& fontName, float fontSize, const std::vector<msdf_atlas::GlyphGeometry>& glyphs,
 		const msdf_atlas::FontGeometry& fontGeometry, uint32_t width, uint32_t height)
 	{
 		msdf_atlas::GeneratorAttributes attributes;
@@ -31,7 +31,7 @@ namespace StarEngine {
 		spec.Format = ImageFormat::RGB8;
 		spec.GenerateMips = false;
 
-		RefPtr<Texture2D> texture = Texture2D::Create(spec);
+		Ref<Texture2D> texture = Texture2D::Create(spec);
 		texture->SetData(Buffer((void*)bitmap.pixels, bitmap.width * bitmap.height * 3));
 		return texture;
 	}
@@ -143,11 +143,11 @@ namespace StarEngine {
 		delete m_Data;
 	}
 
-	RefPtr<Font> Font::GetDefault()
+	Ref<Font> Font::GetDefault()
 	{
-		static RefPtr<Font> DefaultFont;
+		static Ref<Font> DefaultFont;
 		if (!DefaultFont)
-			DefaultFont = RefPtr<Font>::Create("assets/fonts/opensans/OpenSans-Regular.ttf");
+			DefaultFont = Ref<Font>::Create("assets/fonts/opensans/OpenSans-Regular.ttf");
 
 		return DefaultFont;
 	}

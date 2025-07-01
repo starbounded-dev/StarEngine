@@ -27,3 +27,5 @@ vendor/premake/bin/
 StarEditor/Resources/Scripts/StarEngine-ScriptCore.dll
 StarEditor/Resources/Scripts/StarEngine-ScriptCore.pdb
 StarEditor/SandboxProject/Assets/Scripts/Binaries
+StarEditor/SandboxProject/Assets/Scripts/obj
+StarEngine-ScriptCore/obj

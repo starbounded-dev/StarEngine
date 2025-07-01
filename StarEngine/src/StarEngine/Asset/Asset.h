@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarEngine/Core/UUID.h"
+#include "StarEngine/Core/Base.h"
 
 #include <string_view>
 

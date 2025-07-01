@@ -78,7 +78,7 @@ namespace StarEngine {
 	}
 
 	void Pipeline::Invalidate() {
-		RefPtr<Pipeline> instance = this;
+		Ref<Pipeline> instance = this;
 		Renderer::Submit([instance]() mutable {
 			instance->RT_Invalidate();
 		});
@@ -87,8 +87,8 @@ namespace StarEngine {
 	void Pipeline::RT_Invalidate()
 	{
 		nvrhi::IDevice* device = Application::Get().GetWindow().GetDeviceManager()->GetDevice();
-		RefPtr<Shader> shader = RefPtr<Shader>(m_Specification.Shader);
-		RefPtr<Framebuffer> framebuffer = m_Specification.TargetFramebuffer->As<Framebuffer>();
+		Ref<Shader> shader = Ref<Shader>(m_Specification.Shader);
+		Ref<Framebuffer> framebuffer = m_Specification.TargetFramebuffer->As<Framebuffer>();
 
 		nvrhi::GraphicsPipelineDesc pipelineDesc;
 

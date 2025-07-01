@@ -17,7 +17,7 @@
 #define SE_ENABLE_ASSERTS
 #endif
 
-#ifndef SE_DIST
+#ifdef SE_DIST
 #define SE_ENABLE_VERIFY
 #endif
 

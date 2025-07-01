@@ -12,7 +12,7 @@ namespace StarEngine {
 	class EditorAssetManager : public AssetManagerBase
 	{
 	public:
-		virtual RefPtr<Asset> GetAsset(AssetHandle handle) override;
+		virtual Ref<Asset> GetAsset(AssetHandle handle) override;
 
 		virtual bool IsAssetHandleValid(AssetHandle handle) const override;
 		virtual bool IsAssetLoaded(AssetHandle handle) const override;

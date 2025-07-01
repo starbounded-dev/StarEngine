@@ -1,24 +1,42 @@
 #pragma once
-#include "StarEngine/Core/Core.h"
+
 #include "StarEngine/Core/Application.h"
+#include "StarEngine/Core/Assert.h"
 
-#ifdef SE_PLATFORM_WINDOWS
+extern StarEngine::Application* StarEngine::CreateApplication(int argc, char** argv);
+extern bool g_ApplicationRunning;
 
-extern StarEngine::Application* StarEngine::CreateApplication(ApplicationCommandLineArgs args);
+namespace StarEngine {
 
-	int main(int argc, char** argv) {
-		StarEngine::Log::Init();
+	int Main(int argc, char** argv)
+	{
+		while (g_ApplicationRunning)
+		{
+			InitializeCore();
 
-		SE_PROFILE_BEGIN_SESSION("Startup", "StarEngineProfile-Startup.json");
-		auto app = StarEngine::CreateApplication({ argc, argv });
-		SE_PROFILE_END_SESSION();
+			Application* app = CreateApplication(argc, argv);
+			SE_CORE_ASSERT(app, "Client Application is null!");
 
-		SE_PROFILE_BEGIN_SESSION("Runtime", "StarEngineProfile-Runtime.json");
-		app->Run();
-		SE_PROFILE_END_SESSION();
+			app->Run();
 
-		SE_PROFILE_BEGIN_SESSION("Shutdown", "StarEngineProfile-Shutdown.json");
-		delete app;
-		SE_PROFILE_END_SESSION();
+			delete app;
+			ShutdownCore();
+		}
+		return 0;
 	}
+
+}
+
+#if defined(SE_DIST) && defined(SE_PLATFORM_WINDOWS)
+#include <Windows.h>
+
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nCmdShow)
+{
+	return StarEngine::Main(__argc, __argv);
+}
+#else
+int main(int argc, char** argv)
+{
+	return StarEngine::Main(argc, argv);
+}
 #endif

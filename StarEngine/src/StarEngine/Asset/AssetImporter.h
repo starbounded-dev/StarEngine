@@ -7,7 +7,7 @@ namespace StarEngine
 	class AssetImporter
 	{
 	public:
-		static RefPtr<Asset> ImportAsset(AssetHandle handle, const AssetMetadata& metadata);
+		static Ref<Asset> ImportAsset(AssetHandle handle, const AssetMetadata& metadata);
 	};
 
 

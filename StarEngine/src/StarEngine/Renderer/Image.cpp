@@ -88,7 +88,7 @@ namespace StarEngine {
 
 	void Image2D::CreatePerLayerImageViews()
 	{
-		RefPtr<Image2D> instance = this;
+		Ref<Image2D> instance = this;
 		Renderer::Submit([instance]() mutable
 			{
 				instance->RT_CreatePerLayerImageViews();

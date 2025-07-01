@@ -25,11 +25,20 @@ project "StarEditor"
 		"%{IncludeDir.miniaudio}",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.nvrhi}",
+		"%{IncludeDir.Tracy}",
 	}
 
 	links
 	{
-		"StarEngine"
+		"StarEngine",
+		"%{Library.Tracy}",
+	}
+
+	defines
+	{
+		"TRACY_ENABLE",
+		"TRACY_ON_DEMAND",
+		"TRACY_CALLSTACK=10",
 	}
 
 	filter "system:windows" 

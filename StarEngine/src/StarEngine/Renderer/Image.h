@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarEngine/Core/Core.h"
+#include "StarEngine/Core/Base.h"
 #include "StarEngine/Core/Ref.h"
 
 #include "StarEngine/Core/Buffer.h"
@@ -8,6 +8,10 @@
 #include "StarEngine/Renderer/RendererResource.h"
 
 #include <nvrhi/nvrhi.h>
+
+#include <string>
+
+#include <glm/glm.hpp>
 
 namespace StarEngine {
 
@@ -153,8 +157,8 @@ namespace StarEngine {
 	class Image2D : public Image
 	{
 	public:
-		static RefPtr<Image2D> Create(const ImageSpecification& specification) {
-			return RefPtr<Image2D>::Create(specification);
+		static Ref<Image2D> Create(const ImageSpecification& specification) {
+			return Ref<Image2D>::Create(specification);
 		}
 
 		bool IsValid() const { return m_Info.ImageHandle != nullptr; }
@@ -213,7 +217,7 @@ namespace StarEngine {
 
 		virtual uint64_t GetGPUMemoryUsage() const override { return m_GPUAllocationSize; }
 
-		virtual uint64_t GetHash() const override { return (uint64_t)m_Info.ImageHandle->Get(); }
+		virtual uint64_t GetHash() const override { return (uint64_t)m_Info.ImageHandle->getNativeObject(nvrhi::ObjectType::Texture); }
 
 		// DEBUG
 		static const std::map<nvrhi::ITexture*, WeakRef<Image2D>>& GetImageRefs();
@@ -342,7 +346,7 @@ namespace StarEngine {
 
 	struct ImageViewSpecification
 	{
-		RefPtr<Image> Image;
+		Ref<Image> Image;
 		uint32_t Mip = 0;
 
 		std::string DebugName;
@@ -351,7 +355,7 @@ namespace StarEngine {
 	class ImageView : public RendererResource
 	{
 	public:
-		static RefPtr<ImageView> Create(const ImageViewSpecification& specification);
+		static Ref<ImageView> Create(const ImageViewSpecification& specification);
 
 		void Invalidate();
 		void RT_Invalidate();

@@ -4,7 +4,7 @@
 
 namespace StarEngine
 {
-	SubTexture2D::SubTexture2D(const RefPtr<Texture2D>& texture, const glm::vec2& min, const glm::vec2& max)
+	SubTexture2D::SubTexture2D(const Ref<Texture2D>& texture, const glm::vec2& min, const glm::vec2& max)
 		: m_Texture(texture)
 	{
 		m_TexCoords[0] = { min.x, min.y };
@@ -13,10 +13,10 @@ namespace StarEngine
 		m_TexCoords[3] = { min.x, max.y };
 	}
 
-	RefPtr<SubTexture2D> SubTexture2D::CreateFromCoords(const RefPtr<Texture2D>& texture, const glm::vec2& coords, const glm::vec2& cellSize, const glm::vec2& spriteSize)
+	Ref<SubTexture2D> SubTexture2D::CreateFromCoords(const Ref<Texture2D>& texture, const glm::vec2& coords, const glm::vec2& cellSize, const glm::vec2& spriteSize)
 	{
 		glm::vec2 min = { coords.x * cellSize.x / (float)texture->GetWidth(), coords.y * cellSize.y / (float)texture->GetHeight() };
 		glm::vec2 max = { (coords.x + spriteSize.x) * cellSize.x / (float)texture->GetWidth(), (coords.y + spriteSize.y) * cellSize.y / (float)texture->GetHeight() };
-		return RefPtr<SubTexture2D>::Create(texture, min, max);
+		return Ref<SubTexture2D>::Create(texture, min, max);
 	}
 }
