@@ -17,7 +17,7 @@
 	#define SE_PROFILE_THREAD(...)					tracy::SetThreadName(__VA_ARGS__)
 	#define SE_PROFILE_GPU_SCOPE(...)				TracyGpuZone(__VA_ARGS__)
 #else
-#define SE_PROFILE_MARK_FRAME(...)
+#define SE_PROFILE_MARK_FRAME
 #define SE_PROFILE_FUNCTION(...)
 #define SE_PROFILE_FUNCTION_COLOR(name, ...)
 #define SE_PROFILE_SCOPE(...)
