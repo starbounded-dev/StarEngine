@@ -3,8 +3,9 @@
 #define SE_ENABLE_PROFILING !SE_DIST
 
 #if SE_ENABLE_PROFILING
+#include <GLAD/glad.h>
 #include <tracy/Tracy.hpp>
-#include "tracy/TracyOpenGL.hpp"
+#include <tracy/TracyOpenGL.hpp>
 #endif
 
 #if SE_ENABLE_PROFILING
