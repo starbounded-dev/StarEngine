@@ -22,12 +22,23 @@ project "StarEditor"
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.entt}",
 		"%{IncludeDir.ImGuizmo}",
+		"%{IncludeDir.Tracy}",
+		"%{IncludeDir.GLAD}",
 		"%{IncludeDir.miniaudio}"
 	}
 
 	links
 	{
-		"StarEngine"
+		"StarEngine",
+		"GLAD",
+		"%{Library.Tracy}"
+	}
+
+	defines
+	{
+		"TRACY_ENABLE",
+		"TRACY_ON_DEMAND",
+		"TRACY_CALLSTACK=10"
 	}
 
 	filter "system:windows" 

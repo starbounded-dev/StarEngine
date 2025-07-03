@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarEngine/Debug/Instrumentor.h"
+#include "StarEngine/Debug/Profiler.h"
 #include "StarEngine/Core/Base.h"
 
 #include <functional>

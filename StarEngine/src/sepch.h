@@ -28,7 +28,7 @@
 
 #include "StarEngine/Core/Log.h"
 
-#include "StarEngine/Debug/Instrumentor.h"
+#include "StarEngine/Debug/Profiler.h"
 
 #ifdef SE_PLATFORM_WINDOWS
 	#include <Windows.h>

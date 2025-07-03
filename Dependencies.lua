@@ -20,14 +20,17 @@ IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
 IncludeDir["msdfgen"] = "%{wks.location}/StarEngine/vendor/msdf-atlas-gen/msdfgen"
 IncludeDir["msdf_atlas_gen"] = "%{wks.location}/StarEngine/vendor/msdf-atlas-gen/msdf-atlas-gen"
 IncludeDir["miniaudio"] = "%{wks.location}/StarEngine/vendor/miniaudio/include"
+IncludeDir["Tracy"] = "%{wks.location}/StarEngine/vendor/tracy/tracy/public"
 
 LibraryDir = {}
 
 LibraryDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"
 LibraryDir["Mono"] = "%{wks.location}/StarEngine/vendor/mono/lib/%{cfg.buildcfg}"
+LibraryDir["Tracy"] = "%{wks.location}/StarEngine/vendor/tracy/bin/%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}/Tracy"
 
 Library = {}
 Library["mono"] = "%{LibraryDir.Mono}/libmono-static-sgen.lib"
+Library["Tracy"] = "%{LibraryDir.Tracy}/Tracy.lib"
 Library["Vulkan"] = "%{LibraryDir.VulkanSDK}/vulkan-1.lib"
 Library["VulkanUtils"] = "%{LibraryDir.VulkanSDK}/VkLayer_utils.lib"
 

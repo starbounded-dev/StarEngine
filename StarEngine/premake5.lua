@@ -27,6 +27,9 @@ project "StarEngine"
 	{
 		"_CRT_SECURE_NO_WARNINGS",
 		"GLFW_INCLUDE_NONE",
+		"TRACY_ENABLE",
+		"TRACY_ON_DEMAND",
+		"TRACY_CALLSTACK=10",
 		"YAML_CPP_STATIC_DEFINE"
 	}
 
@@ -47,6 +50,7 @@ project "StarEngine"
 		"%{IncludeDir.yaml_cpp}",
 		"%{IncludeDir.ImGuizmo}",
 		"%{IncludeDir.VulkanSDK}",
+		"%{IncludeDir.Tracy}",
 
 		"%{IncludeDir.mono}",
 		"%{IncludeDir.miniaudio}"
@@ -58,11 +62,14 @@ project "StarEngine"
 		"GLAD",
 		"imgui",
 		"opengl32",
-		"%{Library.mono}",
 		"yaml-cpp",
 		"msdf-atlas-gen",
 		"Box2D",
-		"dwmapi.lib"
+		"DbgHelp",
+		"dwmapi.lib",
+
+		"%{Library.Tracy}",
+		"%{Library.mono}",
 	}
 
 	filter "files:vendor/imguizmo/**.cpp"
