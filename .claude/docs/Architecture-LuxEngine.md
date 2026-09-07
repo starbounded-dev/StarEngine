@@ -101,7 +101,7 @@ graph TB
 | Physics 2D | `Core/Source/Lux/Physics2D/` | via `Scene.h` |
 | Scripting | `Core/Source/Lux/Scripting/` | `ScriptEngine.h`, `ScriptGlue.h`, `ScriptBuilder.h` |
 | Assets | `Core/Source/Lux/Asset/` | `AssetManager.h`, `Asset.h`, `AssetTypes.h` |
-| Audio | `Core/Source/Lux/Audio/` | `AudioEngine.h`, `AudioSource.h` |
+| Audio | `Core/Source/Lux/Audio/` | `AudioEngine.h`, `AudioSource.h`, `RaytracedAudioScene.h` |
 | Editor framework | `Core/Source/Lux/Editor/` | `EditorPanel.h`, `PanelManager.h`, `EditorCamera.h`, `SelectionManager.h` |
 | Editor app | `Editor/Source/` | `EditorLayer.h`, `Panels/` |
 | ImGui | `Core/Source/Lux/ImGui/` | `ImGuiEx.h`, `ImGuiUtilities.h`, `Colors.h` |
@@ -360,6 +360,53 @@ runtime sources (`GetOrCreateRuntimeAudioSource`, playlists via
 `GetOrCreateRuntimePlaylistSource`) and releases them on stop (`ReleaseAllRuntimeAudio`). Components:
 `AudioSourceComponent`, `AudioListenerComponent`.
 
+**Ray-traced acoustics (optional):** `RaytracedAudioScene` (`Audio/RaytracedAudioScene.h`) wraps the
+Vercidium Audio SDK (`Core/vendor/VA_RAY/`, opt-in via the `--raytraced-audio` premake option,
+`LUX_ENABLE_RAYTRACED_AUDIO`) behind a Pimpl, so the header never leaks `vaudio.h` and is safe to
+include unconditionally. Built without the option, every method is a no-op (same pattern as
+`DiscordSocial` — see `Social/DiscordSocial.cpp`), so call sites need no `#ifdef`.
+
+`Scene` owns one `Ref<RaytracedAudioScene> m_RaytracedAudioScene` (`GetRaytracedAudioScene()`).
+`OnRaytracedAudioStart()` checks `RaytracedAudioScene::IsAvailable()` first and returns without
+constructing anything if the feature isn't compiled in, so every other `m_RaytracedAudioScene` check
+(the per-frame sync in `OnUpdateRuntime`, `ReleaseRuntimeAudio`) short-circuits on a null `Ref` and a
+scene built without VA_RAY pays no runtime cost for it. Otherwise it's created in
+`OnRaytracedAudioStart()` (called from `OnRuntimeStart`) and torn down in
+`OnRaytracedAudioStop()` (`OnRuntimeStop`, and defensively in `~Scene`) — the same start/stop
+lifecycle shape as `PhysicsScene`. On start, it walks every `MeshColliderComponent` entity, resolves
+the collider's referenced render mesh (`StaticMesh` → `MeshSource`, the same `BaseIndex/3` triangle
+walk `PhysicsScene`/`JoltShapes` use for cooking), bakes each triangle into world space, and hands
+the flat triangle soup to `RaytracedAudioScene::SetStaticGeometry` — **mirrored once at runtime
+start, not kept in sync with moving colliders.** Per-frame, `OnUpdateRuntime` syncs the active
+`AudioListenerComponent`'s position/forward and creates/positions one VA emitter per
+`AudioSourceComponent` entity with a valid `Audio` handle, then ticks `OnUpdate(ts)`
+(`vaWorldUpdate`). The VA listener is a plain emitter used only as an occlusion/reverb *target*
+(`vaEmitterAddTarget`) — it never casts its own rays.
+
+`RaytracedAudioScene::GetResult(entityID)` exposes the per-emitter result (`RaytracedAudioResult`:
+two-band occlusion gain plus reverb return/decay) for a playback backend to apply. VA computes
+acoustic parameters only — it does not play audio itself, so this is a separate system from the
+playback backend below.
+
+**Playback backend (optional, dual):** `AudioEngine`/`AudioSource`/`AudioListener` build against
+either miniaudio (default) or FMOD Engine Core API (`--fmod`, `LUX_ENABLE_FMOD`, requires
+`Core/vendor/FMOD/`), selected by `#ifdef`/`#else` branches within each `.cpp` — both branches
+always compile, so call sites (including `Scene`) never see the backend. Same reasoning as
+`RaytracedAudioScene`/`DiscordSocial`: the default build never depends on an SDK that isn't checked
+out. `AudioEngine::Update()` pumps `FMOD::System::update()` once per frame from `Application::Run`
+(no-op under miniaudio, which mixes on its own thread).
+
+Under FMOD, `AudioSource` owns an `FMOD::Sound` + a lazily-created `FMOD::Channel` kept paused
+rather than stopped between plays (`Channel::stop()` permanently invalidates an FMOD channel, which
+doesn't fit this API's "replay in place" contract), and `Scene::OnUpdateRuntime`'s
+`RaytracedAudioScene` sync block feeds `RaytracedAudioResult` straight into
+`Channel::set3DOcclusion` and `Channel::setReverbProperties` — the one place VA's acoustic
+simulation and FMOD's playback actually connect. `AudioEngine::Init()` creates one ambient,
+effectively unbounded `FMOD::Reverb3D` so that per-source reverb send has somewhere to go; per-source
+reverb *character* (decay time, roughness) from VA isn't fed into FMOD's reverb properties yet, only
+the wet amount. Only the Linux FMOD package has been fetched — the Windows paths in
+`Dependencies.lua` are unverified placeholders (see the comment there).
+
 ### 2.11 Input
 
 `Core/Source/Lux/Core/Input.h` — static, with `KeyCodes.h` / `MouseCodes.h`. Frame-accurate state is
@@ -543,7 +590,7 @@ luxengine/
 │   │       ├── Physics2D/         # Box2D
 │   │       ├── Scripting/         # ScriptEngine, ScriptGlue, ScriptBuilder, ScriptEntityStorage
 │   │       ├── Asset/             # AssetManager facade, AssetManager/, AssetSystem/, serializers
-│   │       ├── Audio/             # AudioEngine, AudioSource, AudioListener
+│   │       ├── Audio/             # AudioEngine, AudioSource, AudioListener, RaytracedAudioScene
 │   │       ├── Editor/            # EditorPanel, PanelManager, EditorCamera, SelectionManager,
 │   │       │                      #   SceneHierarchyPanel, EditorConsole/
 │   │       ├── ImGui/             # ImGuiLayer, ImGuiEx, ImGuiUtilities, Colors, Fonts, ImGuizmo

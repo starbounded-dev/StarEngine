@@ -637,6 +637,7 @@ namespace Lux {
 		TextComponent,
 		MeshComponent, MeshTagComponent, PrefabComponent, StaticMeshComponent, SubmeshComponent,
 		DirectionalLightComponent, PointLightComponent, SpotLightComponent, SkyLightComponent,
+		AudioSourceComponent, AudioListenerComponent,
 		FolderComponent>;
 
 }

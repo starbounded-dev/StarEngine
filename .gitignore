@@ -14,6 +14,12 @@ ScriptCore/Makefile
 # Vendored Vulkan SDK (local install)
 Core/vendor/VulkanSDK/
 
+# Vercidium Audio (VA) raytraced audio SDK - manually fetched, requires accepting Vercidium's EULA
+Core/vendor/VA_RAY/
+
+# FMOD Engine SDK - manually fetched, requires accepting Firelight Technologies' EULA
+Core/vendor/FMOD/
+
 # JoltPhysics build artifacts
 Core/vendor/JoltPhysics/Makefile
 Core/vendor/JoltPhysics/bin/
@@ -94,3 +100,6 @@ scripts/.luxsetup.json
 !.idea/codeStyles/
 !.idea/inspectionProfiles/
 !.idea/runConfigurations/
+
+# FMOD Studio per-user workspace state (the .fspro project itself IS tracked)
+Editor/LuxSampleProject/Assets/Audio/**/.user/

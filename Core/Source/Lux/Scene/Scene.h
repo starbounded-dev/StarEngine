@@ -30,6 +30,7 @@ namespace Lux {
 	class RenderScene;
 	class SceneRenderer;
 	class AudioSource;
+	class RaytracedAudioScene;
 	class Mesh;
 	class StaticMesh;
 
@@ -201,6 +202,8 @@ namespace Lux {
 		void OnPhysics2DStop();
 		void OnPhysics3DStart();
 		void OnPhysics3DStop();
+		void OnRaytracedAudioStart();
+		void OnRaytracedAudioStop();
 		void StepPhysics(Timestep ts);
 		void RenderScene(EditorCamera& camera);
 		Ref<AudioSource> GetOrCreateRuntimeAudioSource(Entity entity, AssetHandle audioHandle);
@@ -233,6 +236,7 @@ namespace Lux {
 		std::vector<std::function<void()>> m_PostUpdateQueue;
 		std::unordered_map<UUID, Ref<AudioSource>> m_RuntimeAudioSources;
 		std::unordered_map<UUID, std::vector<Ref<AudioSource>>> m_RuntimeAudioPlaylists;
+		Ref<RaytracedAudioScene> m_RaytracedAudioScene;
 
 		// Per-entity C# script field values (serialized with the scene) and live instances.
 		ScriptStorage m_ScriptStorage;
@@ -244,6 +248,9 @@ namespace Lux {
 
 		// Defined out-of-line (PhysicsScene need not be complete in this header).
 		Ref<PhysicsScene> GetPhysicsScene() const;
+
+		// Defined out-of-line (RaytracedAudioScene need not be complete in this header).
+		Ref<RaytracedAudioScene> GetRaytracedAudioScene() const;
 
 	private:
 		friend class Entity;

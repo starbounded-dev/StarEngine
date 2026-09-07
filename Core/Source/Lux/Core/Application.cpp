@@ -268,6 +268,14 @@ namespace Lux {
 					LUX_SCOPE_PERF("Discord::Update");
 					DiscordSocial::Update();
 				}
+
+				{
+					// FMOD needs System::update() pumped regularly to process streaming, finish
+					// callbacks and recycle channels; miniaudio runs its own mixing thread and
+					// no-ops here.
+					LUX_SCOPE_PERF("AudioEngine::Update");
+					AudioEngine::Update();
+				}
 				/*
 				Ref<Scene> activeScene = ScriptEngine::GetInstance().GetCurrentScene();
 				if (activeScene)

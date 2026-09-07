@@ -52,6 +52,19 @@ project "Lux-Runtime"
 			}
 		end
 
+		if _OPTIONS["raytraced-audio"] then
+			postbuildcommands {
+				'{COPY} "../Core/vendor/VA_RAY/3d/native/production/windows/vaudionative.dll" "%{cfg.targetdir}"',
+			}
+		end
+
+		-- Placeholder path - the Windows FMOD package hasn't been added yet (see Dependencies.lua).
+		if _OPTIONS["fmod"] then
+			postbuildcommands {
+				'{COPY} "../Core/vendor/FMOD/FMOD Studio API Windows/api/core/lib/x64/fmod.dll" "%{cfg.targetdir}"',
+			}
+		end
+
 	filter { "system:windows", "configurations:Debug or configurations:Debug-AS" }
 		postbuildcommands {
 			'{COPY} "../Core/vendor/assimp/bin/windows/Debug/assimp-vc143-mtd.dll" "%{cfg.targetdir}"',
@@ -75,6 +88,23 @@ project "Lux-Runtime"
 		-- inserted during LTO's deferred codegen, after Ubuntu ld's default --as-needed
 		-- would otherwise have already dropped it.
 		linkoptions { "-Wl,--start-group", "-Wl,-rpath,'$$ORIGIN/lib'", "-Wl,--no-as-needed,-latomic,--as-needed" }
+
+		-- vaudionative.so is resolved via the $ORIGIN/lib rpath above, not the default loader path.
+		if _OPTIONS["raytraced-audio"] then
+			postbuildcommands {
+				'{MKDIR} "%{cfg.targetdir}/lib"',
+				'{COPY} "../Core/vendor/VA_RAY/3d/native/production/linux/libvaudionative.so" "%{cfg.targetdir}/lib"',
+			}
+		end
+
+		-- See the Editor project for why {COPYFILE} + the exact SONAME, not a {COPY} glob.
+		if _OPTIONS["fmod"] then
+			postbuildcommands {
+				'{MKDIR} "%{cfg.targetdir}/lib"',
+				'{COPYFILE} "../Core/vendor/FMOD/fmodstudioapi20314linux/api/core/lib/x86_64/libfmod.so.14" "%{cfg.targetdir}/lib/libfmod.so.14"',
+			}
+		end
+
 		if gtkLinkOptions then
 			linkoptions { gtkLinkOptions }
 		end

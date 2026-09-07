@@ -7,6 +7,7 @@
 #include "Lux/Audio/AudioEngine.h"
 #include "Lux/Audio/AudioSource.h"
 #include "Lux/Audio/AudioListener.h"
+#include "Lux/Audio/RaytracedAudioScene.h"
 
 #include "Lux/Core/JobSystem.h"
 #include "Lux/Scene/Components.h"
@@ -171,6 +172,7 @@ namespace Lux {
 		m_EntityMap.clear();
 		OnPhysics2DStop();
 		OnPhysics3DStop();
+		OnRaytracedAudioStop();
 	}
 
 	template<typename... Component>
@@ -388,6 +390,9 @@ namespace Lux {
 
 		m_RuntimeAudioSources.erase(entity.GetUUID());
 		m_RuntimeAudioPlaylists.erase(entity.GetUUID());
+
+		if (m_RaytracedAudioScene)
+			m_RaytracedAudioScene->DestroyEmitter(entity.GetUUID());
 	}
 
 	void Scene::ReleaseAllRuntimeAudio()
@@ -402,6 +407,7 @@ namespace Lux {
 
 		OnPhysics2DStart();
 		OnPhysics3DStart();
+		OnRaytracedAudioStart();
 
 		PhysicsScene2D::SetPlaying(true);
 
@@ -513,6 +519,7 @@ namespace Lux {
 
 		PhysicsScene2D::SetPlaying(false);
 
+		OnRaytracedAudioStop();
 		OnPhysics3DStop();
 		OnPhysics2DStop();
 
@@ -734,6 +741,53 @@ namespace Lux {
 							}
 						}
 					});
+			}
+
+			if (m_RaytracedAudioScene)
+			{
+				LUX_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::RaytracedAudioScene Scope", 0xFF7200);
+
+				m_Registry.view<AudioListenerComponent>().each([&](entt::entity entityHandle, AudioListenerComponent& alc)
+					{
+						if (!alc.Active)
+							return;
+
+						Entity entity = { entityHandle, this };
+						const glm::mat4 worldTransform = GetWorldSpaceTransformMatrix(entity);
+						const glm::mat4 inverted = glm::inverse(worldTransform);
+						const glm::vec3 worldPosition = glm::vec3(worldTransform[3]);
+						const glm::vec3 forward = glm::normalize(glm::vec3(inverted[2].x, inverted[2].y, inverted[2].z));
+						m_RaytracedAudioScene->SetListener(worldPosition, glm::vec3{ -forward.x, -forward.y, -forward.z });
+					});
+
+				m_Registry.view<TransformComponent, AudioSourceComponent>().each([&](entt::entity entityHandle, TransformComponent&, AudioSourceComponent& asc)
+					{
+						Entity entity = { entityHandle, this };
+						UUID entityID = entity.GetUUID();
+
+						if (!AssetManager::IsAssetHandleValid(asc.Audio))
+						{
+							m_RaytracedAudioScene->DestroyEmitter(entityID);
+							return;
+						}
+
+						m_RaytracedAudioScene->CreateEmitter(entityID);
+						m_RaytracedAudioScene->SetEmitterPosition(entityID, glm::vec3(GetWorldSpaceTransformMatrix(entity)[3]));
+
+						const RaytracedAudioResult result = m_RaytracedAudioScene->GetResult(entityID);
+						if (result.Valid)
+						{
+							Ref<AudioSource> audioSource = GetOrCreateRuntimeAudioSource(entity, asc.Audio);
+							if (audioSource)
+							{
+								const float occlusion = 1.0f - (result.OcclusionGainLF + result.OcclusionGainHF) * 0.5f;
+								audioSource->SetOcclusion(occlusion, occlusion);
+								audioSource->SetReverbSend(result.ReverbReturnedPercent);
+							}
+						}
+					});
+
+				m_RaytracedAudioScene->OnUpdate(ts);
 			}
 		}
 		else if (m_IsPaused)
@@ -963,6 +1017,11 @@ namespace Lux {
 		return m_PhysicsScene;
 	}
 
+	Ref<RaytracedAudioScene> Scene::GetRaytracedAudioScene() const
+	{
+		return m_RaytracedAudioScene;
+	}
+
 	Entity Scene::DuplicateEntity(Entity entity)
 	{
 		using DuplicateComponents =
@@ -971,6 +1030,7 @@ namespace Lux {
 			RigidBodyComponent, CharacterControllerComponent, CompoundColliderComponent, BoxColliderComponent, SphereColliderComponent, CapsuleColliderComponent, MeshColliderComponent, TextComponent,
 			MeshComponent, MeshTagComponent, PrefabComponent, StaticMeshComponent, SubmeshComponent,
 			DirectionalLightComponent, PointLightComponent, SpotLightComponent, SkyLightComponent,
+			AudioSourceComponent, AudioListenerComponent,
 			FolderComponent>;
 
 		if (!entity)
@@ -1368,6 +1428,75 @@ namespace Lux {
 		{
 			m_PhysicsScene->Stop();
 			m_PhysicsScene.reset();
+		}
+	}
+
+	void Scene::OnRaytracedAudioStart()
+	{
+		// Skip constructing the scene entirely when the feature isn't compiled in, so a build
+		// without Core/vendor/VA_RAY pays no per-frame cost for it (every m_RaytracedAudioScene
+		// check elsewhere then short-circuits on a null Ref).
+		if (!RaytracedAudioScene::IsAvailable())
+			return;
+
+		m_RaytracedAudioScene = Ref<RaytracedAudioScene>::Create(this);
+		m_RaytracedAudioScene->Start();
+
+		std::vector<glm::vec3> staticGeometry;
+		{
+			auto view = m_Registry.view<TransformComponent, MeshColliderComponent>();
+			view.each([&](entt::entity entityHandle, TransformComponent& worldTransform, MeshColliderComponent& collider)
+				{
+					Entity entity = { entityHandle, this };
+					AssetHandle meshHandle = ResolveMeshColliderHandle(entity, collider);
+					if (!meshHandle)
+						return;
+
+					Ref<StaticMesh> staticMesh;
+					Ref<MeshSource> meshSource;
+					if (!ResolveStaticMeshDebugAssets(meshHandle, staticMesh, meshSource))
+						return;
+
+					const glm::mat4 entityTransform = GetWorldSpaceTransformMatrix(entity);
+					const size_t vertexCount = meshSource->GetVertexCount();
+					const std::vector<Index>& indices = meshSource->GetIndices();
+					if (vertexCount == 0 || indices.empty())
+						return;
+
+					for (uint32_t submeshIndex : staticMesh->GetSubmeshes())
+					{
+						const Submesh& submesh = meshSource->GetSubmeshes()[submeshIndex];
+						const glm::mat4 worldSpace = entityTransform * submesh.Transform;
+
+						const uint32_t firstTriangle = submesh.BaseIndex / 3;
+						const uint32_t triangleCount = submesh.IndexCount / 3;
+						const uint32_t lastTriangle = std::min<uint32_t>(firstTriangle + triangleCount, (uint32_t)indices.size());
+
+						for (uint32_t triangleIndex = firstTriangle; triangleIndex < lastTriangle; triangleIndex++)
+						{
+							const Index& triangle = indices[triangleIndex];
+							const uint32_t i0 = submesh.BaseVertex + triangle.V1;
+							const uint32_t i1 = submesh.BaseVertex + triangle.V2;
+							const uint32_t i2 = submesh.BaseVertex + triangle.V3;
+							if (i0 >= vertexCount || i1 >= vertexCount || i2 >= vertexCount)
+								continue;
+
+							staticGeometry.push_back(glm::vec3(worldSpace * glm::vec4(meshSource->GetVertexPosition(i0), 1.0f)));
+							staticGeometry.push_back(glm::vec3(worldSpace * glm::vec4(meshSource->GetVertexPosition(i1), 1.0f)));
+							staticGeometry.push_back(glm::vec3(worldSpace * glm::vec4(meshSource->GetVertexPosition(i2), 1.0f)));
+						}
+					}
+				});
+		}
+		m_RaytracedAudioScene->SetStaticGeometry(staticGeometry);
+	}
+
+	void Scene::OnRaytracedAudioStop()
+	{
+		if (m_RaytracedAudioScene)
+		{
+			m_RaytracedAudioScene->Stop();
+			m_RaytracedAudioScene.reset();
 		}
 	}
 

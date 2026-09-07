@@ -66,6 +66,14 @@ project "Core"
 		defines { "LUX_ENABLE_DISCORD" }
 	end
 
+	if _OPTIONS["raytraced-audio"] then
+		defines { "LUX_ENABLE_RAYTRACED_AUDIO" }
+	end
+
+	if _OPTIONS["fmod"] then
+		defines { "LUX_ENABLE_FMOD" }
+	end
+
 	filter "files:vendor/FastNoise/**.cpp or files:vendor/yaml-cpp/src/**.cpp or files:vendor/imgui/misc/cpp/imgui_stdlib.cpp or files:Source/Lux/Core/ApplicationSettings.cpp or files:Source/Lux/Social/DiscordppImpl.cpp"
 	flags { "NoPCH" }
 

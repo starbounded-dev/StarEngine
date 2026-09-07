@@ -112,6 +112,8 @@ Two kinds of toggle, both driven off the single `OPTIONS` table in `scripts/Buil
 | `--discord` | Enables the Discord Social SDK integration; defines `LUX_ENABLE_DISCORD`. Requires `Core/vendor/discord_social_sdk/` (fetched manually — `Configure.warn_missing_discord_sdk` warns if absent). |
 | `--no-tracy` | Omits `TRACY_ENABLE` / `TRACY_ON_DEMAND` / `TRACY_CALLSTACK`, reducing vendored Tracy to a stub and compiling every `LUX_PROFILE_*` away. Cuts link times. |
 | `--no-aftermath` | Defines `LUX_DISABLE_AFTERMATH` **and** `removefiles` the `Platform/Vulkan/Debug/**.cpp` crash-tracker sources (they include `GFSDK_Aftermath.h` unconditionally, so `#ifdef` alone isn't enough). |
+| `--raytraced-audio` | Enables ray-traced audio occlusion/reverb via the Vercidium Audio SDK; defines `LUX_ENABLE_RAYTRACED_AUDIO`. Requires `Core/vendor/VA_RAY/` (fetched manually — `Configure.warn_missing_va_ray_sdk` warns if absent). Unlike Discord, `RaytracedAudioScene.cpp` is always compiled: without the option it degrades to a no-op (see `.claude/docs/Architecture-LuxEngine.md § 2.10`), so no file is excluded from the build. |
+| `--fmod` | Switches audio playback from miniaudio to FMOD Engine (Core API only, no FMOD Studio); defines `LUX_ENABLE_FMOD`. Requires `Core/vendor/FMOD/` (fetched manually — `Configure.warn_missing_fmod_sdk` warns if absent). Like `RaytracedAudioScene.cpp`, `AudioEngine.cpp`/`AudioSource.cpp`/`AudioListener.cpp` are always compiled with both backends behind `#ifdef` — miniaudio remains the default so the build never hard-depends on FMOD being checked out. Only the Linux FMOD package has been added so far; the Windows paths in `Dependencies.lua` are unverified placeholders. |
 
 **Script options** (change what the Python does; premake never sees them): `skip-submodules`,
 `skip-vulkan-check`, `skip-scripts`.
@@ -210,6 +212,19 @@ project's script solution is generated with `include_options=False` precisely be
 `--discord` was enabled without `Core/vendor/discord_social_sdk/` present. The SDK is fetched
 manually and is gitignored (it is very large). Either check it out or re-run generation without the
 option.
+
+### Ray-traced audio build fails with `vaudio.h: No such file or directory`
+
+`--raytraced-audio` was enabled without `Core/vendor/VA_RAY/` present. The SDK is fetched manually
+(see `Core/vendor/VA_RAY/README.txt`) and is gitignored. Either extract it there or re-run
+generation without the option.
+
+### FMOD build fails with `fmod.hpp: No such file or directory`
+
+`--fmod` was enabled without `Core/vendor/FMOD/` present, or the extracted folder name doesn't
+match what `Dependencies.lua` expects (only the Linux package's name is confirmed — see the comment
+above the `FMOD` entry). Extract the SDK there, or update the path in `Dependencies.lua` to match
+the archive's actual top-level folder name, or re-run generation without the option.
 
 ### Aftermath headers not found
 

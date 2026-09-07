@@ -26,5 +26,12 @@ namespace Lux {
 
 	private:
 		uint32_t m_ListenerIndex = 0;
+#ifdef LUX_ENABLE_FMOD
+		// FMOD's System::set3DListenerAttributes() takes position/velocity/forward/up together;
+		// each individual setter below resends this whole cached state.
+		mutable glm::vec3 m_CachedPosition{ 0.0f };
+		mutable glm::vec3 m_CachedVelocity{ 0.0f };
+		mutable glm::vec3 m_CachedForward{ 0.0f, 0.0f, -1.0f };
+#endif
 	};
 }

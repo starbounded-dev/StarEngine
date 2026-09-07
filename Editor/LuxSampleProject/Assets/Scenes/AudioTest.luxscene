@@ -1,0 +1,73 @@
+Scene: AudioTest
+Entities:
+  - Entity: 11111111111111111
+    TagComponent:
+      Tag: Camera
+    Parent: 0
+    Children:
+      []
+    TransformComponent:
+      Position: [0, 1, -8]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      Camera:
+        ProjectionType: 0
+        PerspectiveFOV: 45
+        PerspectiveNear: 0.100000001
+        PerspectiveFar: 1000
+        OrthographicSize: 10
+        OrthographicNear: -1
+        OrthographicFar: 1
+      Primary: true
+      FixedAspectRatio: false
+  - Entity: 22222222222222222
+    TagComponent:
+      Tag: Wall
+    Parent: 0
+    Children:
+      []
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [4, 3, 0.300000012]
+    StaticMeshComponent:
+      AssetID: 5047013130077771705
+      MaterialTable:
+        {}
+      Visible: true
+    MeshColliderComponent:
+      ColliderAsset: 5047013130077771705
+      SubmeshIndex: 0
+      UseSharedShape: false
+      Density: 1
+      Friction: 0.5
+      Restitution: 0
+      CollisionComplexity: 0
+  - Entity: 33333333333333333
+    TagComponent:
+      Tag: AudioSource
+    Parent: 0
+    Children:
+      []
+    TransformComponent:
+      Position: [0, 0, 5]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    AudioSourceComponent:
+      Audio: 15477231389038173681
+      PlayOnAwake: true
+      Looping: true
+      Spatialization: true
+  - Entity: 44444444444444444
+    TagComponent:
+      Tag: AudioListener
+    Parent: 0
+    Children:
+      []
+    TransformComponent:
+      Position: [0, 0, -5]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    AudioListenerComponent:
+      Active: true

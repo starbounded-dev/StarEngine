@@ -135,6 +135,28 @@ Dependencies = {
 		IncludeDir = "%{wks.location}/Core/vendor/discord_social_sdk/include",
 		Windows = { LibName = "discord_partner_sdk", LibDir = "%{wks.location}/Core/vendor/discord_social_sdk/lib/release/" },
 	} or nil,
+	-- Opt-in, enabled with the "--raytraced-audio" premake option. We link the "production" build
+	-- (no bundled GLFW/debug-visualisation window) on both platforms.
+	-- See Core/vendor/VA_RAY/README.txt.
+	VARay = _OPTIONS["raytraced-audio"] and {
+		IncludeDir = "%{wks.location}/Core/vendor/VA_RAY/3d/native/include",
+		Windows = { LibName = "vaudionative", LibDir = "%{wks.location}/Core/vendor/VA_RAY/3d/native/production/windows/" },
+		Linux = { LibName = "vaudionative", LibDir = "%{wks.location}/Core/vendor/VA_RAY/3d/native/production/linux/" },
+	} or nil,
+	-- Opt-in, enabled with the "--fmod" premake option. Core API only (fmod.hpp) - no FMOD Studio,
+	-- since AudioSourceComponent plays raw AudioFile assets rather than authored Studio events.
+	-- We link the release build in every configuration: DebugLibName below is only honoured on
+	-- Windows (see ProcessDependencies), and the "L" logging build is only useful for debugging
+	-- FMOD itself - same reasoning DiscordSocial uses for its release-only DLL.
+	--
+	-- Only the Linux package has been fetched so far (fmodstudioapi20314linux/); its extracted
+	-- folder name is version-and-OS-coded per FMOD's Linux tarball convention. The Windows path
+	-- below is an unverified placeholder based on FMOD's typical Windows installer layout
+	-- ("FMOD Studio API Windows/api/core/...") - correct it once that package is actually added.
+	FMOD = _OPTIONS["fmod"] and {
+		Windows = { LibName = "fmod_vc", IncludeDir = "%{wks.location}/Core/vendor/FMOD/FMOD Studio API Windows/api/core/inc", LibDir = "%{wks.location}/Core/vendor/FMOD/FMOD Studio API Windows/api/core/lib/x64/" },
+		Linux = { LibName = "fmod", IncludeDir = "%{wks.location}/Core/vendor/FMOD/fmodstudioapi20314linux/api/core/inc", LibDir = "%{wks.location}/Core/vendor/FMOD/fmodstudioapi20314linux/api/core/lib/x86_64/" },
+	} or nil,
 	ACL = {
 		IncludeDir = "%{wks.location}/Core/vendor/acl/include"
 	},

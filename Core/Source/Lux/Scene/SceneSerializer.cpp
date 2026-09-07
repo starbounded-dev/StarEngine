@@ -194,8 +194,12 @@ namespace Lux {
 					return true;
 			}
 
-			return entity["AudioData"] || entity["AudioSourceComponent"] || entity["AudioListenerComponent"]
-				|| entity["AnimationComponent"];
+			// AudioSourceComponent/AudioListenerComponent used to be unimplemented (silently dropped
+			// on load), so their mere presence was a legacy/incompatible-schema signal; now that
+			// both round-trip through Serialize/DeserializeEntities, that's no longer true - only
+			// the top-level "AudioData" key (an older, different shape) and AnimationComponent
+			// remain genuinely unsupported.
+			return entity["AudioData"] || entity["AnimationComponent"];
 		}
 
 		static std::string GetEntityNameForLog(const YAML::Node& entity, size_t entityIndex)
@@ -714,6 +718,53 @@ namespace Lux {
 				out << YAML::EndMap;
 			}
 
+			if (entity.HasComponent<AudioSourceComponent>())
+			{
+				const auto& audioSource = entity.GetComponent<AudioSourceComponent>();
+				const auto& config = audioSource.Config;
+				out << YAML::Key << "AudioSourceComponent";
+				out << YAML::BeginMap;
+				out << YAML::Key << "Audio" << YAML::Value << audioSource.Audio;
+				out << YAML::Key << "VolumeMultiplier" << YAML::Value << config.VolumeMultiplier;
+				out << YAML::Key << "PitchMultiplier" << YAML::Value << config.PitchMultiplier;
+				out << YAML::Key << "PlayOnAwake" << YAML::Value << config.PlayOnAwake;
+				out << YAML::Key << "Looping" << YAML::Value << config.Looping;
+				out << YAML::Key << "Spatialization" << YAML::Value << config.Spatialization;
+				// Emitted as uint32_t, not uint8_t: yaml-cpp's unsigned-char overload writes the
+				// value as a *character* (Write(static_cast<char>(v))), so a uint8_t enum would
+				// land in the file as a raw control byte and corrupt the scene.
+				out << YAML::Key << "AttenuationModel" << YAML::Value << (uint32_t)config.AttenuationModel;
+				out << YAML::Key << "RollOff" << YAML::Value << config.RollOff;
+				out << YAML::Key << "MinGain" << YAML::Value << config.MinGain;
+				out << YAML::Key << "MaxGain" << YAML::Value << config.MaxGain;
+				out << YAML::Key << "MinDistance" << YAML::Value << config.MinDistance;
+				out << YAML::Key << "MaxDistance" << YAML::Value << config.MaxDistance;
+				out << YAML::Key << "ConeInnerAngle" << YAML::Value << config.ConeInnerAngle;
+				out << YAML::Key << "ConeOuterAngle" << YAML::Value << config.ConeOuterAngle;
+				out << YAML::Key << "ConeOuterGain" << YAML::Value << config.ConeOuterGain;
+				out << YAML::Key << "DopplerFactor" << YAML::Value << config.DopplerFactor;
+				out << YAML::Key << "UsePlaylist" << YAML::Value << audioSource.AudioSourceData.UsePlaylist;
+				out << YAML::Key << "RepeatPlaylist" << YAML::Value << audioSource.AudioSourceData.RepeatPlaylist;
+				out << YAML::Key << "StartIndex" << YAML::Value << audioSource.AudioSourceData.StartIndex;
+				out << YAML::Key << "Playlist" << YAML::Value << YAML::BeginSeq;
+				for (AssetHandle handle : audioSource.AudioSourceData.Playlist)
+					out << handle;
+				out << YAML::EndSeq;
+				out << YAML::EndMap;
+			}
+
+			if (entity.HasComponent<AudioListenerComponent>())
+			{
+				const auto& listener = entity.GetComponent<AudioListenerComponent>();
+				out << YAML::Key << "AudioListenerComponent";
+				out << YAML::BeginMap;
+				out << YAML::Key << "Active" << YAML::Value << listener.Active;
+				out << YAML::Key << "ConeInnerAngle" << YAML::Value << listener.Config.ConeInnerAngle;
+				out << YAML::Key << "ConeOuterAngle" << YAML::Value << listener.Config.ConeOuterAngle;
+				out << YAML::Key << "ConeOuterGain" << YAML::Value << listener.Config.ConeOuterGain;
+				out << YAML::EndMap;
+			}
+
 			out << YAML::EndMap;
 		}
 
@@ -1137,6 +1188,48 @@ namespace Lux {
 					component.Material.Friction = meshCollider["Friction"].as<float>(0.5f);
 					component.Material.Restitution = meshCollider["Restitution"].as<float>(0.0f);
 					component.CollisionComplexity = (ECollisionComplexity)meshCollider["CollisionComplexity"].as<uint8_t>((uint8_t)ECollisionComplexity::Default);
+				}
+
+				if (auto audioSource = entity["AudioSourceComponent"])
+				{
+					auto& component = deserializedEntity.AddComponent<AudioSourceComponent>();
+					component.Audio = audioSource["Audio"].as<uint64_t>(0);
+
+					auto& config = component.Config;
+					config.VolumeMultiplier = audioSource["VolumeMultiplier"].as<float>(1.0f);
+					config.PitchMultiplier = audioSource["PitchMultiplier"].as<float>(1.0f);
+					config.PlayOnAwake = audioSource["PlayOnAwake"].as<bool>(true);
+					config.Looping = audioSource["Looping"].as<bool>(false);
+					config.Spatialization = audioSource["Spatialization"].as<bool>(false);
+					config.AttenuationModel = (AttenuationModelType)audioSource["AttenuationModel"].as<uint32_t>((uint32_t)AttenuationModelType::Inverse);
+					config.RollOff = audioSource["RollOff"].as<float>(1.0f);
+					config.MinGain = audioSource["MinGain"].as<float>(0.0f);
+					config.MaxGain = audioSource["MaxGain"].as<float>(1.0f);
+					config.MinDistance = audioSource["MinDistance"].as<float>(0.3f);
+					config.MaxDistance = audioSource["MaxDistance"].as<float>(1000.0f);
+					config.ConeInnerAngle = audioSource["ConeInnerAngle"].as<float>(glm::radians(360.0f));
+					config.ConeOuterAngle = audioSource["ConeOuterAngle"].as<float>(glm::radians(360.0f));
+					config.ConeOuterGain = audioSource["ConeOuterGain"].as<float>(0.0f);
+					config.DopplerFactor = audioSource["DopplerFactor"].as<float>(1.0f);
+
+					component.AudioSourceData.UsePlaylist = audioSource["UsePlaylist"].as<bool>(false);
+					component.AudioSourceData.RepeatPlaylist = audioSource["RepeatPlaylist"].as<bool>(false);
+					component.AudioSourceData.StartIndex = audioSource["StartIndex"].as<uint32_t>(0);
+					if (auto playlist = audioSource["Playlist"])
+					{
+						for (auto handle : playlist)
+							component.AudioSourceData.Playlist.emplace_back(handle.as<uint64_t>(0));
+						component.AudioSourceData.NumberOfAudioSources = (uint32_t)component.AudioSourceData.Playlist.size();
+					}
+				}
+
+				if (auto audioListener = entity["AudioListenerComponent"])
+				{
+					auto& component = deserializedEntity.AddComponent<AudioListenerComponent>();
+					component.Active = audioListener["Active"].as<bool>(true);
+					component.Config.ConeInnerAngle = audioListener["ConeInnerAngle"].as<float>(glm::radians(360.0f));
+					component.Config.ConeOuterAngle = audioListener["ConeOuterAngle"].as<float>(glm::radians(360.0f));
+					component.Config.ConeOuterGain = audioListener["ConeOuterGain"].as<float>(0.0f);
 				}
 				}
 				catch (const YAML::Exception& e)

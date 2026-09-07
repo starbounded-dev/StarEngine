@@ -17,6 +17,16 @@ newoption {
 	description = "Build without the Nvidia Aftermath GPU crash tracker"
 }
 
+newoption {
+	trigger = "raytraced-audio",
+	description = "Enable ray-traced audio via the Vercidium Audio SDK (requires Core/vendor/VA_RAY)"
+}
+
+newoption {
+	trigger = "fmod",
+	description = "Use FMOD Engine instead of miniaudio for audio playback (requires Core/vendor/FMOD)"
+}
+
 include "Dependencies.lua"
 
 workspace "Lux"

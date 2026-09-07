@@ -2,12 +2,15 @@
 
 #include "Lux/Core/Ref.h"
 
-#include "miniaudio.h"
-
 #include <filesystem>
 #include <string>
 
+#ifdef LUX_ENABLE_FMOD
+namespace FMOD { class Sound; class Channel; }
+#else
+#include "miniaudio.h"
 struct ma_sound;
+#endif
 
 namespace Lux {
 
@@ -47,7 +50,6 @@ namespace Lux {
 		AudioSource();
 		~AudioSource();
 
-		std::unique_ptr<ma_sound>& GetSound() { return m_Sound; }
 		bool LoadFromFile(const std::filesystem::path& filepath);
 		bool IsLoaded() const { return m_IsLoaded; }
 		const std::filesystem::path& GetFilePath() const { return m_FilePath; }
@@ -79,11 +81,28 @@ namespace Lux {
 		void SetDirection(const glm ::vec3& forward);
 		void SetVelocity(const glm ::vec3& velocity);
 
+		// Applied by RaytracedAudioScene's per-frame sync (Scene::OnUpdateRuntime). No-ops under
+		// miniaudio, which has no built-in occlusion/reverb-send equivalent.
+		void SetOcclusion(float directOcclusion, float reverbOcclusion);
+		void SetReverbSend(float wet);
+
 	private:
+#ifdef LUX_ENABLE_FMOD
+		FMOD::Sound* m_Sound = nullptr;
+		FMOD::Channel* m_Channel = nullptr;
+		// FMOD combines position+velocity, and separately direction, into single calls - cache
+		// whichever was set last so each individual setter can resend a complete state.
+		glm::vec3 m_CachedPosition{ 0.0f };
+		glm::vec3 m_CachedVelocity{ 0.0f };
+		uint64_t m_CursorPos = 0;
+#else
 		std::unique_ptr<ma_sound> m_Sound;
+		// ma_uint64 (unsigned long long) and uint64_t (unsigned long on LP64) are distinct types
+		// here, and ma_sound_get_cursor_in_pcm_frames takes ma_uint64* - keep its native type.
+		ma_uint64 m_CursorPos = 0;
+#endif
 		std::filesystem::path m_FilePath;
 		bool m_Spatialization = false;
 		bool m_IsLoaded = false;
-		ma_uint64 m_CursorPos = 0;
 	};
 }
