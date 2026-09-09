@@ -2,6 +2,11 @@
 #include "AudioEngine.h"
 #include "AudioSource.h"
 
+// Before the vendored implementation headers below: miniaudio and stb_vorbis define min/max as
+// macros, which then rewrite glm's min/max templates into syntax errors deep inside Project.h's
+// include chain.
+#include "Lux/Project/Project.h"
+
 // AudioFileUtils.cpp reads file metadata via dr_wav (bundled in miniaudio.h) and stb_vorbis for
 // the asset import pipeline, independent of which backend below actually plays audio - so these
 // decoder implementations stay unconditional even when FMOD is the playback backend.
@@ -17,6 +22,10 @@
 #ifdef LUX_ENABLE_FMOD
 	#include <fmod.hpp>
 	#include <fmod_errors.h>
+	#include <fmod_studio.hpp>
+
+	#include <algorithm>
+	#include <cmath>
 #endif
 
 namespace Lux {
@@ -26,17 +35,51 @@ namespace Lux {
 	namespace {
 
 		constexpr int kMaxChannels = 512;
-		// One ambient, effectively unbounded reverb zone so per-source ReverbSend
-		// (ChannelControl::setReverbProperties) has somewhere to go. This only carries the wet
-		// send amount - per-source reverb character (decay time, roughness) from
-		// RaytracedAudioScene isn't fed into FMOD's reverb properties yet.
+		// One ambient, effectively unbounded reverb zone. Its *character* is driven per frame from
+		// the ray-traced simulation (AudioEngine::SetReverb); each source controls only how much it
+		// sends into it, via ChannelControl::setReverbProperties.
 		constexpr float kAmbientReverbMinDistance = 1.0f;
 		constexpr float kAmbientReverbMaxDistance = 1000000.0f;
 		FMOD::Reverb3D* s_AmbientReverb = nullptr;
+		AudioEngine::ReverbSnapshot s_ReverbSnapshot;
+
+		bool s_LiveUpdateEnabled = false;
+		std::vector<FMOD::Studio::Bank*> s_Banks;
+		std::vector<AudioBankInfo> s_BankInfo;
+		std::vector<AudioEventInfo> s_Events;
+
+		// FMOD writes GUIDs in the same braced form fmodstudiocl exports to GUIDs.txt, so scenes
+		// and the exported table use one spelling and can be compared as plain strings.
+		std::string GuidToString(const FMOD_GUID& guid)
+		{
+			char buffer[40];
+			std::snprintf(buffer, sizeof(buffer), "{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
+				guid.Data1, guid.Data2, guid.Data3,
+				guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+				guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+			return buffer;
+		}
+
+		// FMOD's HighCut is a cutoff frequency, but the simulation reports high-frequency reverb
+		// loss as a linear gain. Map gain 0..1 onto this frequency range so a heavily absorbed room
+		// closes the cut down toward the low end and an untreated one leaves it wide open.
+		constexpr float kHighCutMinHz = 1000.0f;
+		constexpr float kHighCutMaxHz = 20000.0f;
+
+		// Linear gain -> decibels, with a floor so gain 0 becomes FMOD's documented minimum instead
+		// of -infinity.
+		float LinearToDecibels(float linearGain, float minDb)
+		{
+			if (linearGain <= 0.0f)
+				return minDb;
+
+			return std::max(minDb, 20.0f * std::log10(linearGain));
+		}
 
 	}
 
 	FMOD::System* AudioEngine::s_Engine;
+	FMOD::Studio::System* AudioEngine::s_StudioSystem;
 
 	void AudioEngine::Init()
 	{
@@ -44,22 +87,62 @@ namespace Lux {
 
 		s_ShuttingDown = false;
 
-		FMOD_RESULT result = FMOD::System_Create(&s_Engine);
+		// Studio is created first and owns the Core system: Studio::System::initialize creates it
+		// internally, so calling System_Create ourselves would leave a second, silent core system
+		// that nothing mixes through. getCoreSystem hands back the one Studio will use, and it is
+		// valid before initialize precisely so core settings can be applied first.
+		FMOD_RESULT result = FMOD::Studio::System::create(&s_StudioSystem);
 		if (result != FMOD_OK)
 		{
-			LUX_CORE_ERROR("Failed to create FMOD system: {}", FMOD_ErrorString(result));
+			LUX_CORE_ERROR("Failed to create FMOD Studio system: {}", FMOD_ErrorString(result));
+			s_StudioSystem = nullptr;
+			return;
+		}
+
+		result = s_StudioSystem->getCoreSystem(&s_Engine);
+		if (result != FMOD_OK)
+		{
+			LUX_CORE_ERROR("Failed to get the FMOD core system: {}", FMOD_ErrorString(result));
+			s_StudioSystem->release();
+			s_StudioSystem = nullptr;
 			s_Engine = nullptr;
 			return;
 		}
 
-		result = s_Engine->init(kMaxChannels, FMOD_INIT_3D_RIGHTHANDED | FMOD_INIT_CHANNEL_LOWPASS, nullptr);
+		// Live update lets the FMOD Studio app attach to this process and remix while the game
+		// runs. It opens a listening socket, so it follows the project's setting rather than being
+		// unconditional, and is meaningless in a shipped build.
+		FMOD_STUDIO_INITFLAGS studioFlags = FMOD_STUDIO_INIT_NORMAL;
+		s_LiveUpdateEnabled = false;
+#ifndef LUX_DIST
+		if (Ref<Project> project = Project::GetActive(); project && project->GetConfig().Audio.EnableLiveUpdate)
+		{
+			studioFlags |= FMOD_STUDIO_INIT_LIVEUPDATE;
+			s_LiveUpdateEnabled = true;
+		}
+#endif
+
+		result = s_StudioSystem->initialize(kMaxChannels, studioFlags,
+			FMOD_INIT_3D_RIGHTHANDED | FMOD_INIT_CHANNEL_LOWPASS, nullptr);
 		if (result != FMOD_OK)
 		{
-			LUX_CORE_ERROR("Failed to initialize FMOD system: {}", FMOD_ErrorString(result));
-			s_Engine->release();
+			LUX_CORE_ERROR("Failed to initialize FMOD Studio system: {}", FMOD_ErrorString(result));
+			s_StudioSystem->release();
+			s_StudioSystem = nullptr;
 			s_Engine = nullptr;
 			return;
 		}
+
+		// Logged unconditionally on success, not only on failure: "did FMOD come up, and with what"
+		// is the first question asked whenever a project is silent, and an absent line is itself the
+		// answer.
+		int sampleRate = 0;
+		s_Engine->getSoftwareFormat(&sampleRate, nullptr, nullptr);
+		LUX_CORE_INFO_TAG("Audio", "FMOD Studio initialized ({0} Hz, {1} channels, live update {2})",
+			sampleRate, kMaxChannels, s_LiveUpdateEnabled ? "on" : "off");
+
+		if (s_LiveUpdateEnabled)
+			LUX_CORE_INFO_TAG("Audio", "Connect the FMOD Studio app to this process to mix while it runs");
 
 		if (s_Engine->createReverb3D(&s_AmbientReverb) == FMOD_OK)
 		{
@@ -82,18 +165,322 @@ namespace Lux {
 			s_AmbientReverb = nullptr;
 		}
 
-		if (s_Engine)
+		UnloadAllBanks();
+
+		// Only the Studio system is released: it created the core system in initialize and owns it,
+		// so closing or releasing s_Engine here as well would be a double free. Releasing Studio
+		// tears down both.
+		if (s_StudioSystem)
 		{
-			s_Engine->close();
-			s_Engine->release();
-			s_Engine = nullptr;
+			s_StudioSystem->release();
+			s_StudioSystem = nullptr;
 		}
+
+		s_Engine = nullptr;
+		s_LiveUpdateEnabled = false;
 	}
 
 	void AudioEngine::Update()
 	{
+		// BOTH are required, in this order, and the reason is not obvious: Studio::System::update()
+		// does not recompute the Core system's 3D attenuation. Measured with Channel::getAudibility
+		// on a source at a fixed point and the listener walked away from it - with Studio's update
+		// alone the audibility is frozen at whatever the geometry was when the channel started
+		// (distance has no effect at all, which sounds exactly like spatialisation being off), and
+		// adding System::update() makes it follow the rolloff curve exactly (0.300 at 1 m, 0.060 at
+		// 5 m, 0.030 at 10 m for a 0.3 m min distance).
+		//
+		// Studio goes first so event state resolves before the core mixer consumes it.
+		if (s_StudioSystem)
+			s_StudioSystem->update();
+
 		if (s_Engine)
 			s_Engine->update();
+	}
+
+	bool AudioEngine::LoadBanks(const std::filesystem::path& bankDirectory)
+	{
+		if (!s_StudioSystem)
+			return false;
+
+		UnloadAllBanks();
+
+		std::error_code ec;
+		if (bankDirectory.empty() || !std::filesystem::exists(bankDirectory, ec))
+		{
+			LUX_CORE_WARN_TAG("Audio", "No built banks at '{0}' - build the FMOD Studio project to produce them", bankDirectory.string());
+			return false;
+		}
+
+		// Collect first so the strings bank can be loaded before the rest. It carries the event
+		// path table; loading it late means every getEvent("event:/...") issued in between fails
+		// with EVENT_NOTFOUND, which does not hint at the real cause.
+		std::vector<std::filesystem::path> stringsBanks;
+		std::vector<std::filesystem::path> contentBanks;
+		for (const auto& entry : std::filesystem::directory_iterator(bankDirectory, ec))
+		{
+			if (ec)
+				break;
+
+			if (!entry.is_regular_file(ec) || entry.path().extension() != ".bank")
+				continue;
+
+			if (entry.path().stem().extension() == ".strings")
+				stringsBanks.push_back(entry.path());
+			else
+				contentBanks.push_back(entry.path());
+		}
+
+		if (stringsBanks.empty())
+			LUX_CORE_WARN_TAG("Audio", "No .strings.bank in '{0}' - events will only resolve by GUID, not by path", bankDirectory.string());
+
+		auto loadOne = [](const std::filesystem::path& path, bool isStringsBank)
+			{
+				FMOD::Studio::Bank* bank = nullptr;
+				const FMOD_RESULT result = s_StudioSystem->loadBankFile(path.string().c_str(), FMOD_STUDIO_LOAD_BANK_NORMAL, &bank);
+				if (result != FMOD_OK || !bank)
+				{
+					LUX_CORE_ERROR_TAG("Audio", "Failed to load bank '{0}': {1}", path.filename().string(), FMOD_ErrorString(result));
+					return;
+				}
+
+				int eventCount = 0;
+				bank->getEventCount(&eventCount);
+
+				s_Banks.push_back(bank);
+				s_BankInfo.push_back(AudioBankInfo{ path.filename().string(), eventCount, isStringsBank });
+			};
+
+		for (const auto& path : stringsBanks)
+			loadOne(path, true);
+		for (const auto& path : contentBanks)
+			loadOne(path, false);
+
+		if (s_Banks.empty())
+			return false;
+
+		// Bank loading is asynchronous by default; the event lists below are only populated once
+		// the load has actually completed.
+		s_StudioSystem->flushCommands();
+
+		for (FMOD::Studio::Bank* bank : s_Banks)
+		{
+			int eventCount = 0;
+			if (bank->getEventCount(&eventCount) != FMOD_OK || eventCount <= 0)
+				continue;
+
+			std::vector<FMOD::Studio::EventDescription*> descriptions((size_t)eventCount, nullptr);
+			int retrieved = 0;
+			if (bank->getEventList(descriptions.data(), eventCount, &retrieved) != FMOD_OK)
+				continue;
+
+			for (int i = 0; i < retrieved; i++)
+			{
+				FMOD::Studio::EventDescription* description = descriptions[(size_t)i];
+				if (!description)
+					continue;
+
+				AudioEventInfo info;
+
+				char pathBuffer[512] = {};
+				int pathLength = 0;
+				if (description->getPath(pathBuffer, (int)sizeof(pathBuffer), &pathLength) == FMOD_OK)
+					info.Path = pathBuffer;
+
+				FMOD_GUID guid{};
+				if (description->getID(&guid) == FMOD_OK)
+					info.Guid = GuidToString(guid);
+
+				bool is3D = false;
+				description->is3D(&is3D);
+				info.Is3D = is3D;
+
+				bool isOneshot = false;
+				description->isOneshot(&isOneshot);
+				info.IsOneshot = isOneshot;
+
+				s_Events.push_back(std::move(info));
+			}
+		}
+
+		std::sort(s_Events.begin(), s_Events.end(),
+			[](const AudioEventInfo& a, const AudioEventInfo& b) { return a.Path < b.Path; });
+
+		LUX_CORE_INFO_TAG("Audio", "Loaded {0} bank(s) describing {1} event(s) from '{2}'",
+			s_Banks.size(), s_Events.size(), bankDirectory.string());
+		return true;
+	}
+
+	void AudioEngine::UnloadAllBanks()
+	{
+		if (s_StudioSystem)
+		{
+			for (FMOD::Studio::Bank* bank : s_Banks)
+			{
+				if (bank)
+					bank->unload();
+			}
+		}
+
+		s_Banks.clear();
+		s_BankInfo.clear();
+		s_Events.clear();
+	}
+
+	const std::vector<AudioBankInfo>& AudioEngine::GetLoadedBanks()
+	{
+		return s_BankInfo;
+	}
+
+	const std::vector<AudioEventInfo>& AudioEngine::GetEvents()
+	{
+		return s_Events;
+	}
+
+	bool AudioEngine::SetBusVolume(const std::string& busPath, float volume)
+	{
+		if (!s_StudioSystem)
+			return false;
+
+		FMOD::Studio::Bus* bus = nullptr;
+		if (s_StudioSystem->getBus(busPath.c_str(), &bus) != FMOD_OK || !bus)
+			return false;
+
+		return bus->setVolume(std::clamp(volume, 0.0f, 1.0f)) == FMOD_OK;
+	}
+
+	float AudioEngine::GetBusVolume(const std::string& busPath)
+	{
+		if (!s_StudioSystem)
+			return 0.0f;
+
+		FMOD::Studio::Bus* bus = nullptr;
+		if (s_StudioSystem->getBus(busPath.c_str(), &bus) != FMOD_OK || !bus)
+			return 0.0f;
+
+		float volume = 0.0f;
+		bus->getVolume(&volume);
+		return volume;
+	}
+
+	void AudioEngine::SetReverb(const RaytracedAudioReverb& reverb)
+	{
+		if (!s_AmbientReverb || !reverb.Valid)
+			return;
+
+		// The simulation's units are seconds, Hz and linear gain; FMOD_REVERB_PROPERTIES wants
+		// milliseconds, percentages and decibels. Every value is clamped to the range FMOD
+		// documents for that field — the simulation can legitimately report values outside them
+		// (a huge outdoor space, a fully absorbed room), and FMOD rejects the whole struct if any
+		// single field is out of range, which would silently leave the previous reverb in place.
+		FMOD_REVERB_PROPERTIES properties{};
+		properties.DecayTime = std::clamp(reverb.DecayTime * 1000.0f, 0.0f, 20000.0f);
+		properties.EarlyDelay = std::clamp(reverb.ReflectionsDelay * 1000.0f, 0.0f, 300.0f);
+		properties.LateDelay = std::clamp(reverb.LateReverbDelay * 1000.0f, 0.0f, 100.0f);
+		properties.HFReference = std::clamp(reverb.HFReference, 20.0f, 20000.0f);
+		properties.HFDecayRatio = std::clamp(reverb.DecayHFRatio * 100.0f, 10.0f, 100.0f);
+		properties.Diffusion = std::clamp(reverb.Diffusion * 100.0f, 0.0f, 100.0f);
+		properties.Density = std::clamp(reverb.Density * 100.0f, 0.0f, 100.0f);
+		properties.LowShelfFrequency = std::clamp(reverb.LFReference, 20.0f, 1000.0f);
+		properties.LowShelfGain = std::clamp(LinearToDecibels(reverb.GainLF, -36.0f), -36.0f, 12.0f);
+		properties.HighCut = std::clamp(kHighCutMinHz + std::clamp(reverb.GainHF, 0.0f, 1.0f) * (kHighCutMaxHz - kHighCutMinHz), 20.0f, 20000.0f);
+
+		// FMOD expresses the early/late balance as one percentage rather than two gains.
+		const float earlyLateTotal = reverb.ReflectionsGain + reverb.LateReverbGain;
+		properties.EarlyLateMix = earlyLateTotal > 0.0f
+			? std::clamp((reverb.LateReverbGain / earlyLateTotal) * 100.0f, 0.0f, 100.0f)
+			: 50.0f;
+
+		properties.WetLevel = std::clamp(LinearToDecibels(reverb.Gain, -80.0f), -80.0f, 20.0f);
+
+		if (s_AmbientReverb->setProperties(&properties) != FMOD_OK)
+			return;
+
+		s_ReverbSnapshot.Applied = true;
+		s_ReverbSnapshot.DecayTimeMs = properties.DecayTime;
+		s_ReverbSnapshot.EarlyDelayMs = properties.EarlyDelay;
+		s_ReverbSnapshot.LateDelayMs = properties.LateDelay;
+		s_ReverbSnapshot.HFReferenceHz = properties.HFReference;
+		s_ReverbSnapshot.HFDecayRatioPercent = properties.HFDecayRatio;
+		s_ReverbSnapshot.DiffusionPercent = properties.Diffusion;
+		s_ReverbSnapshot.DensityPercent = properties.Density;
+		s_ReverbSnapshot.LowShelfFrequencyHz = properties.LowShelfFrequency;
+		s_ReverbSnapshot.LowShelfGainDb = properties.LowShelfGain;
+		s_ReverbSnapshot.HighCutHz = properties.HighCut;
+		s_ReverbSnapshot.EarlyLateMixPercent = properties.EarlyLateMix;
+		s_ReverbSnapshot.WetLevelDb = properties.WetLevel;
+	}
+
+	AudioEngine::ReverbSnapshot AudioEngine::GetReverbSnapshot()
+	{
+		return s_ReverbSnapshot;
+	}
+
+	AudioEngineStats AudioEngine::GetStats()
+	{
+		AudioEngineStats stats;
+		stats.BackendName = "FMOD";
+		stats.Initialized = s_Engine != nullptr;
+		if (!s_Engine)
+			return stats;
+
+		stats.HasMixerStats = true;
+
+		// FMOD packs its version as 0xMMMMmmpp (major/minor/patch nibbles), e.g. 0x00020314.
+		unsigned int version = 0;
+		if (s_Engine->getVersion(&version) == FMOD_OK)
+		{
+			stats.VersionMajor = (version >> 16) & 0xFFFF;
+			stats.VersionMinor = (version >> 8) & 0xFF;
+			stats.VersionPatch = version & 0xFF;
+		}
+
+		s_Engine->getSoftwareFormat(&stats.SampleRate, nullptr, nullptr);
+		s_Engine->getChannelsPlaying(&stats.ChannelsPlaying, &stats.RealChannelsPlaying);
+
+		FMOD_CPU_USAGE usage{};
+		if (s_Engine->getCPUUsage(&usage) == FMOD_OK)
+		{
+			stats.DSPCPUPercent = usage.dsp;
+			stats.StreamCPUPercent = usage.stream;
+			stats.UpdateCPUPercent = usage.update;
+		}
+
+		// blocking = false: this runs every frame from the editor UI, and the mixer holding the
+		// allocator lock is not worth stalling the main thread over for a debug readout.
+		FMOD::Memory_GetStats(&stats.MemoryCurrentBytes, &stats.MemoryPeakBytes, false);
+
+		stats.LiveUpdateEnabled = s_LiveUpdateEnabled;
+		stats.LoadedBankCount = (int)s_BankInfo.size();
+		stats.EventDescriptionCount = (int)s_Events.size();
+
+		// Instance count is per-description, so it has to be summed. Cheap: this is a handful of
+		// integer getters over the events a project actually has.
+		if (s_StudioSystem)
+		{
+			int instanceCount = 0;
+			for (FMOD::Studio::Bank* bank : s_Banks)
+			{
+				int eventCount = 0;
+				if (!bank || bank->getEventCount(&eventCount) != FMOD_OK || eventCount <= 0)
+					continue;
+
+				std::vector<FMOD::Studio::EventDescription*> descriptions((size_t)eventCount, nullptr);
+				int retrieved = 0;
+				if (bank->getEventList(descriptions.data(), eventCount, &retrieved) != FMOD_OK)
+					continue;
+
+				for (int i = 0; i < retrieved; i++)
+				{
+					int perDescription = 0;
+					if (descriptions[(size_t)i] && descriptions[(size_t)i]->getInstanceCount(&perDescription) == FMOD_OK)
+						instanceCount += perDescription;
+				}
+			}
+			stats.PlayingEventInstances = instanceCount;
+		}
+
+		return stats;
 	}
 
 #else
@@ -132,6 +519,51 @@ namespace Lux {
 	void AudioEngine::Update()
 	{
 		// miniaudio mixes on its own thread; nothing to pump here.
+	}
+
+	void AudioEngine::SetReverb(const RaytracedAudioReverb&)
+	{
+		// miniaudio has no reverb unit; the simulation's reverb output has nowhere to go.
+	}
+
+	// FMOD Studio concepts with no miniaudio equivalent. They report "nothing loaded" rather than
+	// failing, so callers need no #ifdef.
+	bool AudioEngine::LoadBanks(const std::filesystem::path&) { return false; }
+	void AudioEngine::UnloadAllBanks() {}
+
+	const std::vector<AudioBankInfo>& AudioEngine::GetLoadedBanks()
+	{
+		static const std::vector<AudioBankInfo> s_None;
+		return s_None;
+	}
+
+	const std::vector<AudioEventInfo>& AudioEngine::GetEvents()
+	{
+		static const std::vector<AudioEventInfo> s_None;
+		return s_None;
+	}
+
+	bool AudioEngine::SetBusVolume(const std::string&, float) { return false; }
+	float AudioEngine::GetBusVolume(const std::string&) { return 0.0f; }
+
+	AudioEngine::ReverbSnapshot AudioEngine::GetReverbSnapshot()
+	{
+		return {};
+	}
+
+	AudioEngineStats AudioEngine::GetStats()
+	{
+		AudioEngineStats stats;
+		stats.BackendName = "miniaudio";
+		stats.Initialized = s_Engine != nullptr;
+		if (!s_Engine)
+			return stats;
+
+		// HasMixerStats stays false: miniaudio has no voice-count or mixer-CPU query, and reporting
+		// zeros for those would read as "idle" rather than "not measured".
+		stats.SampleRate = (int)ma_engine_get_sample_rate(s_Engine);
+
+		return stats;
 	}
 
 #endif

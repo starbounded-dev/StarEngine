@@ -120,7 +120,7 @@ Project:
       LevelFilter: Error
     Audio:
       Enabled: true
-      LevelFilter: Error
+      LevelFilter: Info
     Core:
       Enabled: true
       LevelFilter: Trace

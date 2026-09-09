@@ -354,10 +354,38 @@ namespace Lux {
 		else
 			directoryInfo->FilePath = std::filesystem::relative(directoryPath, m_Project->GetAssetDirectory()).lexically_normal();
 
+		// An FMOD Studio project is a directory of tooling internals - Metadata/ holds one
+		// GUID-named XML file per authored object, alongside Studio's cache and its built banks.
+		// None of it is engine content, and recursing produces dozens of folders full of files the
+		// browser then refuses to show. Treat the project as opaque: the .fspro is the only thing
+		// worth clicking, and it opens in FMOD Studio.
+		const bool isStudioProjectRoot = [&directoryPath]
+			{
+				std::error_code ec;
+				for (const auto& entry : std::filesystem::directory_iterator(directoryPath, ec))
+				{
+					if (ec)
+						break;
+
+					if (entry.is_regular_file(ec) && entry.path().extension() == ".fspro")
+						return true;
+				}
+				return false;
+			}();
+
 		for (const auto& entry : std::filesystem::directory_iterator(directoryPath))
 		{
 			if (entry.is_directory())
 			{
+				if (isStudioProjectRoot)
+					continue;
+
+				// Dot-directories are tool state (.cache, .user, .git) rather than content, and
+				// nothing in the browser can act on them.
+				const std::string directoryName = entry.path().filename().string();
+				if (!directoryName.empty() && directoryName.front() == '.')
+					continue;
+
 				AssetHandle subDirectoryHandle = ProcessDirectory(entry.path(), directoryInfo);
 				directoryInfo->SubDirectories[subDirectoryHandle] = m_Directories[subDirectoryHandle];
 				continue;
@@ -1456,6 +1484,10 @@ namespace Lux {
 		case AssetType::StaticMesh: return EditorResources::StaticMeshFileIcon;
 		case AssetType::Texture: return EditorResources::FileIcon;
 		case AssetType::Audio: return EditorResources::AudioIcon;
+		// No dedicated FMOD artwork yet; the speaker icon at least reads as "audio" rather than
+		// falling through to the generic file icon.
+		case AssetType::AudioProject: return EditorResources::AudioIcon;
+		case AssetType::AudioBank: return EditorResources::AudioIcon;
 		case AssetType::ScriptFile: return EditorResources::CSFileIcon;
 		case AssetType::Font: return EditorResources::FontFileIcon;
 		case AssetType::Animation: return EditorResources::AnimationFileIcon;

@@ -43,6 +43,21 @@ namespace Lux {
 			sound->set3DCustomRolloff(flatCurve, 2);
 		}
 
+		// How much more the high band is attenuated than the low band, as 0 (no spectral tilt) to
+		// 1 (highs gone entirely). This is the part of a two-band measurement that a single-scalar
+		// occlusion control can carry without also re-applying the broadband loss, which the
+		// caller has already handled by scaling the channel's volume.
+		float RelativeHighFrequencyLoss(float gainLF, float gainHF)
+		{
+			// Below this the low band is inaudible anyway, and the ratio becomes numerically
+			// meaningless — treat it as no additional filtering rather than dividing by ~0.
+			constexpr float minAudibleGain = 1e-4f;
+			if (gainLF <= minAudibleGain)
+				return 0.0f;
+
+			return std::clamp(1.0f - (gainHF / gainLF), 0.0f, 1.0f);
+		}
+
 	}
 
 	AudioSource::AudioSource()
@@ -206,9 +221,11 @@ namespace Lux {
 			m_Sound->set3DConeSettings(glm::degrees(config.ConeInnerAngle), glm::degrees(config.ConeOuterAngle), config.ConeOuterGain);
 		}
 
+		m_ConfiguredVolume = config.VolumeMultiplier;
+
 		if (m_Channel)
 		{
-			m_Channel->setVolume(config.VolumeMultiplier);
+			m_Channel->setVolume(m_ConfiguredVolume * m_OcclusionVolumeScale);
 			m_Channel->setPitch(config.PitchMultiplier);
 
 			if (config.Spatialization)
@@ -224,8 +241,10 @@ namespace Lux {
 	{
 		LUX_PROFILE_FUNCTION("AudioSource::SetVolume");
 
+		m_ConfiguredVolume = volume;
+
 		if (m_Channel)
-			m_Channel->setVolume(volume);
+			m_Channel->setVolume(m_ConfiguredVolume * m_OcclusionVolumeScale);
 	}
 
 	void AudioSource::SetPitch(float pitch)
@@ -385,16 +404,44 @@ namespace Lux {
 		m_Channel->set3DAttributes(&pos, &vel);
 	}
 
-	void AudioSource::SetOcclusion(float directOcclusion, float reverbOcclusion)
+	void AudioSource::SetAcoustics(const AudioSourceAcoustics& acoustics)
 	{
-		if (m_Channel)
-			m_Channel->set3DOcclusion(directOcclusion, reverbOcclusion);
+		if (!m_Channel)
+			return;
+
+		const float occlusionGainLF = std::clamp(acoustics.OcclusionGainLF, 0.0f, 1.0f);
+		const float occlusionGainHF = std::clamp(acoustics.OcclusionGainHF, 0.0f, 1.0f);
+		const float ambientGainLF = std::clamp(acoustics.AmbientGainLF, 0.0f, 1.0f);
+		const float ambientGainHF = std::clamp(acoustics.AmbientGainHF, 0.0f, 1.0f);
+
+		// FMOD's occlusion is a single scalar that attenuates *and* low-passes together, so the two
+		// measured bands are split across the two controls that can carry them independently:
+		//
+		//   level  <- the low-frequency gain, which is how much sound gets through at all;
+		//   filter <- how much *further* the highs are attenuated relative to the lows.
+		//
+		// Feeding the HF gain straight into set3DOcclusion instead would double-count the loss:
+		// FMOD would attenuate by the HF amount as well as filtering by it, so a source behind a
+		// wall would go inaudible rather than muffled.
+		m_OcclusionVolumeScale = occlusionGainLF;
+		m_Channel->setVolume(m_ConfiguredVolume * m_OcclusionVolumeScale);
+
+		m_Channel->set3DOcclusion(RelativeHighFrequencyLoss(occlusionGainLF, occlusionGainHF),
+			RelativeHighFrequencyLoss(ambientGainLF, ambientGainHF));
+
+		m_Channel->setReverbProperties(0, std::clamp(acoustics.ReverbSend, 0.0f, 1.0f));
 	}
 
-	void AudioSource::SetReverbSend(float wet)
+	float AudioSource::GetAudibility() const
 	{
-		if (m_Channel)
-			m_Channel->setReverbProperties(0, wet);
+		if (!m_Channel)
+			return -1.0f;
+
+		float audibility = -1.0f;
+		if (m_Channel->getAudibility(&audibility) != FMOD_OK)
+			return -1.0f;
+
+		return audibility;
 	}
 
 #else
@@ -734,16 +781,16 @@ namespace Lux {
 		}
 	}
 
-	void AudioSource::SetOcclusion(float directOcclusion, float reverbOcclusion)
+	void AudioSource::SetAcoustics(const AudioSourceAcoustics& acoustics)
 	{
-		// miniaudio has no built-in occlusion/lowpass-per-source equivalent to drive here.
-		(void)directOcclusion;
-		(void)reverbOcclusion;
+		// miniaudio has no per-source occlusion filter or reverb send to drive.
+		(void)acoustics;
 	}
 
-	void AudioSource::SetReverbSend(float wet)
+	float AudioSource::GetAudibility() const
 	{
-		(void)wet;
+		// miniaudio exposes no equivalent final-audibility query.
+		return -1.0f;
 	}
 
 #endif

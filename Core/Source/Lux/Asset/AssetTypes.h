@@ -32,7 +32,12 @@ namespace Lux {
 		SoundGraphSound,
 		Skeleton,
 		Animation,
-		AnimationGraph
+		AnimationGraph,
+		// The FMOD Studio project that authors this game's audio (.fspro), and the banks it builds
+		// (.bank). Both are opened in FMOD Studio rather than in an engine editor - they exist as
+		// asset types so the Content Browser can show and activate them, not so they can be loaded.
+		AudioProject,
+		AudioBank
 	};
 
 	namespace Utils {
@@ -60,6 +65,8 @@ namespace Lux {
 			if (assetType == "Skeleton")            return AssetType::Skeleton;
 			if (assetType == "Animation")           return AssetType::Animation;
 			if (assetType == "AnimationGraph")      return AssetType::AnimationGraph;
+			if (assetType == "AudioProject")        return AssetType::AudioProject;
+			if (assetType == "AudioBank")           return AssetType::AudioBank;
 
 			return AssetType::None;
 		}
@@ -88,6 +95,8 @@ namespace Lux {
 			case AssetType::Skeleton:            return "Skeleton";
 			case AssetType::Animation:           return "Animation";
 			case AssetType::AnimationGraph:      return "AnimationGraph";
+			case AssetType::AudioProject:        return "AudioProject";
+			case AssetType::AudioBank:           return "AudioBank";
 			}
 
 			LUX_CORE_ASSERT(false, "Unknown Asset Type");

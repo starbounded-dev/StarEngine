@@ -45,6 +45,8 @@
 #include "Panels/ContentBrowserPanel.h"
 #include "Panels/SceneRendererPanel.h"
 #include "Panels/RendererDebuggerPanel.h"
+#include "Lux/Audio/AudioBankBuilder.h"
+#include "Panels/AudioDebugPanel.h"
 #include "Panels/ProfilerPanel.h"
 #include "Panels/UndoHistoryPanel.h"
 
@@ -363,6 +365,11 @@ namespace Lux {
 		m_RendererDebuggerPanel = m_PanelManager->AddPanel<RendererDebuggerPanel>(PanelCategory::View, RENDERER_DEBUGGER_PANEL_ID, "Renderer Debugger", false);
 		m_ProfilerPanel = m_PanelManager->AddPanel<ProfilerPanel>(PanelCategory::View, "ProfilerPanel", "Profiler", false);
 
+		// Reads AudioEngine / RaytracedAudioScene directly and takes its scene from
+		// PanelManager::SetSceneContext; the handle is kept only so OnOverlayRender can read the
+		// panel's 3D visualisation settings.
+		m_AudioDebugPanel = m_PanelManager->AddPanel<AudioDebugPanel>(PanelCategory::View, "AudioDebugPanel", "Audio Debugger", false);
+
 		{
 			UndoHistoryPanel::Bindings historyBindings;
 			historyBindings.UndoLabels = [this]() {
@@ -491,6 +498,31 @@ namespace Lux {
 				EnterPrefabEditMode(metadata.Handle);
 			});
 
+			// Audio is authored in FMOD Studio, not in this editor, so activating either the project
+			// or one of its built banks hands off to Studio. A bank opens its owning project —
+			// Studio has no notion of opening a bank on its own, and the project is what the
+			// designer actually needs in front of them.
+			contentBrowserPanel->RegisterItemActivateCallbackForType(AssetType::AudioProject, [](const AssetMetadata& metadata)
+			{
+				AudioBankBuilder::OpenInStudio(Project::GetEditorAssetManager()->GetFileSystemPath(metadata));
+			});
+
+			contentBrowserPanel->RegisterItemActivateCallbackForType(AssetType::AudioBank, [](const AssetMetadata&)
+			{
+				Ref<Project> project = Project::GetActive();
+				if (!project)
+					return;
+
+				const std::filesystem::path studioProject = project->GetStudioProjectPath();
+				if (studioProject.empty())
+				{
+					LUX_CORE_WARN_TAG("Audio", "This project has no FMOD Studio project configured, so there is nothing to open for that bank");
+					return;
+				}
+
+				AudioBankBuilder::OpenInStudio(studioProject);
+			});
+
 			if (textEditorPanel)
 			{
 				contentBrowserPanel->RegisterItemActivateCallbackForType(AssetType::ScriptFile, [this, textEditorPanel](const AssetMetadata& metadata) mutable
@@ -544,6 +576,7 @@ namespace Lux {
 		m_SceneRenderer.reset();
 		m_RendererDebuggerPanel.reset();
 		m_ProfilerPanel.reset();
+		m_AudioDebugPanel.reset();
 		m_SceneRendererPanel.reset();
 		m_SceneHierarchyPanel.reset();
 		EditorResources::Shutdown();
@@ -935,6 +968,9 @@ namespace Lux {
 			ImGui::DockBuilderDockWindow("Light Settings", leftBottom);
 			ImGui::DockBuilderDockWindow("Profiler", leftBottom);
 			ImGui::DockBuilderDockWindow("Renderer Debugger", bottom);
+			// Given a home next to the Renderer Debugger, but deliberately left out of
+			// s_AdvancedPanels below: it stays closed until the user opens it from the View menu.
+			ImGui::DockBuilderDockWindow("Audio Debugger", bottom);
 		}
 
 		ImGui::DockBuilderFinish(dockspaceId);
@@ -2316,7 +2352,128 @@ namespace Lux {
 			drawIconForView(m_ActiveScene->GetAllEntitiesWith<TransformComponent, SpotLightComponent>(), EditorResources::SpotLightIcon);
 		}
 
+		DrawAudioVisualisation();
+
 		m_Renderer2D->EndScene();
+	}
+
+	// Draws the ray-traced acoustics simulation into the viewport: the visualisation rays the
+	// listener casts, where they bounced, and the emitters they connect. Settings come from the
+	// Audio Debugger panel, which is where they are edited; this is only the drawing half.
+	//
+	// Runs inside OnOverlayRender's BeginScene/EndScene, so it must not open its own scene.
+	void EditorLayer::DrawAudioVisualisation()
+	{
+		if (!m_AudioDebugPanel || !m_ActiveScene)
+			return;
+
+		const AudioVisualisationSettings& settings = m_AudioDebugPanel->GetVisualisationSettings();
+		if (!settings.Enabled)
+			return;
+
+		Ref<RaytracedAudioScene> raytraced = m_ActiveScene->GetRaytracedAudioScene();
+		if (!raytraced)
+			return;
+
+		// Ray-type colours follow the simulation's own semantics rather than the editor theme:
+		// warm for the direct/reverb energy leaving the listener, cool for the surfaces it lands on.
+		constexpr glm::vec4 kRayNearColor{ 1.0f, 0.78f, 0.35f, 0.9f };
+		constexpr glm::vec4 kRayFarColor{ 0.85f, 0.32f, 0.55f, 0.9f };
+		constexpr glm::vec4 kBounceColor{ 0.45f, 0.85f, 1.0f, 1.0f };
+		constexpr glm::vec4 kNormalColor{ 0.35f, 1.0f, 0.6f, 0.9f };
+		constexpr glm::vec4 kListenerColor{ 0.4f, 1.0f, 0.45f, 1.0f };
+		constexpr glm::vec4 kSourceColor{ 1.0f, 0.6f, 0.2f, 1.0f };
+		constexpr glm::vec4 kBoundsColor{ 0.35f, 0.45f, 0.7f, 0.6f };
+
+		const RaytracedAudioStats stats = raytraced->GetStats();
+
+		RaytracedAudioVisualisation snapshot;
+		raytraced->GetVisualisation(snapshot);
+
+		if (settings.DrawRayPaths || settings.DrawBouncePoints || settings.DrawNormals)
+		{
+			const int bounceCount = std::max(snapshot.BounceCount, 1);
+			for (int ray = 0; ray < snapshot.RayCount; ray++)
+			{
+				glm::vec3 previous = snapshot.Origin;
+
+				for (int bounce = 0; bounce < bounceCount; bounce++)
+				{
+					const size_t index = (size_t)ray * (size_t)bounceCount + (size_t)bounce;
+					if (index >= snapshot.Bounces.size())
+						break;
+
+					const RaytracedAudioBounce& hit = snapshot.Bounces[index];
+
+					// A ray that hit nothing ends here — its remaining slots are miss placeholders
+					// well outside the world, and connecting to them would fire lines off to
+					// infinity through the viewport.
+					if (!hit.Hit)
+						break;
+
+					if (settings.DrawRayPaths)
+					{
+						// Fade along the path so the listener end reads as the origin and later
+						// bounces recede, which is what makes a few hundred rays legible at once.
+						const float t = bounceCount > 1 ? (float)bounce / (float)(bounceCount - 1) : 0.0f;
+						glm::vec4 color = glm::mix(kRayNearColor, kRayFarColor, t);
+						color.a *= 1.0f - settings.PathFadeStrength * t;
+						m_Renderer2D->DrawLine(previous, hit.Position, color);
+					}
+
+					if (settings.DrawBouncePoints)
+						m_Renderer2D->DrawCircle(hit.Position, glm::vec3(0.0f), 0.05f, kBounceColor);
+
+					if (settings.DrawNormals)
+						m_Renderer2D->DrawLine(hit.Position, hit.Position + hit.Normal * settings.NormalLength, kNormalColor);
+
+					previous = hit.Position;
+				}
+			}
+		}
+
+		if (settings.DrawEmitters)
+		{
+			// Three rings per emitter so it reads as a sphere from any angle, rather than
+			// disappearing when the camera lines up with a single circle's plane.
+			auto drawEmitterGizmo = [this](const glm::vec3& position, float radius, const glm::vec4& color)
+				{
+					m_Renderer2D->DrawCircle(position, glm::vec3(0.0f), radius, color);
+					m_Renderer2D->DrawCircle(position, glm::vec3(glm::half_pi<float>(), 0.0f, 0.0f), radius, color);
+					m_Renderer2D->DrawCircle(position, glm::vec3(0.0f, glm::half_pi<float>(), 0.0f), radius, color);
+				};
+
+			drawEmitterGizmo(stats.ListenerPosition, settings.EmitterRadius, kListenerColor);
+
+			auto sources = m_ActiveScene->GetAllEntitiesWith<TransformComponent, AudioSourceComponent>();
+			for (entt::entity entityHandle : sources)
+			{
+				Entity entity = { entityHandle, m_ActiveScene.Raw() };
+				const glm::vec3 position = glm::vec3(m_ActiveScene->GetWorldSpaceTransformMatrix(entity)[3]);
+				drawEmitterGizmo(position, settings.EmitterRadius * 0.75f, kSourceColor);
+
+				// A line to the listener makes the occlusion relationship visible: this is the path
+				// the simulation is measuring for that source.
+				m_Renderer2D->DrawLine(position, stats.ListenerPosition, kSourceColor * glm::vec4(1.0f, 1.0f, 1.0f, 0.35f));
+			}
+		}
+
+		if (settings.DrawWorldBounds && stats.WorldSize.x > 0.0f)
+		{
+			const glm::vec3 min = stats.WorldMin;
+			const glm::vec3 max = stats.WorldMin + stats.WorldSize;
+			const glm::vec3 corners[8] = {
+				{ min.x, min.y, min.z }, { max.x, min.y, min.z }, { max.x, max.y, min.z }, { min.x, max.y, min.z },
+				{ min.x, min.y, max.z }, { max.x, min.y, max.z }, { max.x, max.y, max.z }, { min.x, max.y, max.z },
+			};
+			constexpr int edges[12][2] = {
+				{ 0,1 }, { 1,2 }, { 2,3 }, { 3,0 },
+				{ 4,5 }, { 5,6 }, { 6,7 }, { 7,4 },
+				{ 0,4 }, { 1,5 }, { 2,6 }, { 3,7 },
+			};
+			for (const auto& edge : edges)
+				m_Renderer2D->DrawLine(corners[edge[0]], corners[edge[1]], kBoundsColor);
+		}
 	}
 
 	void EditorLayer::LoadEditorPreferences()
@@ -2547,6 +2704,7 @@ namespace Lux {
 			if (startScene)
 				OpenScene(startScene);
 			m_PanelManager->OnProjectChanged(Project::GetActive());
+			LoadAudioBanksForActiveProject();
 			if (m_SceneRenderer)
 				m_SceneRenderer->ApplyProjectSettings(Project::GetActive()->GetConfig().SceneRenderer);
 		}
@@ -3918,12 +4076,62 @@ namespace Lux {
 		DiscordSocial::SetPresence(presence);
 	}
 
+	void EditorLayer::RebuildAudioBanksIfNeeded()
+	{
+		Ref<Project> project = Project::GetActive();
+		if (!project)
+			return;
+
+		const std::filesystem::path studioProject = project->GetStudioProjectPath();
+		if (studioProject.empty())
+			return;
+
+		const std::filesystem::path bankDirectory = project->GetStudioBankDirectory();
+
+		if (project->GetConfig().Audio.RebuildBanksOnPlay
+			&& AudioBankBuilder::NeedsRebuild(studioProject, bankDirectory))
+		{
+			// Reload only on a successful build. A failed one leaves the previous banks on disk,
+			// and the already-loaded copies of them are still the right thing to be playing.
+			if (AudioBankBuilder::Build(studioProject))
+				AudioEngine::LoadBanks(bankDirectory);
+
+			return;
+		}
+
+		// Nothing to rebuild, but the banks may still not be loaded - opening a project loads them,
+		// and a project opened before any banks existed would have none.
+		if (AudioEngine::GetLoadedBanks().empty())
+			AudioEngine::LoadBanks(bankDirectory);
+	}
+
+	void EditorLayer::LoadAudioBanksForActiveProject()
+	{
+		Ref<Project> project = Project::GetActive();
+		if (!project)
+			return;
+
+		const std::filesystem::path bankDirectory = project->GetStudioBankDirectory();
+		if (bankDirectory.empty())
+			return;
+
+		// Loaded on project open rather than on Play so the editor can list a project's events
+		// while editing - the event picker and the Audio Debugger both need them in Edit mode.
+		AudioEngine::LoadBanks(bankDirectory);
+	}
+
 	void EditorLayer::OnScenePlay()
 	{
 		if (m_PrefabEditMode)   // no play while editing a prefab in isolation
 			return;
 		if (m_SceneState == SceneState::Simulate)
 			OnSceneStop();
+
+		// Before the runtime starts, so the banks it loads are the ones matching what the designer
+		// last saved in FMOD Studio. A timestamp check makes this free when nothing changed; a
+		// failed build is logged and play continues, since a stale bank still plays something and
+		// blocking Play on an audio tool would be worse than the staleness.
+		RebuildAudioBanksIfNeeded();
 
 		SuspendRendererDebugViewsForPlay();
 		m_SceneState = SceneState::Play;

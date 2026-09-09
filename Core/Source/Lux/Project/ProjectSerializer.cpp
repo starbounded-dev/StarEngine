@@ -684,6 +684,10 @@ namespace Lux
 			{
 				out << YAML::BeginMap;
 				out << YAML::Key << "FileStreamingDurationThreshold" << YAML::Value << config.Audio.FileStreamingDurationThreshold;
+				out << YAML::Key << "StudioProjectPath" << YAML::Value << config.Audio.StudioProjectPath.generic_string();
+				out << YAML::Key << "StudioBankOutputPath" << YAML::Value << config.Audio.StudioBankOutputPath.generic_string();
+				out << YAML::Key << "RebuildBanksOnPlay" << YAML::Value << config.Audio.RebuildBanksOnPlay;
+				out << YAML::Key << "EnableLiveUpdate" << YAML::Value << config.Audio.EnableLiveUpdate;
 				out << YAML::EndMap;
 			}
 
@@ -903,7 +907,13 @@ namespace Lux
 		}
 
 		if (auto audioNode = projectNode["Audio"])
+		{
 			config.Audio.FileStreamingDurationThreshold = audioNode["FileStreamingDurationThreshold"].as<double>(config.Audio.FileStreamingDurationThreshold);
+			config.Audio.StudioProjectPath = audioNode["StudioProjectPath"].as<std::string>(config.Audio.StudioProjectPath.generic_string());
+			config.Audio.StudioBankOutputPath = audioNode["StudioBankOutputPath"].as<std::string>(config.Audio.StudioBankOutputPath.generic_string());
+			config.Audio.RebuildBanksOnPlay = audioNode["RebuildBanksOnPlay"].as<bool>(config.Audio.RebuildBanksOnPlay);
+			config.Audio.EnableLiveUpdate = audioNode["EnableLiveUpdate"].as<bool>(config.Audio.EnableLiveUpdate);
+		}
 
 		config.Physics = {};
 		if (auto physicsNode = projectNode["Physics"])

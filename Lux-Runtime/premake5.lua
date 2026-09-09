@@ -102,6 +102,7 @@ project "Lux-Runtime"
 			postbuildcommands {
 				'{MKDIR} "%{cfg.targetdir}/lib"',
 				'{COPYFILE} "../Core/vendor/FMOD/fmodstudioapi20314linux/api/core/lib/x86_64/libfmod.so.14" "%{cfg.targetdir}/lib/libfmod.so.14"',
+				'{COPYFILE} "../Core/vendor/FMOD/fmodstudioapi20314linux/api/studio/lib/x86_64/libfmodstudio.so.14" "%{cfg.targetdir}/lib/libfmodstudio.so.14"',
 			}
 		end
 

@@ -252,6 +252,10 @@ namespace Lux {
 		// Defined out-of-line (RaytracedAudioScene need not be complete in this header).
 		Ref<RaytracedAudioScene> GetRaytracedAudioScene() const;
 
+		// The live voice playing for an entity, or null when it has none. Editor tooling only -
+		// gameplay drives sources through the component, not by reaching in here.
+		Ref<AudioSource> GetRuntimeAudioSource(UUID entityID) const;
+
 	private:
 		friend class Entity;
 		friend class SceneSerializer;

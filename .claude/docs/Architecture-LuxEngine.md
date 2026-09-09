@@ -345,7 +345,7 @@ Split between engine-owned framework (`Core/Source/Lux/Editor/`) and the editor 
   restarts the runtime). Resets on scene load. Full design + phased plan: `docs/Editor/Undo-Redo.md`.
 - Editor app panels (`Editor/Source/Panels/`): ContentBrowser (+ `ContentBrowser/`),
   ApplicationSettings, ProjectSettings, AssetManager, Materials, MaterialEditor, LightSettings,
-  SceneRenderer, RenderStats, RendererDebugger, TextEditor, ThumbnailCache.
+  SceneRenderer, RenderStats, RendererDebugger, AudioDebug, TextEditor, ThumbnailCache.
 - `Editor/Source/EditorLayer.{h,cpp}` is the orchestrator. Prefer adding a **panel** over adding code
   to `EditorLayer`.
 - `Editor/Source/RuntimeExportUtils.{h,cpp}` builds the standalone runtime package.
@@ -377,16 +377,54 @@ lifecycle shape as `PhysicsScene`. On start, it walks every `MeshColliderCompone
 the collider's referenced render mesh (`StaticMesh` → `MeshSource`, the same `BaseIndex/3` triangle
 walk `PhysicsScene`/`JoltShapes` use for cooking), bakes each triangle into world space, and hands
 the flat triangle soup to `RaytracedAudioScene::SetStaticGeometry` — **mirrored once at runtime
-start, not kept in sync with moving colliders.** Per-frame, `OnUpdateRuntime` syncs the active
-`AudioListenerComponent`'s position/forward and creates/positions one VA emitter per
-`AudioSourceComponent` entity with a valid `Audio` handle, then ticks `OnUpdate(ts)`
-(`vaWorldUpdate`). The VA listener is a plain emitter used only as an occlusion/reverb *target*
-(`vaEmitterAddTarget`) — it never casts its own rays.
+start, not kept in sync with moving colliders.** **The simulation is asynchronous, and a frame has two halves.** `OnUpdateRuntime`'s acoustics block
+must run in this order, and `RaytracedAudioScene`'s API is shaped to force it:
 
-`RaytracedAudioScene::GetResult(entityID)` exposes the per-emitter result (`RaytracedAudioResult`:
-two-band occlusion gain plus reverb return/decay) for a playback backend to apply. VA computes
-acoustic parameters only — it does not play audio itself, so this is a separate system from the
-playback backend below.
+1. `WaitForResults()` (`vaWorldWait`) — joins the batch the *previous* frame kicked.
+2. Sync the active `AudioListenerComponent`'s position/forward, create/position one VA emitter per
+   `AudioSourceComponent` entity with a valid `Audio` handle, and read `GetResult` / `GetAmbience`.
+3. `OnUpdate(ts)` (`vaWorldUpdate`) — kicks the next batch and returns immediately.
+
+Step 2 is the only window in which no Vercidium worker is touching the world, so both emitter
+mutation and result reads belong there. Reading results without step 1 races the workers still
+writing them, and — because `vaWorldUpdate` without a matching wait can leave a batch queued but not
+yet picked up — `Stop()` performs an unconditional `vaWorldWait` *before* testing
+`vaWorldGetThreadsRunning`, since that predicate reads false for work that has not started and would
+otherwise skip the shutdown drain entirely.
+
+**Emitter topology — the listener is the only ray caster.** It casts all five ray types (reverb,
+occlusion, permeation, ambient occlusion, ambient permeation, at Vercidium's documented counts) and
+every audio source is registered as one of its targets via `vaEmitterAddTarget(listener, source)`.
+Sources keep the SDK's zero ray-count defaults and cast nothing. This is the arrangement Vercidium's
+documentation describes, and it is what makes the cost scale: adding a source adds a *target* to the
+listener's existing ray budget, not a second budget of its own. Note the argument order — the caster
+comes first in both `vaEmitterAddTarget` and `vaEmitterGetTargetFilter`, and swapping them silently
+yields no occlusion rather than an error.
+
+Two getters split the output along the axis the simulation itself uses:
+
+- `GetResult(entityID)` → `RaytracedAudioResult`, **per source**: two-band direct-path occlusion
+  gain (`OcclusionGainLF/HF`).
+- `GetAmbience()` → `RaytracedAudioAmbience`, **per listener**: the ambient (enclosure) filter, the
+  measured echogram energy split, and `RaytracedAudioReverb` — the complete EAX/I3DL2 parameter set
+  (`vaEmitterGetEAX`), in the SDK's own units of seconds, Hz and linear gain.
+
+Reverb lives on the ambience rather than on each source because it is a property of the *space*, not
+of any one emitter; sources contribute to it only through their individual send levels. Multi-zone
+reverb (several rooms at once) is what VA's grouped EAX is for — `RaytracedAudioStats::GroupedEAXCount`
+surfaces the zone count, but nothing maps those zones onto separate backend reverb units yet.
+
+**Visualisation.** `SetVisualisationEnabled(...)` turns on the SDK's visualisation rays and
+`GetVisualisation(...)` returns a `RaytracedAudioVisualisation` snapshot of world-space bounce
+positions and normals, laid out ray-major. These rays are debug-only: they cost real raytracing work
+and feed nothing back into the audio, so they default to off. **The SDK delivers bounces on its own
+worker threads** through `vaEmitterSetVisualisationCallback`, and the delivered array is valid only
+for the duration of the callback — a file-local `VisualisationState` (reached through
+`vaEmitterSetUserData`, since the callback is a plain C function pointer with no user-data parameter)
+copies it out under a mutex, and readers copy it again. Anything else races the worker threads.
+
+VA computes acoustic parameters only — it does not play audio itself, so this is a separate system
+from the playback backend below.
 
 **Playback backend (optional, dual):** `AudioEngine`/`AudioSource`/`AudioListener` build against
 either miniaudio (default) or FMOD Engine Core API (`--fmod`, `LUX_ENABLE_FMOD`, requires
@@ -398,14 +436,126 @@ out. `AudioEngine::Update()` pumps `FMOD::System::update()` once per frame from 
 
 Under FMOD, `AudioSource` owns an `FMOD::Sound` + a lazily-created `FMOD::Channel` kept paused
 rather than stopped between plays (`Channel::stop()` permanently invalidates an FMOD channel, which
-doesn't fit this API's "replay in place" contract), and `Scene::OnUpdateRuntime`'s
-`RaytracedAudioScene` sync block feeds `RaytracedAudioResult` straight into
-`Channel::set3DOcclusion` and `Channel::setReverbProperties` — the one place VA's acoustic
-simulation and FMOD's playback actually connect. `AudioEngine::Init()` creates one ambient,
-effectively unbounded `FMOD::Reverb3D` so that per-source reverb send has somewhere to go; per-source
-reverb *character* (decay time, roughness) from VA isn't fed into FMOD's reverb properties yet, only
-the wet amount. Only the Linux FMOD package has been fetched — the Windows paths in
-`Dependencies.lua` are unverified placeholders (see the comment there).
+doesn't fit this API's "replay in place" contract).
+
+**Where VA and FMOD connect** — `Scene::OnUpdateRuntime`'s acoustics block, in two steps:
+
+1. Once per frame, `AudioEngine::SetReverb(ambience.Reverb)` converts the full EAX set to
+   `FMOD_REVERB_PROPERTIES` (seconds → ms, linear gain → dB, ratios → percent) and applies it to the
+   one ambient, effectively unbounded `FMOD::Reverb3D` created in `AudioEngine::Init()`. Every field
+   is clamped to FMOD's documented range: **FMOD rejects the whole struct if any single field is out
+   of range**, which would silently leave the previous reverb in place. `GetReverbSnapshot()` returns
+   what was actually applied, in FMOD's units, for the editor to show beside the simulation's output.
+2. Per source, `AudioSource::SetAcoustics(AudioSourceAcoustics)` applies the two-band result.
+
+The two-band mapping is the part worth understanding. FMOD's `set3DOcclusion` is a single scalar that
+attenuates *and* low-passes together, so the two measured bands are split across the two controls
+that can carry them independently: the **LF gain scales the channel's volume** (how much gets through
+at all) and **the HF-relative loss, `1 − gainHF/gainLF`, drives the occlusion filter** (how much
+*further* the highs are attenuated). Feeding the HF gain straight into `set3DOcclusion` would
+double-count the loss — attenuating by the HF amount as well as filtering by it — and a source behind
+a wall would go inaudible instead of muffled. Because occlusion now scales volume, `AudioSource`
+keeps `m_ConfiguredVolume` and `m_OcclusionVolumeScale` apart and multiplies them, so a `SetConfig`
+doesn't wipe out occlusion and occlusion doesn't overwrite the authored volume.
+
+Only the Linux FMOD package has been fetched — the Windows paths in `Dependencies.lua` are unverified
+placeholders (see the comment there).
+
+**FMOD Studio (in progress — authoring pipeline).** The engine is migrating from Core-only playback
+of raw audio files to Studio events authored in an `.fspro` project. `Dependencies.lua` has two FMOD
+entries because Studio is a *separate library layered on* Core (`FMODStudio` + `FMOD`); Studio owns
+events and banks and creates a Core system internally, so both must be linked and both `.so`s copied.
+
+Project-level configuration lives in `ProjectAudioSettings` (`Project.h`): `StudioProjectPath` (the
+`.fspro`, relative to the asset directory), `StudioBankOutputPath` (relative to the `.fspro`, since
+FMOD writes `Build/` next to the project file), `RebuildBanksOnPlay`, and `EnableLiveUpdate`.
+`Project::GetStudioProjectPath()` / `GetStudioBankDirectory()` resolve these to absolute paths and
+return empty when the project has no authored audio — callers must check, not assume.
+
+`AudioBankBuilder` (`Audio/AudioBankBuilder.{h,cpp}`) shells out to FMOD's CLI, the same way
+`ScriptBuilder` shells out to `dotnet`, and deliberately does **not** sit behind `LUX_ENABLE_FMOD` —
+building banks needs the Studio *application*, not the SDK. It locates `fmodstudiocl` via
+`LUX_FMOD_STUDIO_CL`, then the usual install paths, then `PATH`. `NeedsRebuild` compares the newest
+file under the `.fspro`'s directory against the *oldest* bank (a project that gained a bank since the
+last full build has one current file and one stale one, and the stale one is what matters), skipping
+the build directory so a build never invalidates itself. `EditorLayer::RebuildAudioBanksIfNeeded()`
+runs this on entering Play; a failed build logs and lets Play continue, because a stale bank still
+plays something.
+
+Builds always pass `-export-guids`, which writes `Build/GUIDs.txt` as `{guid} event:/Path` lines.
+**Events must be referenced by GUID, not by path**: a rename in Studio leaves a path-referencing
+scene silently mute with no error, while GUIDs survive renames and moves.
+
+`.fspro` and `.bank` are registered as `AssetType::AudioProject` / `AssetType::AudioBank` so the
+Content Browser can show and *activate* them — activation hands off to the FMOD Studio GUI
+(`AudioBankBuilder::OpenInStudio`), since neither is edited in this editor. They have no
+`AssetImporter` serializer on purpose: they are never loaded as engine assets.
+`ContentBrowserPanel::ProcessDirectory` treats a directory containing a `.fspro` as **opaque** and
+does not recurse into it — a Studio project is dozens of GUID-named XML files under `Metadata/`,
+plus its cache and build output, none of which is engine content. Dot-directories are skipped for
+the same reason. (`Metadata/` *is* tracked in git: it is the authored source, stored one file per
+object so audio work merges. `Build/`, `.cache/` and `.user/` are ignored.)
+
+**Runtime ownership: Studio owns the Core system.** `AudioEngine::Init` calls
+`FMOD::Studio::System::create` and then `getCoreSystem()` — it must **not** also call
+`FMOD::System_Create`, which would leave a second core system that nothing mixes through.
+Consequences that are easy to get wrong:
+
+- `Shutdown` releases **only** the Studio system. It owns the core system, so releasing or closing
+  `s_Engine` as well is a double free.
+- `Update` must call **both** `Studio::System::update()` and then `System::update()`. Studio's update
+  does **not** recompute the Core system's 3D attenuation: measured with `Channel::getAudibility` on
+  a fixed source with the listener walked away from it, Studio's update alone leaves audibility
+  frozen at the geometry the channel started with — distance has no effect, which is indistinguishable
+  from spatialisation being switched off — while adding the Core update makes it track the rolloff
+  curve exactly. Studio goes first so event state resolves before the core mixer consumes it.
+- `GetEngine()` still returns the core system, and remains the right handle for what Studio does not
+  cover: the 3D listener, the ray-traced `Reverb3D`, and CPU/memory stats. Core-API playback
+  (`createSound`/`playSound`, as `AudioSource` still uses) works on it unchanged, which is what lets
+  the event migration land incrementally instead of as one breaking change.
+
+Live update (`FMOD_STUDIO_INIT_LIVEUPDATE`) is gated on `ProjectAudioSettings::EnableLiveUpdate` and
+compiled out of `dist` — it opens a listening socket so the FMOD Studio app can attach to the running
+editor and remix in place.
+
+`LoadBanks(directory)` loads every `.bank` in the built-bank directory, **strings bank first**: it
+carries the event path table, and loading it late makes every `getEvent("event:/…")` issued in
+between fail with `EVENT_NOTFOUND`, which does not hint at the cause. It then `flushCommands()` —
+bank loading is asynchronous by default and the event lists are empty until the load completes — and
+enumerates `AudioEventInfo` (path, GUID, 3D, oneshot) from the banks themselves rather than from
+`GUIDs.txt`, so the list cannot disagree with what is actually loaded. `EditorLayer` loads banks on
+project open (so events are listable in Edit mode, not just in Play) and reloads them after a
+successful rebuild on Play.
+
+`SetBusVolume` / `GetBusVolume` drive the mixer buses the sound designer authored (`bus:/`,
+`bus:/SFX`). The engine never invents the bus hierarchy — an unknown path returns false/0, which is
+the normal answer for a project that has not authored that bus.
+
+**Editor observability:** `AudioDebugPanel` (`Editor/Source/Panels/AudioDebugPanel.{h,cpp}`, View →
+Audio Debugger, closed by default) renders both halves of the stack. It is pure visualization over
+read-only accessors — `AudioEngine::GetStats()` / `GetReverbSnapshot()` and
+`RaytracedAudioScene::GetStats()` / `GetResult()` / `GetAmbience()` / `GetVisualisation()` — and adds
+no instrumentation of its own. Its Reverb section deliberately shows the simulation's EAX output and
+the values FMOD actually received side by side, because when reverb sounds wrong the useful question
+is which of the two is surprising (a clamp that flattened a value shows up there).
+
+The panel owns the `AudioVisualisationSettings` but does not draw: `EditorLayer::DrawAudioVisualisation()`,
+called from `OnOverlayRender()`, reads them and draws ray paths, bounce points, surface normals,
+emitter gizmos and world bounds with the `Renderer2D` that function has already set up for the frame.
+Splitting it this way keeps the settings next to their UI while the drawing stays where a camera is
+already bound — a panel has no scene camera of its own. Note `EditorLayer` holds a `Ref<AudioDebugPanel>`
+*only* for this; `PanelManager` still owns the panel and drives its render and scene context.
+
+Both stats structs are POD and **name their backend as data** rather than exposing it as a macro:
+`LUX_ENABLE_FMOD` / `LUX_ENABLE_RAYTRACED_AUDIO` are defined only for the `Core` project
+(`Core/premake5.lua`), so the Editor cannot branch on them and no panel may try. This is the general
+rule for surfacing an opt-in SDK's state to editor code: add a backend-agnostic accessor in `Core`,
+never an `#ifdef` in `Editor/`. `AudioEngineStats::HasMixerStats` distinguishes "not measured"
+(miniaudio, which has no voice-count or mixer-CPU query) from a real zero.
+
+`RaytracedAudioScene::Impl` tracks `StaticTriangleCount` alongside its primitives purely so the panel
+can tell "no geometry mirrored" apart from "geometry the simulation is ignoring" — the SDK offers no
+way to read a primitive's triangle count back.
 
 ### 2.11 Input
 

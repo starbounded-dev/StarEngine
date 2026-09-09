@@ -7,6 +7,7 @@
 	#include <algorithm>
 	#include <cmath>
 	#include <limits>
+	#include <mutex>
 	#include <unordered_map>
 #endif
 
@@ -30,13 +31,19 @@ namespace Lux {
 
 	void RaytracedAudioScene::Start() {}
 	void RaytracedAudioScene::Stop() {}
+	void RaytracedAudioScene::WaitForResults() {}
 	void RaytracedAudioScene::OnUpdate(Timestep) {}
 	void RaytracedAudioScene::SetStaticGeometry(const std::vector<glm::vec3>&) {}
 	void RaytracedAudioScene::SetListener(const glm::vec3&, const glm::vec3&) {}
 	void RaytracedAudioScene::CreateEmitter(UUID) {}
 	void RaytracedAudioScene::DestroyEmitter(UUID) {}
 	void RaytracedAudioScene::SetEmitterPosition(UUID, const glm::vec3&) {}
+	void RaytracedAudioScene::SetEmitterMaxVolume(UUID, float) {}
 	RaytracedAudioResult RaytracedAudioScene::GetResult(UUID) const { return {}; }
+	RaytracedAudioAmbience RaytracedAudioScene::GetAmbience() const { return {}; }
+	void RaytracedAudioScene::SetVisualisationEnabled(bool, int, int, int) {}
+	void RaytracedAudioScene::GetVisualisation(RaytracedAudioVisualisation& outVisualisation) const { outVisualisation = {}; }
+	RaytracedAudioStats RaytracedAudioScene::GetStats() const { return {}; }
 
 #else
 
@@ -59,21 +66,96 @@ namespace Lux {
 		// casts nothing never produces an occlusion filter or reverb result. These are the values
 		// from Vercidium's own getting-started example; they are the starting point for tuning
 		// quality against CPU cost, not a hard requirement.
+		//
+		// All of them are set on the *listener*, which is the only ray caster (see the class
+		// comment). Reverb rays measure the space the listener is in; occlusion and permeation rays
+		// are cast toward each target source; the ambient pair measures how enclosed the listener
+		// is, independent of any source.
 		constexpr int kReverbRayCount = 128;
 		constexpr int kReverbBounceCount = 64;
 		constexpr int kOcclusionRayCount = 512;
 		constexpr int kOcclusionBounceCount = 8;
 		constexpr int kPermeationRayCount = 128;
 		constexpr int kPermeationBounceCount = 3;
+		constexpr int kAmbientOcclusionRayCount = 512;
+		constexpr int kAmbientOcclusionBounceCount = 8;
+		constexpr int kAmbientPermeationRayCount = 128;
+		constexpr int kAmbientPermeationBounceCount = 4;
+
+		// Upper bound on the vaWorldUpdate/vaWorldWait pumps used to drain Vercidium's worker
+		// threads during Stop(); one is normally enough (see the comment there).
+		constexpr int kShutdownDrainMaxSpins = 1000;
 
 		VAVector ToVA(const glm::vec3& v)
 		{
 			return vaVectorCreate(v.x, v.y, v.z);
 		}
 
+		glm::vec3 FromVA(const VAVector& v)
+		{
+			return { v.x, v.y, v.z };
+		}
+
 	}
 
 	bool RaytracedAudioScene::IsAvailable() { return true; }
+
+	namespace {
+
+		// Visualisation bounces are produced on Vercidium's worker threads and are only valid for
+		// the duration of the callback, so they are copied out under this lock and copied again by
+		// whoever renders them. File-local rather than a member of the private Impl because
+		// vaEmitterSetVisualisationCallback takes a plain C function pointer with no user-data
+		// parameter — the emitter's user data is the only route back, and it must point at
+		// something this callback can name.
+		struct VisualisationState
+		{
+			mutable std::mutex Mutex;
+			std::vector<RaytracedAudioBounce> Bounces;
+			glm::vec3 Origin{ 0.0f };
+			int RayCount = 0;
+			int BounceCount = 0;
+			bool Enabled = false;
+		};
+
+		void VisualisationCallback(VAEmitter* emitter, VAVisualisationData* data, int count)
+		{
+			auto* state = (VisualisationState*)vaEmitterGetUserData(emitter);
+			if (!state || !data || count <= 0)
+				return;
+
+			// The lock is held for a copy of a few thousand floats. Workers contend only with each
+			// other and with one per-frame read; nothing here blocks on rendering.
+			std::scoped_lock lock(state->Mutex);
+
+			state->Bounces.resize((size_t)count);
+			for (int i = 0; i < count; i++)
+			{
+				state->Bounces[i].Position = FromVA(data[i].position);
+				state->Bounces[i].Normal = FromVA(data[i].normal);
+			}
+			state->Origin = FromVA(vaEmitterGetPosition(emitter));
+
+			// The SDK hands back a flat array with no ray/bounce grouping. It is ray-major over
+			// rayCount * bounceCount, so derive the stride from what actually arrived rather than
+			// trusting the configured counts — a short delivery under the configured stride would
+			// splice unrelated rays into one polyline.
+			const int configuredBounces = vaEmitterGetVisualisationBounceCount(emitter);
+			if (configuredBounces > 0 && count % configuredBounces == 0)
+			{
+				state->BounceCount = configuredBounces;
+				state->RayCount = count / configuredBounces;
+			}
+			else
+			{
+				// Draw each bounce as its own segment from the origin instead of as a connected
+				// path. Visibly different from a real ray path, but never misleading.
+				state->BounceCount = 1;
+				state->RayCount = count;
+			}
+		}
+
+	}
 
 	struct RaytracedAudioScene::Impl
 	{
@@ -81,6 +163,12 @@ namespace Lux {
 		VAEmitter* Listener = nullptr;
 		std::unordered_map<UUID, VAEmitter*> SourceEmitters;
 		std::vector<VAMeshPrimitive*> StaticPrimitives;
+		// The SDK offers no way to read a primitive's triangle count back, so record what we
+		// mirrored into it - the editor uses this to tell "no geometry" apart from "geometry the
+		// simulation is ignoring".
+		int StaticTriangleCount = 0;
+
+		VisualisationState Visualisation;
 	};
 
 	RaytracedAudioScene::RaytracedAudioScene(Scene* scene)
@@ -104,15 +192,32 @@ namespace Lux {
 		vaWorldSetPosition(m_Impl->World, vaVectorCreateUniform(-kDefaultWorldHalfExtent));
 		vaWorldSetSize(m_Impl->World, vaVectorCreateUniform(kDefaultWorldHalfExtent * 2.0f));
 
-		// The listener is a plain emitter used only as an occlusion/reverb target - it never casts
-		// its own rays.
+		// The listener is the only ray caster in the world (see the class comment): reverb rays
+		// measure the space it is in, occlusion and permeation rays are cast toward each target
+		// source, and the ambient pair measures how enclosed it is regardless of any source.
 		m_Impl->Listener = vaEmitterCreate();
+		vaEmitterSetName(m_Impl->Listener, "LuxListener");
 		vaEmitterSetHasRelativeReverb(m_Impl->Listener, true);
-		vaEmitterSetReverbRayCount(m_Impl->Listener, 0);
-		vaEmitterSetOcclusionRayCount(m_Impl->Listener, 0);
-		vaEmitterSetPermeationRayCount(m_Impl->Listener, 0);
-		vaEmitterSetAmbientOcclusionRayCount(m_Impl->Listener, 0);
-		vaEmitterSetAmbientPermeationRayCount(m_Impl->Listener, 0);
+		// The listener hears the grouped reverb rather than contributing to it; blending its own
+		// reverb back in would double-count the space.
+		vaEmitterSetAffectsGroupedEAX(m_Impl->Listener, false);
+
+		vaEmitterSetReverbRayCount(m_Impl->Listener, kReverbRayCount);
+		vaEmitterSetReverbBounceCount(m_Impl->Listener, kReverbBounceCount);
+		vaEmitterSetOcclusionRayCount(m_Impl->Listener, kOcclusionRayCount);
+		vaEmitterSetOcclusionBounceCount(m_Impl->Listener, kOcclusionBounceCount);
+		vaEmitterSetPermeationRayCount(m_Impl->Listener, kPermeationRayCount);
+		vaEmitterSetPermeationBounceCount(m_Impl->Listener, kPermeationBounceCount);
+		vaEmitterSetAmbientOcclusionRayCount(m_Impl->Listener, kAmbientOcclusionRayCount);
+		vaEmitterSetAmbientOcclusionBounceCount(m_Impl->Listener, kAmbientOcclusionBounceCount);
+		vaEmitterSetAmbientPermeationRayCount(m_Impl->Listener, kAmbientPermeationRayCount);
+		vaEmitterSetAmbientPermeationBounceCount(m_Impl->Listener, kAmbientPermeationBounceCount);
+
+		// Routes the visualisation callback back to our snapshot buffer. Set unconditionally so
+		// SetVisualisationEnabled only has to touch ray counts.
+		vaEmitterSetUserData(m_Impl->Listener, &m_Impl->Visualisation);
+		vaEmitterSetVisualisationCallback(m_Impl->Listener, VisualisationCallback);
+
 		if (VAResult result = vaWorldAddEmitter(m_Impl->World, m_Impl->Listener); result != VA_SUCCESS)
 			LUX_CORE_ERROR_TAG("Audio", "RaytracedAudioScene::Start failed to add the listener emitter to the world; no source will produce occlusion (VAResult={0})", result);
 	}
@@ -124,16 +229,53 @@ namespace Lux {
 		if (!m_Impl->World)
 			return;
 
-		// Stop the background raytracing threads submitting new work before tearing anything down.
-		vaWorldSetPendingShutdown(m_Impl->World, true);
+		// Stop the background raytracing threads submitting new work, then wait for the ones
+		// already in flight to drain. vaudio.h states the precondition explicitly: "When
+		// vaWorldGetThreadsRunning() returns false, it is safe to call vaWorldDestroy()".
+		// Tearing down without waiting segfaults on a Vercidium worker thread (it jumps through
+		// a function pointer belonging to the world we just freed); in a host process that
+		// surfaces later as glibc heap corruption in an unrelated allocation. One update is
+		// normally enough to drain - the bound only stops a wedged worker hanging the editor.
+		// Stop new visualisation bounces being delivered before anything is torn down, so the drain
+		// below is the only thing the workers are still finishing.
+		if (m_Impl->Listener)
+		{
+			vaEmitterSetVisualisationRayCount(m_Impl->Listener, 0);
+			vaEmitterSetVisualisationCallback(m_Impl->Listener, nullptr);
+		}
 
-		// vaWorldRemoveEmitter can answer VA_PENDING_REMOVAL: the world keeps the emitter alive
+		// Join whatever the last OnUpdate kicked off, unconditionally and before anything else.
+		// OnUpdate only calls vaWorldUpdate and never waits - that is the point of an asynchronous
+		// simulation - so on entry here a batch is typically still in flight or not yet picked up.
+		// In the latter case vaWorldGetThreadsRunning() answers false, the drain loop below is
+		// skipped entirely, and the world is destroyed out from under work that is about to start.
+		vaWorldWait(m_Impl->World);
+
+		vaWorldSetPendingShutdown(m_Impl->World, true);
+		for (int spin = 0; spin < kShutdownDrainMaxSpins && vaWorldGetThreadsRunning(m_Impl->World); spin++)
+		{
+			vaWorldUpdate(m_Impl->World);
+			vaWorldWait(m_Impl->World);
+		}
+
+		if (vaWorldGetThreadsRunning(m_Impl->World))
+			LUX_CORE_ERROR_TAG("Audio", "RaytracedAudioScene::Stop: Vercidium worker threads still running after {0} drain attempts; destroying the world anyway may crash", kShutdownDrainMaxSpins);
+
+		// Every source is a target of the listener, and the listener outlives them in this teardown
+		// order. Destroying a source while the listener still lists it as a target leaves a dangling
+		// entry that vaWorldDestroy walks - which segfaults inside the SDK, on the main thread, with
+		// nothing in the trace pointing back here. Deregister first, exactly as DestroyEmitter does.
+		//
+		// vaWorldRemoveEmitter can then answer VA_PENDING_REMOVAL: the world keeps the emitter alive
 		// until its reverb tail finishes. Destroying it here regardless leaves the world holding a
 		// freed pointer, which it frees again from vaWorldDestroy below - a double free. Only
 		// destroy what actually came back out; vaWorldDestroy releases whatever the world still
 		// owns along with itself.
 		for (auto& [entityID, emitter] : m_Impl->SourceEmitters)
 		{
+			if (m_Impl->Listener)
+				vaEmitterRemoveTarget(m_Impl->Listener, emitter);
+
 			if (vaWorldRemoveEmitter(m_Impl->World, emitter) == VA_SUCCESS)
 				vaEmitterDestroy(emitter);
 		}
@@ -145,6 +287,7 @@ namespace Lux {
 				vaMeshPrimitiveDestroy(primitive);
 		}
 		m_Impl->StaticPrimitives.clear();
+		m_Impl->StaticTriangleCount = 0;
 
 		if (m_Impl->Listener)
 		{
@@ -158,6 +301,21 @@ namespace Lux {
 		m_Impl->World = nullptr;
 	}
 
+	void RaytracedAudioScene::WaitForResults()
+	{
+		LUX_PROFILE_FUNCTION_AUTO;
+
+		if (!m_Impl->World)
+			return;
+
+		// Joins the batch OnUpdate kicked last frame. Everything the caller does between this and
+		// the next OnUpdate - moving emitters, reading filters and reverb - then runs with no
+		// Vercidium worker touching the world. This is a wait on work that has had a full frame to
+		// finish, not a synchronous raytrace: by the time the caller gets here the batch is
+		// normally already complete and this returns immediately.
+		vaWorldWait(m_Impl->World);
+	}
+
 	void RaytracedAudioScene::OnUpdate(Timestep ts)
 	{
 		LUX_PROFILE_FUNCTION_AUTO;
@@ -166,6 +324,8 @@ namespace Lux {
 		if (!m_Impl->World)
 			return;
 
+		// Kicks the next batch and returns without waiting - the results land by the next frame's
+		// WaitForResults. Nothing may read results or move emitters after this point in the frame.
 		vaWorldUpdate(m_Impl->World);
 	}
 
@@ -182,6 +342,7 @@ namespace Lux {
 				vaMeshPrimitiveDestroy(primitive);
 		}
 		m_Impl->StaticPrimitives.clear();
+		m_Impl->StaticTriangleCount = 0;
 
 		if (worldSpaceTriangles.empty())
 			return;
@@ -219,6 +380,7 @@ namespace Lux {
 		}
 
 		m_Impl->StaticPrimitives.push_back(primitive);
+		m_Impl->StaticTriangleCount = (int)(worldSpaceTriangles.size() / 3);
 
 		const glm::vec3 paddedMin = minBounds - kWorldBoundsPadding;
 		const glm::vec3 paddedMax = maxBounds + kWorldBoundsPadding;
@@ -247,16 +409,10 @@ namespace Lux {
 		if (!m_Impl->World || m_Impl->SourceEmitters.contains(entityID))
 			return;
 
+		// A source is a pure target: it casts nothing itself and is raytraced *by* the listener, so
+		// its ray counts stay at the SDK's zero defaults. Adding a source therefore costs one more
+		// target for the listener's existing ray budget, not a second budget of its own.
 		VAEmitter* emitter = vaEmitterCreate();
-
-		// Without these the emitter casts no rays at all and never yields a result (see the
-		// constants above).
-		vaEmitterSetReverbRayCount(emitter, kReverbRayCount);
-		vaEmitterSetReverbBounceCount(emitter, kReverbBounceCount);
-		vaEmitterSetOcclusionRayCount(emitter, kOcclusionRayCount);
-		vaEmitterSetOcclusionBounceCount(emitter, kOcclusionBounceCount);
-		vaEmitterSetPermeationRayCount(emitter, kPermeationRayCount);
-		vaEmitterSetPermeationBounceCount(emitter, kPermeationBounceCount);
 
 		if (VAResult result = vaWorldAddEmitter(m_Impl->World, emitter); result != VA_SUCCESS)
 		{
@@ -265,10 +421,12 @@ namespace Lux {
 			return;
 		}
 
+		// vaEmitterAddTarget requires the target to already be in the same world, which the call
+		// above guarantees.
 		if (m_Impl->Listener)
 		{
-			if (VAResult result = vaEmitterAddTarget(emitter, m_Impl->Listener); result != VA_SUCCESS)
-				LUX_CORE_ERROR_TAG("Audio", "RaytracedAudioScene::CreateEmitter failed to target the listener from entity {0}; it will produce no occlusion (VAResult={1})", (uint64_t)entityID, result);
+			if (VAResult result = vaEmitterAddTarget(m_Impl->Listener, emitter); result != VA_SUCCESS)
+				LUX_CORE_ERROR_TAG("Audio", "RaytracedAudioScene::CreateEmitter failed to target entity {0} from the listener; it will produce no occlusion (VAResult={1})", (uint64_t)entityID, result);
 		}
 
 		m_Impl->SourceEmitters[entityID] = emitter;
@@ -280,12 +438,26 @@ namespace Lux {
 		if (it == m_Impl->SourceEmitters.end())
 			return;
 
+		// Drop the listener's target first: leaving it registered would have the listener keep
+		// casting occlusion rays at an emitter that is on its way out of the world.
+		if (m_Impl->Listener)
+			vaEmitterRemoveTarget(m_Impl->Listener, it->second);
+
 		// As in Stop(): a VA_PENDING_REMOVAL emitter is still owned by the world (its reverb tail
 		// is still playing), so dropping our handle is all we may safely do - the world frees it.
 		if (m_Impl->World && vaWorldRemoveEmitter(m_Impl->World, it->second) == VA_SUCCESS)
 			vaEmitterDestroy(it->second);
 
 		m_Impl->SourceEmitters.erase(it);
+	}
+
+	void RaytracedAudioScene::SetEmitterMaxVolume(UUID entityID, float maxVolume)
+	{
+		auto it = m_Impl->SourceEmitters.find(entityID);
+		if (it == m_Impl->SourceEmitters.end())
+			return;
+
+		vaEmitterSetMaxVolume(it->second, maxVolume);
 	}
 
 	void RaytracedAudioScene::SetEmitterPosition(UUID entityID, const glm::vec3& position)
@@ -315,23 +487,171 @@ namespace Lux {
 		if (vaEmitterGetInitialising(emitter) || vaEmitterGetPendingRemoval(emitter))
 			return result;
 
-		if (const VALowPassFilter* filter = vaEmitterGetTargetFilter(emitter, m_Impl->Listener))
+		if (vaEmitterGetInitialising(m_Impl->Listener))
+			return result;
+
+		// The listener is the caster, so the filter is looked up caster-first: this is the filter
+		// the listener computed for hearing that source.
+		if (const VALowPassFilter* filter = vaEmitterGetTargetFilter(m_Impl->Listener, emitter))
 		{
 			result.OcclusionGainLF = filter->gainLF;
 			result.OcclusionGainHF = filter->gainHF;
 			result.Valid = true;
 		}
 
-		if (const VAProcessedReverb* reverb = vaEmitterGetProcessedReverb(emitter))
+		return result;
+	}
+
+	RaytracedAudioAmbience RaytracedAudioScene::GetAmbience() const
+	{
+		RaytracedAudioAmbience ambience;
+
+		if (!m_Impl->World || !m_Impl->Listener || vaEmitterGetInitialising(m_Impl->Listener))
+			return ambience;
+
+		if (const VALowPassFilter* filter = vaEmitterGetAmbientFilter(m_Impl->Listener))
 		{
-			result.ReverbReturnedPercent = reverb->returnedPercent;
-			result.ReverbOutsidePercent = reverb->outsidePercent;
-			result.ReverbDecayTimeLF = reverb->measuredDecayTimeLF;
-			result.ReverbDecayTimeHF = reverb->measuredDecayTimeHF;
-			result.Valid = true;
+			ambience.AmbientGainLF = filter->gainLF;
+			ambience.AmbientGainHF = filter->gainHF;
+			ambience.Valid = true;
 		}
 
-		return result;
+		if (const VAProcessedReverb* processed = vaEmitterGetProcessedReverb(m_Impl->Listener))
+		{
+			ambience.ReturnedPercent = processed->returnedPercent;
+			ambience.OutsidePercent = processed->outsidePercent;
+			ambience.MeasuredDecayTimeLF = processed->measuredDecayTimeLF;
+			ambience.MeasuredDecayTimeHF = processed->measuredDecayTimeHF;
+			ambience.MaterialRoughness = processed->materialRoughness;
+			ambience.MaterialAbsorptionLF = processed->materialAbsorptionLF;
+			ambience.MaterialAbsorptionHF = processed->materialAbsorptionHF;
+			ambience.Valid = true;
+		}
+
+		// The whole EAX set, copied field for field. This is the simulation's actual output: a
+		// backend that applies only one or two of these is leaving the reverb character on the
+		// table.
+		if (const VAEAXReverb* eax = vaEmitterGetEAX(m_Impl->Listener))
+		{
+			RaytracedAudioReverb& reverb = ambience.Reverb;
+			reverb.Valid = true;
+			reverb.Gain = eax->gain;
+			reverb.GainLF = eax->gainLF;
+			reverb.GainHF = eax->gainHF;
+			reverb.DecayTime = eax->decayTime;
+			reverb.DecayLFRatio = eax->decayLFRatio;
+			reverb.DecayHFRatio = eax->decayHFRatio;
+			reverb.ReflectionsGain = eax->reflectionsGain;
+			reverb.ReflectionsDelay = eax->reflectionsDelay;
+			reverb.LateReverbGain = eax->lateReverbGain;
+			reverb.LateReverbDelay = eax->lateReverbDelay;
+			reverb.Density = eax->density;
+			reverb.Diffusion = eax->diffusion;
+			reverb.EchoTime = eax->echoTime;
+			reverb.EchoDepth = eax->echoDepth;
+			reverb.ModulationTime = eax->modulationTime;
+			reverb.ModulationDepth = eax->modulationDepth;
+			reverb.AirAbsorptionGainHF = eax->airAbsorptionGainHF;
+			reverb.HFReference = eax->hfReference;
+			reverb.LFReference = eax->lfReference;
+			reverb.RoomRolloffFactor = eax->roomRolloffFactor;
+			reverb.DecayHFLimit = eax->decayHFLimit != 0;
+			ambience.Valid = true;
+		}
+
+		return ambience;
+	}
+
+	void RaytracedAudioScene::SetVisualisationEnabled(bool enabled, int rayCount, int bounceCount, int updateIntervalMs)
+	{
+		if (!m_Impl->Listener)
+			return;
+
+		const bool on = enabled && rayCount > 0 && bounceCount > 0;
+
+		vaEmitterSetVisualisationRayCount(m_Impl->Listener, on ? rayCount : 0);
+		vaEmitterSetVisualisationBounceCount(m_Impl->Listener, on ? bounceCount : 0);
+		if (on && updateIntervalMs > 0)
+			vaEmitterSetVisualisationUpdateFrequency(m_Impl->Listener, updateIntervalMs);
+
+		std::scoped_lock lock(m_Impl->Visualisation.Mutex);
+		m_Impl->Visualisation.Enabled = on;
+		if (!on)
+		{
+			// Drop the last snapshot so a disabled overlay stops drawing immediately rather than
+			// leaving the final frame of rays frozen in the viewport.
+			m_Impl->Visualisation.Bounces.clear();
+			m_Impl->Visualisation.RayCount = 0;
+			m_Impl->Visualisation.BounceCount = 0;
+		}
+	}
+
+	void RaytracedAudioScene::GetVisualisation(RaytracedAudioVisualisation& outVisualisation) const
+	{
+		{
+			std::scoped_lock lock(m_Impl->Visualisation.Mutex);
+			outVisualisation.Bounces = m_Impl->Visualisation.Bounces;
+			outVisualisation.Origin = m_Impl->Visualisation.Origin;
+			outVisualisation.RayCount = m_Impl->Visualisation.RayCount;
+			outVisualisation.BounceCount = m_Impl->Visualisation.BounceCount;
+		}
+
+		if (!m_Impl->World)
+			return;
+
+		// A ray that hit nothing still occupies its slot in the array, filled with a far
+		// out-of-world sentinel (observed as -99999 per component, but the SDK documents no
+		// specific value). Classifying by world containment rather than by that magic number keeps
+		// this correct if the sentinel ever changes, and costs one AABB test per bounce.
+		const glm::vec3 worldMin = FromVA(vaWorldGetPosition(m_Impl->World));
+		const glm::vec3 worldMax = worldMin + FromVA(vaWorldGetSize(m_Impl->World));
+
+		for (RaytracedAudioBounce& bounce : outVisualisation.Bounces)
+		{
+			bounce.Hit = glm::all(glm::greaterThanEqual(bounce.Position, worldMin))
+				&& glm::all(glm::lessThanEqual(bounce.Position, worldMax));
+		}
+	}
+
+	RaytracedAudioStats RaytracedAudioScene::GetStats() const
+	{
+		RaytracedAudioStats stats;
+		stats.Available = true;
+		vaGetVersion(&stats.VersionMajor, &stats.VersionMinor, &stats.VersionPatch);
+		stats.ProductionBuild = vaIsProduction();
+
+		if (!m_Impl->World)
+			return stats;
+
+		stats.Running = true;
+		stats.ThreadsRunning = vaWorldGetThreadsRunning(m_Impl->World);
+		stats.EmitterCount = vaWorldGetEmitterCount(m_Impl->World);
+		stats.SourceEmitterCount = (int)m_Impl->SourceEmitters.size();
+		stats.StaticPrimitiveCount = (int)m_Impl->StaticPrimitives.size();
+		stats.StaticTriangleCount = m_Impl->StaticTriangleCount;
+		stats.RaysCastThisFrame = vaWorldGetRaysCastThisFrame(m_Impl->World);
+		stats.WorkItemCount = vaWorldGetWorkItemCount(m_Impl->World);
+		stats.MaximumConcurrencyLevel = vaWorldGetMaximumConcurrencyLevel(m_Impl->World);
+		stats.GroupedEAXCount = vaWorldGetGroupedEAXCount(m_Impl->World);
+
+		if (m_Impl->Listener)
+		{
+			stats.VisualisationEnabled = vaEmitterGetVisualisationEnabled(m_Impl->Listener);
+			stats.VisualisationRayCount = vaEmitterGetVisualisationRayCount(m_Impl->Listener);
+			stats.VisualisationBounceCount = vaEmitterGetVisualisationBounceCount(m_Impl->Listener);
+		}
+
+		stats.MainThreadTimeMs = vaWorldGetMainThreadTime(m_Impl->World);
+		stats.RaytracingTimeMs = vaWorldGetRaytracingTime(m_Impl->World);
+		stats.PreparationTimeMs = vaWorldGetPreparationTime(m_Impl->World);
+		stats.AnalysisTimeMs = vaWorldGetAnalysisTime(m_Impl->World);
+		stats.LatencyMs = vaWorldGetLatency(m_Impl->World);
+
+		stats.WorldMin = FromVA(vaWorldGetPosition(m_Impl->World));
+		stats.WorldSize = FromVA(vaWorldGetSize(m_Impl->World));
+		stats.ListenerPosition = FromVA(vaWorldGetCameraPosition(m_Impl->World));
+
+		return stats;
 	}
 
 #endif

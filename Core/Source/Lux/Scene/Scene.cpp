@@ -747,6 +747,11 @@ namespace Lux {
 			{
 				LUX_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::RaytracedAudioScene Scope", 0xFF7200);
 
+				// Joins last frame's raytracing batch. Everything below - moving the listener and
+				// emitters, reading results - then runs while no Vercidium worker is touching the
+				// world, and OnUpdate at the bottom kicks the next batch.
+				m_RaytracedAudioScene->WaitForResults();
+
 				m_Registry.view<AudioListenerComponent>().each([&](entt::entity entityHandle, AudioListenerComponent& alc)
 					{
 						if (!alc.Active)
@@ -759,6 +764,13 @@ namespace Lux {
 						const glm::vec3 forward = glm::normalize(glm::vec3(inverted[2].x, inverted[2].y, inverted[2].z));
 						m_RaytracedAudioScene->SetListener(worldPosition, glm::vec3{ -forward.x, -forward.y, -forward.z });
 					});
+
+				// Reverb belongs to the space, not to any one source, so it is read once per frame
+				// from the listener and pushed to the backend's single reverb unit. Each source
+				// below then controls only how much it sends into it.
+				const RaytracedAudioAmbience ambience = m_RaytracedAudioScene->GetAmbience();
+				if (ambience.Reverb.Valid)
+					AudioEngine::SetReverb(ambience.Reverb);
 
 				m_Registry.view<TransformComponent, AudioSourceComponent>().each([&](entt::entity entityHandle, TransformComponent&, AudioSourceComponent& asc)
 					{
@@ -773,18 +785,23 @@ namespace Lux {
 
 						m_RaytracedAudioScene->CreateEmitter(entityID);
 						m_RaytracedAudioScene->SetEmitterPosition(entityID, glm::vec3(GetWorldSpaceTransformMatrix(entity)[3]));
+						m_RaytracedAudioScene->SetEmitterMaxVolume(entityID, asc.Config.VolumeMultiplier);
 
 						const RaytracedAudioResult result = m_RaytracedAudioScene->GetResult(entityID);
-						if (result.Valid)
-						{
-							Ref<AudioSource> audioSource = GetOrCreateRuntimeAudioSource(entity, asc.Audio);
-							if (audioSource)
-							{
-								const float occlusion = 1.0f - (result.OcclusionGainLF + result.OcclusionGainHF) * 0.5f;
-								audioSource->SetOcclusion(occlusion, occlusion);
-								audioSource->SetReverbSend(result.ReverbReturnedPercent);
-							}
-						}
+						if (!result.Valid && !ambience.Valid)
+							return;
+
+						Ref<AudioSource> audioSource = GetOrCreateRuntimeAudioSource(entity, asc.Audio);
+						if (!audioSource)
+							return;
+
+						AudioSourceAcoustics acoustics;
+						acoustics.OcclusionGainLF = result.OcclusionGainLF;
+						acoustics.OcclusionGainHF = result.OcclusionGainHF;
+						acoustics.AmbientGainLF = ambience.AmbientGainLF;
+						acoustics.AmbientGainHF = ambience.AmbientGainHF;
+						acoustics.ReverbSend = ambience.ReturnedPercent;
+						audioSource->SetAcoustics(acoustics);
 					});
 
 				m_RaytracedAudioScene->OnUpdate(ts);
@@ -1020,6 +1037,12 @@ namespace Lux {
 	Ref<RaytracedAudioScene> Scene::GetRaytracedAudioScene() const
 	{
 		return m_RaytracedAudioScene;
+	}
+
+	Ref<AudioSource> Scene::GetRuntimeAudioSource(UUID entityID) const
+	{
+		auto it = m_RuntimeAudioSources.find(entityID);
+		return it != m_RuntimeAudioSources.end() ? it->second : nullptr;
 	}
 
 	Entity Scene::DuplicateEntity(Entity entity)

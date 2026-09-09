@@ -143,19 +143,26 @@ Dependencies = {
 		Windows = { LibName = "vaudionative", LibDir = "%{wks.location}/Core/vendor/VA_RAY/3d/native/production/windows/" },
 		Linux = { LibName = "vaudionative", LibDir = "%{wks.location}/Core/vendor/VA_RAY/3d/native/production/linux/" },
 	} or nil,
-	-- Opt-in, enabled with the "--fmod" premake option. Core API only (fmod.hpp) - no FMOD Studio,
-	-- since AudioSourceComponent plays raw AudioFile assets rather than authored Studio events.
+	-- Opt-in, enabled with the "--fmod" premake option. Two entries because FMOD ships the Studio
+	-- API as a separate library layered on the Core one: Studio owns the events and banks the game
+	-- actually plays, and creates a Core system internally for the low-level work (3D listener,
+	-- reverb, CPU stats). Both must be linked - Studio alone does not resolve.
+	--
 	-- We link the release build in every configuration: DebugLibName below is only honoured on
 	-- Windows (see ProcessDependencies), and the "L" logging build is only useful for debugging
 	-- FMOD itself - same reasoning DiscordSocial uses for its release-only DLL.
 	--
 	-- Only the Linux package has been fetched so far (fmodstudioapi20314linux/); its extracted
-	-- folder name is version-and-OS-coded per FMOD's Linux tarball convention. The Windows path
-	-- below is an unverified placeholder based on FMOD's typical Windows installer layout
-	-- ("FMOD Studio API Windows/api/core/...") - correct it once that package is actually added.
+	-- folder name is version-and-OS-coded per FMOD's Linux tarball convention. The Windows paths
+	-- below are unverified placeholders based on FMOD's typical Windows installer layout
+	-- ("FMOD Studio API Windows/api/...") - correct them once that package is actually added.
 	FMOD = _OPTIONS["fmod"] and {
 		Windows = { LibName = "fmod_vc", IncludeDir = "%{wks.location}/Core/vendor/FMOD/FMOD Studio API Windows/api/core/inc", LibDir = "%{wks.location}/Core/vendor/FMOD/FMOD Studio API Windows/api/core/lib/x64/" },
 		Linux = { LibName = "fmod", IncludeDir = "%{wks.location}/Core/vendor/FMOD/fmodstudioapi20314linux/api/core/inc", LibDir = "%{wks.location}/Core/vendor/FMOD/fmodstudioapi20314linux/api/core/lib/x86_64/" },
+	} or nil,
+	FMODStudio = _OPTIONS["fmod"] and {
+		Windows = { LibName = "fmodstudio_vc", IncludeDir = "%{wks.location}/Core/vendor/FMOD/FMOD Studio API Windows/api/studio/inc", LibDir = "%{wks.location}/Core/vendor/FMOD/FMOD Studio API Windows/api/studio/lib/x64/" },
+		Linux = { LibName = "fmodstudio", IncludeDir = "%{wks.location}/Core/vendor/FMOD/fmodstudioapi20314linux/api/studio/inc", LibDir = "%{wks.location}/Core/vendor/FMOD/fmodstudioapi20314linux/api/studio/lib/x86_64/" },
 	} or nil,
 	ACL = {
 		IncludeDir = "%{wks.location}/Core/vendor/acl/include"
