@@ -191,6 +191,11 @@ Structurally:
   maintains them.
 - `FrameRenderPacket` is the per-frame snapshot that decouples submission from the live registry.
 - `RendererConfig::FramesInFlight` defaults to 3.
+- Selection outline jump-flood inputs are rebound inside the render queue for each iteration,
+  because the ping-pong pass is reused. Mask/distance data uses point sampling. Selection wireframes
+  use the on-top pass; collider wireframes use a cached depth-tested variant unless On Top is enabled.
+  Both share the scene color target, and the graph declares the collider depth read. Collider colors
+  are captured per frame and written to material storage in render-queue order.
 
 ### 2.4 Scene / ECS
 
@@ -349,6 +354,12 @@ Split between engine-owned framework (`Core/Source/Lux/Editor/`) and the editor 
 - `Editor/Source/EditorLayer.{h,cpp}` is the orchestrator. Prefer adding a **panel** over adding code
   to `EditorLayer`.
 - `Editor/Source/RuntimeExportUtils.{h,cpp}` builds the standalone runtime package.
+- Viewport transform gizmos operate on world matrices and convert edits back through the parent
+  transform. Translation, rotation, and scale have separate snap increments (also available with Ctrl).
+  The six-axis view widget uses `EditorCamera::SetOrbitState`; camera view construction uses the
+  orientation's up vector so top/bottom views remain valid. Icons use world positions and selected
+  mesh bounds use only that mesh's submeshes. 2D collider overlays match Box2D's radius/offset
+  convention and share the 3D collider scope, color, and On Top controls.
 
 UI style: use `ImGuiEx` scopes and widgets and `Colors::Theme` constants — see
 `.claude/docs/Conventions.md`.

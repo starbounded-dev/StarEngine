@@ -301,6 +301,7 @@ namespace Lux
 
 		bool m_ShowPhysicsColliders = false;
 		bool m_ShowBoundingBoxes = false;
+		AssetHandle m_LastInvalidBoundsMesh = 0;
 		bool m_ShowEntityIcons = true;
 		bool m_ShowViewportPerformanceHUD = true;
 
@@ -314,6 +315,7 @@ namespace Lux
 		bool m_UseGizmoSnap = false;
 		float m_TranslationSnapValue = 0.5f;
 		float m_RotationSnapValue = 45.0f;
+		float m_ScaleSnapValue = 0.1f;
 		AssetHandle m_RuntimeExportIcon = 0;
 		char m_RuntimeExportGameNameBuffer[256] = {};
 

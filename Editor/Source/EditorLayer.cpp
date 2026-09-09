@@ -17,6 +17,7 @@
 
 #include "Lux/Utilities/FileSystem.h"
 
+#include <cmath>
 #include <cstring>
 #include <format>
 
@@ -60,6 +61,7 @@
 #include <array>
 #include <atomic>
 #include <cctype>
+#include <cmath>
 #include <cmath>
 #include <cstring>
 #include <functional>
@@ -408,6 +410,7 @@ namespace Lux {
 		editorPreferencesBindings.UseGizmoSnap = &m_UseGizmoSnap;
 		editorPreferencesBindings.TranslationSnapValue = &m_TranslationSnapValue;
 		editorPreferencesBindings.RotationSnapValue = &m_RotationSnapValue;
+		editorPreferencesBindings.ScaleSnapValue = &m_ScaleSnapValue;
 		editorPreferencesBindings.ShowBoundingBoxes = &m_ShowBoundingBoxes;
 		editorPreferencesBindings.ShowEntityIcons = &m_ShowEntityIcons;
 		editorPreferencesBindings.ShowViewportPerformanceHUD = &m_ShowViewportPerformanceHUD;
@@ -465,6 +468,7 @@ namespace Lux {
 		m_EditorViewport->Init(m_ActiveScene, fbSpec, sceneRendererSpec);
 		m_Framebuffer = m_EditorViewport->GetFramebuffer();
 		m_SceneRenderer = m_EditorViewport->GetSceneRenderer();
+		m_SceneRenderer->GetOptions().ShowGrid = Application::Get().GetSettings().GetInt("Editor.ShowGrid", 1) != 0;
 
 		// Now safe to call - m_Renderer2D and the viewport framebuffer are valid.
 		m_Renderer2D->SetTargetFramebuffer(m_Framebuffer);
@@ -875,15 +879,16 @@ namespace Lux {
 						ImGuizmo::SetRect(gizmoBounds[0].x, gizmoBounds[0].y, gizmoSize.x, gizmoSize.y);
 
 						EditorCamera& viewportCamera = m_EditorViewport->GetCamera();
-						const glm::mat4& cameraProjection = viewportCamera.GetProjectionMatrix();
+						const glm::mat4& cameraProjection = viewportCamera.GetUnReversedProjectionMatrix();
 						glm::mat4 cameraView = viewportCamera.GetViewMatrix();
 
 						auto& tc = selectedEntity.GetComponent<TransformComponent>();
-						glm::mat4 transform = tc.GetTransform();
+						glm::mat4 transform = m_ActiveScene->GetWorldSpaceTransformMatrix(selectedEntity);
 
 						const bool controlSnap = Input::IsKeyPressed(Key::LeftControl) || Input::IsKeyPressed(Key::RightControl);
 						bool snap = m_UseGizmoSnap || controlSnap;
-						float snapValue = (m_GizmoType == ImGuizmo::OPERATION::ROTATE) ? m_RotationSnapValue : m_TranslationSnapValue;
+						float snapValue = m_GizmoType == ImGuizmo::OPERATION::ROTATE ? m_RotationSnapValue
+							: m_GizmoType == ImGuizmo::OPERATION::SCALE ? m_ScaleSnapValue : m_TranslationSnapValue;
 						float snapValues[3] = { snapValue, snapValue, snapValue };
 
 						ImGuizmo::Manipulate(
@@ -899,13 +904,25 @@ namespace Lux {
 						{
 							glm::vec3 translation, scale;
 							glm::quat rotationQuat;
-							Math::DecomposeTransform(transform, translation, rotationQuat, scale);
-
-							glm::vec3 rotationEuler = glm::eulerAngles(rotationQuat);
-							glm::vec3 deltaRotation = rotationEuler - tc.GetRotationEuler();
-							tc.Translation = translation;
-							tc.SetRotationEuler(tc.GetRotationEuler() + deltaRotation);
-							tc.Scale = scale;
+							bool parentInvertible = true;
+							if (Entity parent = selectedEntity.GetParent())
+							{
+								const glm::mat4 parentTransform = m_ActiveScene->GetWorldSpaceTransformMatrix(parent);
+								const float determinant = glm::determinant(parentTransform);
+								parentInvertible = determinant != 0.0f && std::isfinite(determinant);
+								if (parentInvertible)
+									transform = glm::inverse(parentTransform) * transform;
+							}
+							if (parentInvertible && Math::DecomposeTransform(transform, translation, rotationQuat, scale))
+							{
+								tc.Translation = translation;
+								tc.SetRotationEuler(glm::eulerAngles(rotationQuat));
+								tc.Scale = scale;
+							}
+							else if (!m_GizmoWasUsing)
+							{
+								LUX_CORE_ERROR_TAG("Editor", "Cannot edit entity {}: gizmo or parent transform is singular", selectedEntity.Name());
+							}
 						}
 
 						// Record one undo step when a gizmo drag finishes (the transform is mutated above
@@ -1805,9 +1822,11 @@ namespace Lux {
 				settingsChanged = true;
 			if (m_UseGizmoSnap)
 			{
-				if (ImGui::DragFloat("Translate Snap", &m_TranslationSnapValue, 0.05f, 0.05f, 10.0f, "%.2f"))
+				if (ImGui::DragFloat("Translate Snap", &m_TranslationSnapValue, 0.05f, 0.05f, 10.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp))
 					settingsChanged = true;
-				if (ImGui::DragFloat("Rotate Snap", &m_RotationSnapValue, 1.0f, 1.0f, 180.0f, "%.0f"))
+				if (ImGui::DragFloat("Rotate Snap", &m_RotationSnapValue, 1.0f, 1.0f, 180.0f, "%.0f", ImGuiSliderFlags_AlwaysClamp))
+					settingsChanged = true;
+				if (ImGui::DragFloat("Scale Snap", &m_ScaleSnapValue, 0.01f, 0.01f, 1.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp))
 					settingsChanged = true;
 			}
 
@@ -1826,7 +1845,16 @@ namespace Lux {
 			if (m_SceneRenderer)
 			{
 				auto& options = m_SceneRenderer->GetOptions();
-				ImGui::Checkbox("Show Grid", &options.ShowGrid);
+				if (ImGui::Checkbox("Show Grid", &options.ShowGrid))
+				{
+					auto& settings = Application::Get().GetSettings();
+					settings.SetInt("Editor.ShowGrid", options.ShowGrid ? 1 : 0);
+					settings.Serialize();
+				}
+				int colliderMode = static_cast<int>(options.PhysicsColliderMode);
+				if (ImGui::Combo("Collider Scope", &colliderMode, "Selected Entity\0All Entities\0"))
+					options.PhysicsColliderMode = static_cast<SceneRendererOptions::PhysicsColliderView>(colliderMode);
+				ImGui::Checkbox("Colliders On Top", &options.ShowPhysicsCollidersOnTop);
 				if (ImGui::Checkbox("Show Physics Colliders", &options.ShowPhysicsColliders))
 				{
 					m_ShowPhysicsColliders = options.ShowPhysicsColliders;
@@ -1871,22 +1899,22 @@ namespace Lux {
 		if (!m_EditorViewport)
 			return;
 
-		const glm::vec2& viewportSize = m_EditorViewport->GetSize();
-		const glm::vec2* viewportBounds = m_EditorViewport->GetBounds();
+		const glm::vec2& viewportSize = m_EditorViewport->GetImageSize();
+		const glm::vec2* viewportBounds = m_EditorViewport->GetImageBounds();
 		if (viewportSize.x <= 0.0f || viewportSize.y <= 0.0f)
 			return;
 
-		const float gizmoRadius = 22.0f;
-		const float windowExtent = (gizmoRadius + 8.0f) * 2.0f;
+		const float gizmoRadius = 30.0f;
+		const float windowExtent = (gizmoRadius + 14.0f) * 2.0f;
 
 		const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking |
 			ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize |
-			ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs;
+			ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
 
 		// Top-right, tucked below the settings gear so the two don't overlap.
 		ImGui::SetNextWindowPos(ImVec2(viewportBounds[1].x - 12.0f, viewportBounds[0].y + 48.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
 		ImGui::SetNextWindowBgAlpha(0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGuiEx::ScopedStyle padding(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 		ImGui::Begin("##viewport_orientation_gizmo", nullptr, flags);
 		ImGui::Dummy(ImVec2(windowExtent, windowExtent));
 
@@ -1900,15 +1928,18 @@ namespace Lux {
 		const glm::mat4& view = m_EditorViewport->GetCamera().GetViewMatrix();
 
 		struct Axis { glm::vec3 world; ImU32 color; const char* label; };
-		const Axis axes[3] = {
+		const Axis axes[6] = {
 			{ { 1.0f, 0.0f, 0.0f }, IM_COL32(210, 74, 74, 255), "X" },
 			{ { 0.0f, 1.0f, 0.0f }, IM_COL32(120, 190, 90, 255), "Y" },
 			{ { 0.0f, 0.0f, 1.0f }, IM_COL32(90, 140, 220, 255), "Z" },
+			{ { -1.0f, 0.0f, 0.0f }, IM_COL32(210, 74, 74, 255), "-X" },
+			{ { 0.0f, -1.0f, 0.0f }, IM_COL32(120, 190, 90, 255), "-Y" },
+			{ { 0.0f, 0.0f, -1.0f }, IM_COL32(90, 140, 220, 255), "-Z" },
 		};
 
 		struct Projected { ImVec2 tip; float depth; ImU32 color; const char* label; };
-		Projected projected[3];
-		for (int i = 0; i < 3; i++)
+		Projected projected[6];
+		for (int i = 0; i < 6; i++)
 		{
 			const glm::vec3 v = glm::vec3(view * glm::vec4(axes[i].world, 0.0f));
 			projected[i] = {
@@ -1916,20 +1947,43 @@ namespace Lux {
 				v.z, axes[i].color, axes[i].label };
 		}
 
-		int order[3] = { 0, 1, 2 };
-		std::sort(order, order + 3, [&](int a, int b) { return projected[a].depth < projected[b].depth; });
+		int order[6] = { 0, 1, 2, 3, 4, 5 };
+		std::sort(order, order + 6, [&](int a, int b) { return projected[a].depth < projected[b].depth; });
 
-		for (int idx = 0; idx < 3; idx++)
+		// Hit-test front to back so overlapping axis heads select the visible one.
+		int hoveredAxis = -1;
+		if (ImGui::IsWindowHovered())
+		{
+			const ImVec2 mouse = ImGui::GetMousePos();
+			for (int idx = 5; idx >= 0; idx--)
+			{
+				const ImVec2 delta(mouse.x - projected[order[idx]].tip.x, mouse.y - projected[order[idx]].tip.y);
+				if (delta.x * delta.x + delta.y * delta.y <= 100.0f)
+				{
+					hoveredAxis = order[idx];
+					break;
+				}
+			}
+		}
+		if (hoveredAxis >= 0 && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		{
+			EditorCamera& camera = m_EditorViewport->GetCamera();
+			const glm::vec3 axis = axes[hoveredAxis].world;
+			const float pitch = glm::asin(axis.y);
+			const float yaw = axis.y != 0.0f ? camera.GetYaw() : glm::atan(-axis.x, axis.z);
+			camera.SetOrbitState(camera.GetFocalPoint(), camera.GetDistance(), pitch, yaw);
+		}
+
+		for (int idx = 0; idx < 6; idx++)
 		{
 			const Projected& p = projected[order[idx]];
 			drawList->AddLine(center, p.tip, p.color, 2.0f);
-			drawList->AddCircleFilled(p.tip, 4.0f, p.color);
+			drawList->AddCircleFilled(p.tip, 10.0f, order[idx] == hoveredAxis ? Colors::Theme::text : p.color);
 			const ImVec2 labelSize = ImGui::CalcTextSize(p.label);
 			drawList->AddText(ImVec2(p.tip.x - labelSize.x * 0.5f, p.tip.y - labelSize.y * 0.5f), Colors::Theme::titlebar, p.label);
 		}
 
 		ImGui::End();
-		ImGui::PopStyleVar();
 	}
 
 	void EditorLayer::UI_ViewportSelectionBadge()
@@ -2259,11 +2313,21 @@ namespace Lux {
 
 		if (m_ShowPhysicsColliders)
 		{
+			const auto& colliderOptions = m_SceneRenderer->GetOptions();
+			const bool onTop = colliderOptions.ShowPhysicsCollidersOnTop;
+			const glm::vec4 color = colliderOptions.SimplePhysicsCollidersColor;
+			auto shouldDrawCollider = [&](entt::entity entityID)
+			{
+				return colliderOptions.PhysicsColliderMode == SceneRendererOptions::PhysicsColliderView::All
+					|| (m_SceneHierarchyPanel && m_SceneHierarchyPanel->GetSelectedEntity() == Entity(entityID, m_ActiveScene.Raw()));
+			};
 			// Box Colliders
 			{
 				auto view = m_ActiveScene->GetAllEntitiesWith<TransformComponent, BoxCollider2DComponent>();
 				for (auto entity : view)
 				{
+					if (!shouldDrawCollider(entity))
+						continue;
 					auto [tc, bc2d] = view.get<TransformComponent, BoxCollider2DComponent>(entity);
 
 					glm::vec3 scale = tc.Scale * glm::vec3(bc2d.Size * 2.0f, 1.0f);
@@ -2273,7 +2337,6 @@ namespace Lux {
 						* glm::translate(glm::mat4(1.0f), glm::vec3(bc2d.Offset, 0.001f))
 						* glm::scale(glm::mat4(1.0f), scale);
 
-					glm::vec4 color(0, 1, 0, 1);
 					glm::vec4 corners[4] = {
 						{-0.5f, -0.5f, 0.0f, 1.0f}, { 0.5f, -0.5f, 0.0f, 1.0f},
 						{ 0.5f,  0.5f, 0.0f, 1.0f}, {-0.5f,  0.5f, 0.0f, 1.0f}
@@ -2282,7 +2345,7 @@ namespace Lux {
 					{
 						glm::vec3 p0 = transform * corners[i];
 						glm::vec3 p1 = transform * corners[(i + 1) % 4];
-						m_Renderer2D->DrawLine(p0, p1, color);
+						m_Renderer2D->DrawLine(p0, p1, color, onTop);
 					}
 				}
 			}
@@ -2292,15 +2355,19 @@ namespace Lux {
 				auto view = m_ActiveScene->GetAllEntitiesWith<TransformComponent, CircleCollider2DComponent>();
 				for (auto entity : view)
 				{
+					if (!shouldDrawCollider(entity))
+						continue;
 					auto [tc, cc2d] = view.get<TransformComponent, CircleCollider2DComponent>(entity);
 
-					glm::vec3 translation = tc.Translation + glm::vec3(cc2d.Offset, 0.001f);
-					glm::vec3 scale = tc.Scale * glm::vec3(cc2d.Radius * 2.0f);
+					// Box2D rotates the local offset and uses X scale for a circle's radius.
+					// DrawCircle's unit geometry already has radius one.
+					const float radius = tc.Scale.x * cc2d.Radius;
+					glm::mat4 transform = glm::translate(glm::mat4(1.0f), tc.Translation)
+						* glm::rotate(glm::mat4(1.0f), tc.GetRotationEuler().z, glm::vec3(0.0f, 0.0f, 1.0f))
+						* glm::translate(glm::mat4(1.0f), glm::vec3(cc2d.Offset, 0.001f))
+						* glm::scale(glm::mat4(1.0f), glm::vec3(radius));
 
-					glm::mat4 transform = glm::translate(glm::mat4(1.0f), translation)
-						* glm::scale(glm::mat4(1.0f), scale);
-
-					m_Renderer2D->DrawCircle(transform, glm::vec4(0, 1, 0, 1));
+					m_Renderer2D->DrawCircle(transform, color, onTop);
 				}
 			}
 
@@ -2312,8 +2379,7 @@ namespace Lux {
 
 		if (selectedEntity)
 		{
-			const TransformComponent& transform = selectedEntity.GetComponent<TransformComponent>();
-			const glm::mat4 worldTransform = transform.GetTransform();
+			const glm::mat4 worldTransform = m_ActiveScene->GetWorldSpaceTransformMatrix(selectedEntity);
 
 			if (m_ShowBoundingBoxes && selectedEntity.HasComponent<StaticMeshComponent>())
 			{
@@ -2324,7 +2390,25 @@ namespace Lux {
 					Ref<MeshSource> meshSource = AssetManager::GetAsset<MeshSource>(staticMesh->GetMeshSource());
 					if (meshSource)
 					{
-						m_Renderer2D->DrawAABB(meshSource->GetBoundingBox(), worldTransform, glm::vec4(1.0f, 0.5f, 0.0f, 1.0f), true);
+						const auto& submeshes = meshSource->GetSubmeshes();
+						bool invalidSubmesh = false;
+						for (uint32_t submeshIndex : staticMesh->GetSubmeshes())
+						{
+							// Mesh selections can outlive a reimport that removes submeshes.
+							if (submeshIndex >= submeshes.size())
+							{
+								invalidSubmesh = true;
+								continue;
+							}
+							const auto& submesh = submeshes[submeshIndex];
+							m_Renderer2D->DrawAABB(submesh.BoundingBox, worldTransform * submesh.Transform,
+								glm::vec4(1.0f, 0.5f, 0.0f, 1.0f), true);
+						}
+						if (invalidSubmesh && m_LastInvalidBoundsMesh != smc.StaticMesh)
+						{
+							LUX_CORE_ERROR_TAG("Editor", "Cannot draw all bounds for mesh {}: its submesh selection no longer matches the mesh source. Reimport the mesh selection.", smc.StaticMesh);
+						}
+						m_LastInvalidBoundsMesh = invalidSubmesh ? smc.StaticMesh : AssetHandle(0);
 					}
 				}
 			}
@@ -2339,8 +2423,8 @@ namespace Lux {
 
 					for (auto entityID : view)
 					{
-						auto& transform = view.template get<TransformComponent>(entityID);
-						m_Renderer2D->DrawQuadBillboard(transform.Translation, glm::vec2(0.35f), iconTexture, 1.0f, glm::vec4(1.0f));
+						const glm::mat4 transform = m_ActiveScene->GetWorldSpaceTransformMatrix({ entityID, m_ActiveScene.Raw() });
+						m_Renderer2D->DrawQuadBillboard(glm::vec3(transform[3]), glm::vec2(0.35f), iconTexture, 1.0f, glm::vec4(1.0f));
 					}
 				};
 
@@ -2489,6 +2573,7 @@ namespace Lux {
 		m_UseGizmoSnap = settings.GetInt("Editor.UseGizmoSnap", 0) != 0;
 		m_TranslationSnapValue = std::max(settings.GetFloat("Editor.TranslationSnapValue", 0.5f), 0.05f);
 		m_RotationSnapValue = std::max(settings.GetFloat("Editor.RotationSnapValue", 45.0f), 1.0f);
+		m_ScaleSnapValue = std::max(settings.GetFloat("Editor.ScaleSnapValue", 0.1f), 0.01f);
 		m_ShowBoundingBoxes = settings.GetInt("Editor.ShowBoundingBoxes", 0) != 0;
 		m_ShowEntityIcons = settings.GetInt("Editor.ShowEntityIcons", 1) != 0;
 		m_ShowViewportPerformanceHUD = settings.GetInt("Editor.ShowViewportPerformanceHUD", 1) != 0;
@@ -2508,6 +2593,7 @@ namespace Lux {
 		settings.SetInt("Editor.UseGizmoSnap", m_UseGizmoSnap ? 1 : 0);
 		settings.SetFloat("Editor.TranslationSnapValue", m_TranslationSnapValue);
 		settings.SetFloat("Editor.RotationSnapValue", m_RotationSnapValue);
+		settings.SetFloat("Editor.ScaleSnapValue", m_ScaleSnapValue);
 		settings.SetInt("Editor.ShowBoundingBoxes", m_ShowBoundingBoxes ? 1 : 0);
 		settings.SetInt("Editor.ShowEntityIcons", m_ShowEntityIcons ? 1 : 0);
 		settings.SetInt("Editor.ShowViewportPerformanceHUD", m_ShowViewportPerformanceHUD ? 1 : 0);
@@ -2518,6 +2604,9 @@ namespace Lux {
 
 	void EditorLayer::ApplyEditorPreferences()
 	{
+		m_TranslationSnapValue = std::max(m_TranslationSnapValue, 0.05f);
+		m_RotationSnapValue = std::max(m_RotationSnapValue, 1.0f);
+		m_ScaleSnapValue = std::max(m_ScaleSnapValue, 0.01f);
 		Application::Get().GetWindow().SetVSync(m_VSync);
 
 		// With VSync on the display already paces the loop, and layering a CPU limiter on
