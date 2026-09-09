@@ -35,6 +35,10 @@ namespace Lux {
 		void DrawEntityCreateMenu(Entity parent = {});
 		void DrawEntityNode(Entity entity, const std::string& searchFilter = {});
 		void DrawComponents(const std::vector<UUID>& entityIDs);
+
+		// The FMOD Studio event assignment for an Audio Source. Lists what the loaded banks
+		// describe, so it is empty until the project's banks are built.
+		void DrawAudioEventPicker(struct AudioSourceComponent& component, const std::vector<UUID>& selectedEntities);
 		bool TagSearchRecursive(Entity entity, std::string_view searchFilter, uint32_t maxSearchDepth, uint32_t currentDepth = 1);
 	private:
 		Ref<Scene> m_Context;

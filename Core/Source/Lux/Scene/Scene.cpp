@@ -6,6 +6,7 @@
 
 #include "Lux/Audio/AudioEngine.h"
 #include "Lux/Audio/AudioSource.h"
+#include "Lux/Audio/AudioEventInstance.h"
 #include "Lux/Audio/AudioListener.h"
 #include "Lux/Audio/RaytracedAudioScene.h"
 
@@ -390,6 +391,7 @@ namespace Lux {
 
 		m_RuntimeAudioSources.erase(entity.GetUUID());
 		m_RuntimeAudioPlaylists.erase(entity.GetUUID());
+		m_RuntimeEventInstances.erase(entity.GetUUID());
 
 		if (m_RaytracedAudioScene)
 			m_RaytracedAudioScene->DestroyEmitter(entity.GetUUID());
@@ -399,6 +401,10 @@ namespace Lux {
 	{
 		m_RuntimeAudioSources.clear();
 		m_RuntimeAudioPlaylists.clear();
+
+		// Event instances hold FMOD Studio resources and must not outlive the runtime that started
+		// them; the destructor stops each one immediately and releases it.
+		m_RuntimeEventInstances.clear();
 	}
 
 	void Scene::OnRuntimeStart()
@@ -678,6 +684,31 @@ namespace Lux {
 						const glm::mat4 worldTransform = GetWorldSpaceTransformMatrix(entity);
 						const glm::vec3 worldPosition = glm::vec3(worldTransform[3]);
 
+						// An authored FMOD Studio event takes precedence over the legacy raw-file
+						// path. Everything the Config struct would have controlled - attenuation,
+						// cones, doppler, randomisation - is authored in the event instead, so none
+						// of it is applied here; only placement, level and pitch are the engine's.
+						if (asc.Event.IsValid())
+						{
+							Ref<AudioEventInstance> instance = GetOrCreateRuntimeEventInstance(entity, asc.Event);
+							if (!instance)
+								return;
+
+							const glm::vec3 forward = glm::normalize(glm::vec3(worldTransform[2]));
+							const glm::vec3 up = glm::normalize(glm::vec3(worldTransform[1]));
+							instance->Set3DAttributes(worldPosition, glm::vec3(0.0f), forward, up);
+							instance->SetVolume(asc.Config.VolumeMultiplier);
+							instance->SetPitch(asc.Config.PitchMultiplier);
+
+							if (asc.Config.PlayOnAwake && asc.Paused)
+							{
+								instance->Start();
+								asc.Paused = false;
+							}
+
+							return;
+						}
+
 						if (asc.Audio && !asc.AudioSourceData.UsePlaylist)
 						{
 							Ref<AudioSource> audioSource = GetOrCreateRuntimeAudioSource(entity, asc.Audio);
@@ -791,17 +822,26 @@ namespace Lux {
 						if (!result.Valid && !ambience.Valid)
 							return;
 
-						Ref<AudioSource> audioSource = GetOrCreateRuntimeAudioSource(entity, asc.Audio);
-						if (!audioSource)
-							return;
-
 						AudioSourceAcoustics acoustics;
 						acoustics.OcclusionGainLF = result.OcclusionGainLF;
 						acoustics.OcclusionGainHF = result.OcclusionGainHF;
 						acoustics.AmbientGainLF = ambience.AmbientGainLF;
 						acoustics.AmbientGainHF = ambience.AmbientGainHF;
 						acoustics.ReverbSend = ambience.ReturnedPercent;
-						audioSource->SetAcoustics(acoustics);
+
+						// An event-driven source receives the same measurements, but as named
+						// parameters rather than as a filter - the event decides what occlusion does
+						// to it. Sources on the legacy raw-file path still get the direct treatment.
+						if (asc.Event.IsValid())
+						{
+							if (Ref<AudioEventInstance> instance = GetRuntimeEventInstance(entityID))
+								instance->SetAcoustics(acoustics);
+
+							return;
+						}
+
+						if (Ref<AudioSource> audioSource = GetOrCreateRuntimeAudioSource(entity, asc.Audio))
+							audioSource->SetAcoustics(acoustics);
 					});
 
 				m_RaytracedAudioScene->OnUpdate(ts);
@@ -1043,6 +1083,29 @@ namespace Lux {
 	{
 		auto it = m_RuntimeAudioSources.find(entityID);
 		return it != m_RuntimeAudioSources.end() ? it->second : nullptr;
+	}
+
+	Ref<AudioEventInstance> Scene::GetOrCreateRuntimeEventInstance(Entity entity, const AudioEventRef& event)
+	{
+		const UUID entityID = entity.GetUUID();
+
+		auto it = m_RuntimeEventInstances.find(entityID);
+		if (it != m_RuntimeEventInstances.end())
+		{
+			// A cached null means Create already failed for this entity - the event is not in any
+			// loaded bank. Kept rather than retried so the warning is logged once, not every frame.
+			return it->second;
+		}
+
+		Ref<AudioEventInstance> instance = AudioEventInstance::Create(event.Guid);
+		m_RuntimeEventInstances[entityID] = instance;
+		return instance;
+	}
+
+	Ref<AudioEventInstance> Scene::GetRuntimeEventInstance(UUID entityID) const
+	{
+		auto it = m_RuntimeEventInstances.find(entityID);
+		return it != m_RuntimeEventInstances.end() ? it->second : nullptr;
 	}
 
 	Entity Scene::DuplicateEntity(Entity entity)

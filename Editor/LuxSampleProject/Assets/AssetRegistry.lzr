@@ -332,7 +332,7 @@ Assets:
   - Handle: 8868489982347245392
     FilePath: Scripts/Intermediates/Release/LuxSample.AssemblyInfo.cs
     Type: ScriptFile
-    FileLastWriteTime: 18446744069060624984
+    FileLastWriteTime: 18446744069060858895
     Status: None
   - Handle: 8873821167095533110
     FilePath: Meshes/Source/Sponza/Materials/Sponza_10_Material_10.lmat
@@ -527,8 +527,8 @@ Assets:
   - Handle: 13137233102113716417
     FilePath: Scenes/AudioTest.luxscene
     Type: Scene
-    FileLastWriteTime: 18446744069060616235
-    Status: None
+    FileLastWriteTime: 18446744069060861852
+    Status: Ready
   - Handle: 13274671615592977719
     FilePath: Scenes/NewSceneSystem.luxscene
     Type: Scene
@@ -583,12 +583,17 @@ Assets:
     FilePath: Audio/fart-01.wav
     Type: Audio
     FileLastWriteTime: 18446744069059611435
-    Status: None
+    Status: Ready
   - Handle: 15736897142292738885
     FilePath: Meshes/Source/Sponza/Materials/Sponza_19_Material_19.lmat
     Type: Material
     FileLastWriteTime: 18446744069059659388
     Status: Ready
+  - Handle: 15891871588286909990
+    FilePath: Audio/SampleProject/SampleProject.fspro
+    Type: AudioProject
+    FileLastWriteTime: 18446744069060628121
+    Status: None
   - Handle: 15966242954355821266
     FilePath: Scripts/Intermediates/Debug/LuxSample.AssemblyInfo.cs
     Type: ScriptFile

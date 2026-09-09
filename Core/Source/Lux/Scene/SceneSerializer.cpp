@@ -750,6 +750,12 @@ namespace Lux {
 				for (AssetHandle handle : audioSource.AudioSourceData.Playlist)
 					out << handle;
 				out << YAML::EndSeq;
+
+				// The GUID is the reference; the path is written alongside it purely so a human
+				// reading the scene file can tell which event this is without opening FMOD Studio.
+				// Deserialization refreshes the path from the loaded banks and never trusts it.
+				out << YAML::Key << "EventGuid" << YAML::Value << audioSource.Event.Guid;
+				out << YAML::Key << "EventPath" << YAML::Value << audioSource.Event.Path;
 				out << YAML::EndMap;
 			}
 
@@ -1211,6 +1217,9 @@ namespace Lux {
 					config.ConeOuterAngle = audioSource["ConeOuterAngle"].as<float>(glm::radians(360.0f));
 					config.ConeOuterGain = audioSource["ConeOuterGain"].as<float>(0.0f);
 					config.DopplerFactor = audioSource["DopplerFactor"].as<float>(1.0f);
+
+					component.Event.Guid = audioSource["EventGuid"].as<std::string>(std::string{});
+					component.Event.Path = audioSource["EventPath"].as<std::string>(std::string{});
 
 					component.AudioSourceData.UsePlaylist = audioSource["UsePlaylist"].as<bool>(false);
 					component.AudioSourceData.RepeatPlaylist = audioSource["RepeatPlaylist"].as<bool>(false);

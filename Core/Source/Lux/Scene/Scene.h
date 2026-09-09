@@ -30,6 +30,7 @@ namespace Lux {
 	class RenderScene;
 	class SceneRenderer;
 	class AudioSource;
+	class AudioEventInstance;
 	class RaytracedAudioScene;
 	class Mesh;
 	class StaticMesh;
@@ -207,6 +208,7 @@ namespace Lux {
 		void StepPhysics(Timestep ts);
 		void RenderScene(EditorCamera& camera);
 		Ref<AudioSource> GetOrCreateRuntimeAudioSource(Entity entity, AssetHandle audioHandle);
+		Ref<AudioEventInstance> GetOrCreateRuntimeEventInstance(Entity entity, const struct AudioEventRef& event);
 		Ref<AudioSource> GetOrCreateRuntimePlaylistSource(Entity entity, uint32_t index, AssetHandle audioHandle);
 		void ReleaseRuntimeAudio(Entity entity);
 		void ReleaseAllRuntimeAudio();
@@ -235,6 +237,9 @@ namespace Lux {
 		std::unordered_map<UUID, entt::entity> m_EntityMap;
 		std::vector<std::function<void()>> m_PostUpdateQueue;
 		std::unordered_map<UUID, Ref<AudioSource>> m_RuntimeAudioSources;
+		// Null entries are meaningful: they record an event that could not be resolved, so the
+		// failure is logged once rather than on every frame.
+		std::unordered_map<UUID, Ref<AudioEventInstance>> m_RuntimeEventInstances;
 		std::unordered_map<UUID, std::vector<Ref<AudioSource>>> m_RuntimeAudioPlaylists;
 		Ref<RaytracedAudioScene> m_RaytracedAudioScene;
 
@@ -255,6 +260,7 @@ namespace Lux {
 		// The live voice playing for an entity, or null when it has none. Editor tooling only -
 		// gameplay drives sources through the component, not by reaching in here.
 		Ref<AudioSource> GetRuntimeAudioSource(UUID entityID) const;
+		Ref<AudioEventInstance> GetRuntimeEventInstance(UUID entityID) const;
 
 	private:
 		friend class Entity;

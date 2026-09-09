@@ -421,10 +421,31 @@ namespace Lux {
 		TextComponent(const TextComponent& other) = default;
 	};
 
+	// A reference to an FMOD Studio event.
+	//
+	// The GUID is the reference; the path is a cached label for the editor and is never used to
+	// resolve the event. That split matters: renaming or moving an event in FMOD Studio changes its
+	// path but not its GUID, so a path-referencing scene goes silently mute the first time a
+	// designer reorganises the project - no error, no warning, just nothing plays.
+	struct AudioEventRef
+	{
+		std::string Guid;   // "{xxxxxxxx-....}", empty when no event is assigned
+		std::string Path;   // "event:/FX/Door" - display only, refreshed from the loaded banks
+
+		bool IsValid() const { return !Guid.empty(); }
+	};
+
 	struct AudioSourceComponent
 	{
 		AudioSourceConfig Config;
 
+		// The FMOD Studio event this source plays. Takes precedence over Audio below when set:
+		// spatialisation, attenuation, randomisation and DSP then come from the event as authored,
+		// and Config's corresponding fields are ignored.
+		AudioEventRef Event;
+
+		// Legacy raw-file playback through the Core API. Retained while the project's .fspro has no
+		// authored events; a source with an Event set never touches this.
 		AssetHandle Audio = 0;
 		AudioData AudioSourceData;
 

@@ -2,6 +2,8 @@
 
 #include "SceneHierarchyPanel.h"
 
+#include "Lux/Audio/AudioEngine.h"
+
 #include "Lux/Asset/Asset.h"
 #include "Lux/Asset/AssetManager.h"
 #include "Lux/Core/Events/KeyEvent.h"
@@ -1098,6 +1100,80 @@ namespace Lux {
 			if (!entitiesToDelete.empty())
 				QueueEntityDeletion(entitiesToDelete);
 		}
+	}
+
+	void SceneHierarchyPanel::DrawAudioEventPicker(AudioSourceComponent& component, const std::vector<UUID>& selectedEntities)
+	{
+		const std::vector<AudioEventInfo>& events = AudioEngine::GetEvents();
+
+		// The label shows the path because that is what a designer recognises, but the assignment
+		// stores the GUID - see AudioEventRef. A stored event whose path is not in the loaded banks
+		// is shown by GUID and flagged, rather than silently reading as "nothing assigned".
+		std::string preview = "None";
+		bool missing = false;
+		if (component.Event.IsValid())
+		{
+			const auto match = std::find_if(events.begin(), events.end(),
+				[&](const AudioEventInfo& info) { return info.Guid == component.Event.Guid; });
+
+			if (match != events.end())
+			{
+				// Refresh the cached label: the designer may have renamed the event since this scene
+				// was saved, and the GUID kept the reference working.
+				component.Event.Path = match->Path;
+				preview = match->Path;
+			}
+			else
+			{
+				preview = component.Event.Path.empty() ? component.Event.Guid : component.Event.Path;
+				missing = true;
+			}
+		}
+
+		// Same two-column shape ImGuiEx::Property uses: label, NextColumn, widget, NextColumn,
+		// underline. Drawn by hand because there is no Property overload for a combo box.
+		ImGuiEx::ShiftCursor(10.0f, 9.0f);
+		ImGui::TextUnformatted("Event");
+
+		ImGui::NextColumn();
+		ImGuiEx::ShiftCursorY(4.0f);
+		ImGui::PushItemWidth(-1.0f);
+
+		if (ImGui::BeginCombo("##audio_event", preview.c_str()))
+		{
+			if (ImGui::Selectable("None", !component.Event.IsValid()))
+			{
+				component.Event = {};
+				ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities,
+					[](AudioSourceComponent& audioComponent, Entity) { audioComponent.Event = {}; });
+			}
+
+			for (const AudioEventInfo& info : events)
+			{
+				const bool selected = info.Guid == component.Event.Guid;
+				if (ImGui::Selectable(info.Path.c_str(), selected))
+				{
+					AudioEventRef assigned{ info.Guid, info.Path };
+					component.Event = assigned;
+					ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities,
+						[assigned](AudioSourceComponent& audioComponent, Entity) { audioComponent.Event = assigned; });
+				}
+
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("%s\n%s%s", info.Guid.c_str(), info.Is3D ? "3D" : "2D", info.IsOneshot ? " - oneshot" : "");
+			}
+
+			ImGui::EndCombo();
+		}
+		// Kept inside the value column so it stays part of this row rather than escaping the grid.
+		if (missing)
+			ImGui::TextColored(ImVec4(0.95f, 0.72f, 0.31f, 1.0f), "Not in any loaded bank - build the project.");
+		else if (events.empty())
+			ImGui::TextDisabled("No events yet - author them in FMOD Studio.");
+
+		ImGui::PopItemWidth();
+		ImGui::NextColumn();
+		ImGuiEx::Draw::Underline();
 	}
 
 	void SceneHierarchyPanel::DrawComponents(const std::vector<UUID>& entityIDs)
@@ -2691,6 +2767,19 @@ namespace Lux {
 
 				auto& component = firstComponent;
 				auto& config = component.Config;
+
+				// The event picker comes first because an event supersedes the raw file below: when
+				// one is set, spatialisation and attenuation are authored in FMOD Studio and this
+				// component's own config fields no longer apply.
+				ImGuiEx::BeginPropertyGrid();
+				DrawAudioEventPicker(component, selectedEntities);
+				ImGuiEx::EndPropertyGrid();
+
+				if (component.Event.IsValid())
+				{
+					ImGui::TextDisabled("Attenuation, cones and doppler are authored in the event.");
+					ImGui::Spacing();
+				}
 
 				ImGuiEx::BeginPropertyGrid();
 				AssetHandle audioHandle = component.Audio;
