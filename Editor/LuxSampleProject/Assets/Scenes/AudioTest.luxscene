@@ -1,4 +1,26 @@
 Scene: AudioTest
+PostProcess:
+  Exposure: 1
+  ExposureMode: 0
+  Aperture: 16
+  ShutterSpeed: 0.00800000038
+  ISO: 100
+  ExposureEV100: 12
+  ExposureCompensation: 0
+  AutoMinEV100: -2
+  AutoMaxEV100: 16
+  AutoAdaptationSpeedUp: 3
+  AutoAdaptationSpeedDown: 1
+  ColorFilter: [1, 1, 1]
+  Saturation: 1
+  Contrast: 1
+  Gamma: 2.20000005
+  Tonemap: 0
+  WhiteTemperature: 0
+  WhiteTint: 0
+  Lift: [0, 0, 0]
+  GradeGamma: [1, 1, 1]
+  Gain: [1, 1, 1]
 Entities:
   - Entity: 11111111111111111
     TagComponent:
@@ -21,6 +43,11 @@ Entities:
         OrthographicFar: 1
       Primary: true
       FixedAspectRatio: false
+    AudioListenerComponent:
+      Active: true
+      ConeInnerAngle: 6.28318548
+      ConeOuterAngle: 6.28318548
+      ConeOuterGain: 0
   - Entity: 22222222222222222
     TagComponent:
       Tag: Wall
@@ -43,7 +70,7 @@ Entities:
       Density: 1
       Friction: 0.5
       Restitution: 0
-      CollisionComplexity: 0
+      CollisionComplexity: "\x02"
   - Entity: 33333333333333333
     TagComponent:
       Tag: AudioSource
@@ -56,18 +83,25 @@ Entities:
       Scale: [1, 1, 1]
     AudioSourceComponent:
       Audio: 15477231389038173681
-      PlayOnAwake: true
-      Looping: true
+      VolumeMultiplier: 1
+      PitchMultiplier: 1
+      PlayOnAwake: false
+      Looping: false
       Spatialization: true
-  - Entity: 44444444444444444
-    TagComponent:
-      Tag: AudioListener
-    Parent: 0
-    Children:
-      []
-    TransformComponent:
-      Position: [0, 0, -5]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    AudioListenerComponent:
-      Active: true
+      AttenuationModel: 1
+      RollOff: 1
+      MinGain: 0
+      MaxGain: 1
+      MinDistance: 0.300000012
+      MaxDistance: 1000
+      ConeInnerAngle: 6.28318548
+      ConeOuterAngle: 6.28318548
+      ConeOuterGain: 0
+      DopplerFactor: 1
+      UsePlaylist: false
+      RepeatPlaylist: false
+      StartIndex: 0
+      Playlist:
+        []
+      EventGuid: ""
+      EventPath: ""
