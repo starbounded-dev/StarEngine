@@ -1,5 +1,8 @@
 #include "lpch.h"
 #include "ProjectSettingsWindow.h"
+
+#include "Lux/Audio/AudioBankBuilder.h"
+#include "Lux/Audio/AudioEngine.h"
 #include "RuntimeExportUtils.h"
 
 #include "Lux/Asset/AssetManager.h"
@@ -476,7 +479,90 @@ namespace Lux {
 		ImGuiEx::EndPropertyGrid();
 
 		ImGui::TextDisabled("Stored in both the YAML project file and the runtime project data.");
+
+		ImGui::Spacing();
+		ImGui::TextUnformatted("FMOD Studio");
+
+		ImGuiEx::BeginPropertyGrid();
+
+		std::string studioProjectPath = audioSettings.StudioProjectPath.generic_string();
+		if (ImGuiEx::Property("Studio Project (.fspro)", studioProjectPath,
+			"Path to the FMOD Studio project that authors this game's audio, relative to the asset directory. Leave empty if the project has no authored audio."))
+		{
+			audioSettings.StudioProjectPath = studioProjectPath;
+			m_Dirty = true;
+		}
+
+		std::string bankOutputPath = audioSettings.StudioBankOutputPath.generic_string();
+		if (ImGuiEx::Property("Bank Output", bankOutputPath,
+			"Where FMOD writes built banks, relative to the .fspro's own directory. 'Desktop' is FMOD's default platform name."))
+		{
+			audioSettings.StudioBankOutputPath = bankOutputPath;
+			m_Dirty = true;
+		}
+
+		bool rebuildOnPlay = audioSettings.RebuildBanksOnPlay;
+		if (ImGuiEx::Property("Rebuild Banks On Play", rebuildOnPlay,
+			"Rebuilds banks before entering Play when the Studio project has changed since they were last built. A timestamp check, so it costs nothing when nothing changed."))
+		{
+			audioSettings.RebuildBanksOnPlay = rebuildOnPlay;
+			m_Dirty = true;
+		}
+
+		bool liveUpdate = audioSettings.EnableLiveUpdate;
+		if (ImGuiEx::Property("Live Update", liveUpdate,
+			"Lets the FMOD Studio application connect to the running editor and mix in real time. Takes effect the next time the project is opened, since the audio engine is initialised then."))
+		{
+			audioSettings.EnableLiveUpdate = liveUpdate;
+			m_Dirty = true;
+		}
+
+		ImGuiEx::EndPropertyGrid();
+
+		RenderAudioBankStatus();
+
 		ImGui::TreePop();
+	}
+
+	// Live state rather than settings: whether the tooling was found, what is loaded right now, and
+	// a way to rebuild without entering Play.
+	void ProjectSettingsWindow::RenderAudioBankStatus()
+	{
+		const std::filesystem::path studioProject = m_Project->GetStudioProjectPath();
+		if (studioProject.empty())
+		{
+			ImGui::TextDisabled("No FMOD Studio project configured.");
+			return;
+		}
+
+		std::error_code ec;
+		const bool projectExists = std::filesystem::exists(studioProject, ec);
+		if (!projectExists)
+		{
+			ImGui::TextColored(ImVec4(0.95f, 0.72f, 0.31f, 1.0f), "Not found: %s", studioProject.string().c_str());
+			return;
+		}
+
+		const std::vector<AudioBankInfo>& banks = AudioEngine::GetLoadedBanks();
+		const std::vector<AudioEventInfo>& events = AudioEngine::GetEvents();
+		ImGui::Text("%zu bank(s) loaded, %zu event(s)", banks.size(), events.size());
+
+		if (!AudioBankBuilder::IsAvailable())
+		{
+			ImGui::TextColored(ImVec4(0.95f, 0.72f, 0.31f, 1.0f),
+				"fmodstudiocl not found - set LUX_FMOD_STUDIO_CL to build banks from the editor.");
+			return;
+		}
+
+		if (ImGui::Button("Build Banks Now"))
+		{
+			if (AudioBankBuilder::Build(studioProject))
+				AudioEngine::LoadBanks(m_Project->GetStudioBankDirectory());
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Open In FMOD Studio"))
+			AudioBankBuilder::OpenInStudio(studioProject);
 	}
 
 	void ProjectSettingsWindow::RenderScriptingSettings()
