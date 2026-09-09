@@ -2171,6 +2171,8 @@ namespace Lux {
 			pipelineSpec.TargetFramebuffer = Framebuffer::Create(fbSpec);
 			pipelineSpec.Layout = vertexLayout;
 			pipelineSpec.Wireframe = true;
+			pipelineSpec.BackfaceCulling = false;
+			pipelineSpec.DepthWrite = false;
 			pipelineSpec.DepthTest = false;
 
 			RenderPassSpecification rpSpec;
@@ -2182,6 +2184,25 @@ namespace Lux {
 			m_GeometryWireframePass->SetInput("ObjectIndexes", m_SBSObjectIndexes);
 			LUX_CORE_VERIFY(m_GeometryWireframePass->Validate());
 			m_GeometryWireframePass->Bake();
+
+			// Cache a depth-tested collider variant; selection wireframes stay on top.
+			fbSpec.ExistingImages[1] = m_PreDepthPass->GetDepthOutput();
+			fbSpec.Attachments = { ImageFormat::RGBA16F, ImageFormat::DEPTH32FSTENCIL8UINT };
+			fbSpec.ClearDepthOnLoad = false;
+			fbSpec.DebugName = "PhysicsCollider";
+			pipelineSpec.TargetFramebuffer = Framebuffer::Create(fbSpec);
+			pipelineSpec.DepthTest = true;
+			pipelineSpec.DepthWrite = false;
+			pipelineSpec.BackfaceCulling = false;
+			pipelineSpec.DebugName = "PhysicsCollider";
+			rpSpec.DebugName = "PhysicsColliderPass";
+			rpSpec.Pipeline = Pipeline::Create(pipelineSpec);
+			m_PhysicsColliderPass = RenderPass::Create(rpSpec);
+			m_PhysicsColliderPass->SetInput("Camera", m_UBSCamera);
+			m_PhysicsColliderPass->SetInput("GPUSceneInstances", m_SBSGPUSceneInstances);
+			m_PhysicsColliderPass->SetInput("ObjectIndexes", m_SBSObjectIndexes);
+			LUX_CORE_VERIFY(m_PhysicsColliderPass->Validate());
+			m_PhysicsColliderPass->Bake();
 
 			m_WireframeMaterial = Material::Create(pipelineSpec.Shader, "Wireframe");
 			m_WireframeMaterial->Set("u_MaterialUniforms.Color", glm::vec4{ 1.0f, 0.5f, 0.0f, 1.0f });
@@ -2416,6 +2437,7 @@ namespace Lux {
 
 			PipelineSpecification pipelineSpec;
 			pipelineSpec.DebugName = "Grid";
+			pipelineSpec.BackfaceCulling = false;
 			pipelineSpec.Shader = Renderer::GetShaderLibrary()->Get("Grid");
 			pipelineSpec.TargetFramebuffer = Framebuffer::Create(fbSpec);
 			pipelineSpec.DepthTest = true;
@@ -3559,6 +3581,7 @@ namespace Lux {
 		addRenderPass(m_GBufferDebugPass);
 		addRenderPass(m_SelectedGeometryPass);
 		addRenderPass(m_GeometryWireframePass);
+		addRenderPass(m_PhysicsColliderPass);
 		addRenderPass(m_SkyboxPass);
 		addRenderPass(m_CompositePass);
 		addRenderPass(m_GridRenderPass);
@@ -3953,6 +3976,7 @@ namespace Lux {
 		if (m_GeometryWireframePass && wireframeActive)
 		{
 			std::vector<RenderGraph::ResourceHandle> wireframeReads = sceneColorCurrent;
+			wireframeReads.insert(wireframeReads.end(), preDepthOutputs.begin(), preDepthOutputs.end());
 			std::vector<RenderGraph::ResourceHandle> wireframeOutputs = addRenderPassResources("Geometry Wireframe", m_GeometryWireframePass);
 			addPass("Geometry Wireframe", wireframeReads, wireframeOutputs, RenderGraph::PassFlags::Graphics, makeExecute(&SceneRenderer::GeometryWireframePass));
 			sceneColorCurrent = wireframeOutputs;
@@ -4462,6 +4486,7 @@ namespace Lux {
 		recreatePassFramebuffer(m_SkyboxPass);
 		recreatePassFramebuffer(m_SelectedGeometryPass);
 		recreatePassFramebuffer(m_GeometryWireframePass);
+		recreatePassFramebuffer(m_PhysicsColliderPass);
 		recreatePassFramebuffer(m_AOCompositePass);
 		recreatePassFramebuffer(m_AODebugPass);
 		recreatePassFramebuffer(m_SSRCompositePass);
@@ -4594,6 +4619,8 @@ namespace Lux {
 				m_SelectedGeometryPass->GetTargetFramebuffer()->Resize(m_ViewportWidth, m_ViewportHeight);
 			if (m_GeometryWireframePass)
 				m_GeometryWireframePass->GetTargetFramebuffer()->Resize(m_ViewportWidth, m_ViewportHeight);
+			if (m_PhysicsColliderPass)
+				m_PhysicsColliderPass->GetTargetFramebuffer()->Resize(m_ViewportWidth, m_ViewportHeight);
 			m_CompositingFramebuffer->Resize(m_ViewportWidth, m_ViewportHeight);
 			m_CompositePass->GetTargetFramebuffer()->Resize(m_ViewportWidth, m_ViewportHeight);
 			m_GridRenderPass->GetTargetFramebuffer()->Resize(m_ViewportWidth, m_ViewportHeight);
@@ -4643,6 +4670,7 @@ namespace Lux {
 			repairPassIfStale(m_GBufferDebugPass, "GBufferDebug");
 			repairPassIfStale(m_SelectedGeometryPass, "SelectedGeometry");
 			repairPassIfStale(m_GeometryWireframePass, "GeometryWireframe");
+			repairPassIfStale(m_PhysicsColliderPass, "PhysicsCollider");
 			repairPassIfStale(m_CompositePass, "Composite");
 			repairPassIfStale(m_GridRenderPass, "Grid");
 			repairPassIfStale(m_JumpFloodCompositePass, "JumpFloodComposite");
@@ -7674,8 +7702,20 @@ namespace Lux {
 			}
 		}
 
-		if (m_Options.ShowPhysicsColliders)
+		Renderer::EndRenderPass(m_CommandBuffer);
+
+		if (m_Options.ShowPhysicsColliders && !colliderPass.DrawList.empty())
 		{
+			// Material storage is read by queued draws; update it in the same queue.
+			Renderer::Submit([simpleMaterial = m_SimpleColliderMaterial, complexMaterial = m_ComplexColliderMaterial,
+				simpleColor = m_Options.SimplePhysicsCollidersColor, complexColor = m_Options.ComplexPhysicsCollidersColor]() mutable
+			{
+				simpleMaterial->Set("u_MaterialUniforms.Color", simpleColor);
+				complexMaterial->Set("u_MaterialUniforms.Color", complexColor);
+			});
+			Ref<RenderPass> colliderRenderPass = m_Options.ShowPhysicsCollidersOnTop
+				? m_GeometryWireframePass : m_PhysicsColliderPass;
+			Renderer::BeginRenderPass(m_CommandBuffer, colliderRenderPass);
 			for (const MeshKey& key : colliderPass.DrawOrder)
 			{
 				const auto drawIt = colliderPass.DrawList.find(key);
@@ -7693,9 +7733,9 @@ namespace Lux {
 						instance->m_GeometryWireframePass->GetPipeline()->GetShader());
 					});
 			}
+			Renderer::EndRenderPass(m_CommandBuffer);
 		}
 
-		Renderer::EndRenderPass(m_CommandBuffer);
 		Renderer::EndGPUPerfMarker(m_CommandBuffer);
 	}
 
@@ -8116,7 +8156,12 @@ namespace Lux {
 			if (!jumpFloodPass || !m_JumpFloodPassMaterials[passIndex])
 				break;
 
-			jumpFloodPass->SetInput("u_Texture", input);
+			// The same pass is reused for steps 4 and 1. Bind its input in
+			// queue order so the first draw cannot see the last step's input.
+			Renderer::Submit([jumpFloodPass, input]() mutable
+			{
+				jumpFloodPass->SetInput("u_Texture", input);
+			});
 			vertexOverrides.Write(&step, sizeof(int), sizeof(glm::vec2));
 
 			Renderer::BeginRenderPass(m_CommandBuffer, jumpFloodPass);
