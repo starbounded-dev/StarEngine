@@ -1102,78 +1102,176 @@ namespace Lux {
 		}
 	}
 
+	void SceneHierarchyPanel::DrawAudioParameterOverrides(AudioSourceComponent& component)
+	{
+		if (!ImGuiEx::PropertyGridHeader("Parameter Overrides", false))
+			return;
+
+		ImGui::TextDisabled("Applied once when the event instance is created.\nNames must match parameters authored on the event.");
+
+		int removeAt = -1;
+		for (int i = 0; i < (int)component.ParameterOverrides.size(); i++)
+		{
+			auto& [name, value] = component.ParameterOverrides[(size_t)i];
+
+			ImGui::PushID(i);
+
+			char nameBuffer[64] = {};
+			std::snprintf(nameBuffer, sizeof(nameBuffer), "%s", name.c_str());
+			ImGui::SetNextItemWidth(150.0f);
+			if (ImGui::InputTextWithHint("##name", "Parameter", nameBuffer, sizeof(nameBuffer)))
+				name = nameBuffer;
+
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(110.0f);
+			ImGui::DragFloat("##value", &value, 0.01f);
+
+			ImGui::SameLine();
+			if (ImGui::SmallButton("Remove"))
+				removeAt = i;
+
+			ImGui::PopID();
+		}
+
+		if (removeAt >= 0)
+			component.ParameterOverrides.erase(component.ParameterOverrides.begin() + removeAt);
+
+		if (ImGui::Button("Add Parameter"))
+			component.ParameterOverrides.emplace_back(std::string{}, 0.0f);
+
+		ImGui::TreePop();
+	}
+
 	void SceneHierarchyPanel::DrawAudioEventPicker(AudioSourceComponent& component, const std::vector<UUID>& selectedEntities)
 	{
 		const std::vector<AudioEventInfo>& events = AudioEngine::GetEvents();
 
-		// The label shows the path because that is what a designer recognises, but the assignment
-		// stores the GUID - see AudioEventRef. A stored event whose path is not in the loaded banks
-		// is shown by GUID and flagged, rather than silently reading as "nothing assigned".
-		std::string preview = "None";
-		bool missing = false;
-		if (component.Event.IsValid())
-		{
-			const auto match = std::find_if(events.begin(), events.end(),
-				[&](const AudioEventInfo& info) { return info.Guid == component.Event.Guid; });
+		// Resolve the assignment against what is actually loaded. A stored event whose GUID is not
+		// in any loaded bank is shown and flagged rather than reading as "nothing assigned", which
+		// would invite someone to silently reassign it.
+		const auto assigned = std::find_if(events.begin(), events.end(),
+			[&](const AudioEventInfo& info) { return info.Guid == component.Event.Guid; });
+		const bool resolved = assigned != events.end();
 
-			if (match != events.end())
-			{
-				// Refresh the cached label: the designer may have renamed the event since this scene
-				// was saved, and the GUID kept the reference working.
-				component.Event.Path = match->Path;
-				preview = match->Path;
-			}
-			else
-			{
-				preview = component.Event.Path.empty() ? component.Event.Guid : component.Event.Path;
-				missing = true;
-			}
+		if (resolved)
+		{
+			// The designer may have renamed or re-banked the event since this scene was saved; the
+			// GUID kept the reference working, so refresh the labels that describe it.
+			component.Event.Path = assigned->Path;
+			component.Event.BankName = assigned->BankName;
 		}
 
-		// Same two-column shape ImGuiEx::Property uses: label, NextColumn, widget, NextColumn,
-		// underline. Drawn by hand because there is no Property overload for a combo box.
-		ImGuiEx::ShiftCursor(10.0f, 9.0f);
-		ImGui::TextUnformatted("Event");
+		// Which bank the event list is filtered to. Editor state, not scene state: it follows the
+		// assigned event when there is one, and is otherwise whatever the user last picked.
+		if (resolved)
+			m_AudioEventBankFilter = assigned->BankName;
 
-		ImGui::NextColumn();
-		ImGuiEx::ShiftCursorY(4.0f);
-		ImGui::PushItemWidth(-1.0f);
+		auto propertyRow = [](const char* label)
+			{
+				ImGuiEx::ShiftCursor(10.0f, 9.0f);
+				ImGui::TextUnformatted(label);
+				ImGui::NextColumn();
+				ImGuiEx::ShiftCursorY(4.0f);
+				ImGui::PushItemWidth(-1.0f);
+			};
 
-		if (ImGui::BeginCombo("##audio_event", preview.c_str()))
+		auto endPropertyRow = []()
+			{
+				ImGui::PopItemWidth();
+				ImGui::NextColumn();
+				ImGuiEx::Draw::Underline();
+			};
+
+		// --- Bank -------------------------------------------------------------------------------
+		propertyRow("Bank");
 		{
-			if (ImGui::Selectable("None", !component.Event.IsValid()))
-			{
-				component.Event = {};
-				ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities,
-					[](AudioSourceComponent& audioComponent, Entity) { audioComponent.Event = {}; });
-			}
+			const std::vector<AudioBankInfo>& banks = AudioEngine::GetLoadedBanks();
+			const char* bankPreview = m_AudioEventBankFilter.empty() ? "All banks" : m_AudioEventBankFilter.c_str();
 
-			for (const AudioEventInfo& info : events)
+			if (ImGui::BeginCombo("##audio_event_bank", bankPreview))
 			{
-				const bool selected = info.Guid == component.Event.Guid;
-				if (ImGui::Selectable(info.Path.c_str(), selected))
+				if (ImGui::Selectable("All banks", m_AudioEventBankFilter.empty()))
+					m_AudioEventBankFilter.clear();
+
+				for (const AudioBankInfo& bank : banks)
 				{
-					AudioEventRef assigned{ info.Guid, info.Path };
-					component.Event = assigned;
-					ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities,
-						[assigned](AudioSourceComponent& audioComponent, Entity) { audioComponent.Event = assigned; });
+					// A strings bank carries the path table, not events - offering it as a filter
+					// would produce a permanently empty list.
+					if (bank.IsStringsBank || bank.EventCount == 0)
+						continue;
+
+					if (ImGui::Selectable(bank.Name.c_str(), m_AudioEventBankFilter == bank.Name))
+						m_AudioEventBankFilter = bank.Name;
 				}
 
-				if (ImGui::IsItemHovered())
-					ImGui::SetTooltip("%s\n%s%s", info.Guid.c_str(), info.Is3D ? "3D" : "2D", info.IsOneshot ? " - oneshot" : "");
+				ImGui::EndCombo();
+			}
+		}
+		endPropertyRow();
+
+		// --- Event ------------------------------------------------------------------------------
+		propertyRow("Event");
+		{
+			std::string preview = "None";
+			if (component.Event.IsValid())
+				preview = resolved ? component.Event.Path
+					: (component.Event.Path.empty() ? component.Event.Guid : component.Event.Path);
+
+			if (ImGui::BeginCombo("##audio_event", preview.c_str()))
+			{
+				// Kept inside the popup so it is where the eye already is when the list is long.
+				ImGui::SetNextItemWidth(-1.0f);
+				char search[128] = {};
+				std::snprintf(search, sizeof(search), "%s", m_AudioEventSearch.c_str());
+				if (ImGui::InputTextWithHint("##audio_event_search", "Search events...", search, sizeof(search)))
+					m_AudioEventSearch = search;
+
+				ImGui::Separator();
+
+				if (ImGui::Selectable("None", !component.Event.IsValid()))
+				{
+					component.Event = {};
+					ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities,
+						[](AudioSourceComponent& audioComponent, Entity) { audioComponent.Event = {}; });
+				}
+
+				int shown = 0;
+				for (const AudioEventInfo& info : events)
+				{
+					if (!m_AudioEventBankFilter.empty() && info.BankName != m_AudioEventBankFilter)
+						continue;
+
+					if (!ImGuiEx::IsMatchingSearch(info.Path, m_AudioEventSearch, false, false, true))
+						continue;
+
+					shown++;
+					if (ImGui::Selectable(info.Path.c_str(), info.Guid == component.Event.Guid))
+					{
+						AudioEventRef picked{ info.Guid, info.Path, info.BankName };
+						component.Event = picked;
+						ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities,
+							[picked](AudioSourceComponent& audioComponent, Entity) { audioComponent.Event = picked; });
+					}
+
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("%s\n%s  -  %s%s", info.Guid.c_str(), info.BankName.c_str(),
+							info.Is3D ? "3D" : "2D", info.IsOneshot ? ", oneshot" : "");
+					}
+				}
+
+				if (shown == 0)
+					ImGui::TextDisabled(events.empty() ? "No events in the loaded banks." : "Nothing matches.");
+
+				ImGui::EndCombo();
 			}
 
-			ImGui::EndCombo();
+			if (component.Event.IsValid() && !resolved)
+				ImGui::TextColored(ImVec4(0.95f, 0.72f, 0.31f, 1.0f), "Not in any loaded bank - build the project.");
+			else if (events.empty())
+				ImGui::TextDisabled("No events yet - author them in FMOD Studio.");
 		}
-		// Kept inside the value column so it stays part of this row rather than escaping the grid.
-		if (missing)
-			ImGui::TextColored(ImVec4(0.95f, 0.72f, 0.31f, 1.0f), "Not in any loaded bank - build the project.");
-		else if (events.empty())
-			ImGui::TextDisabled("No events yet - author them in FMOD Studio.");
-
-		ImGui::PopItemWidth();
-		ImGui::NextColumn();
-		ImGuiEx::Draw::Underline();
+		endPropertyRow();
 	}
 
 	void SceneHierarchyPanel::DrawComponents(const std::vector<UUID>& entityIDs)
@@ -2760,50 +2858,17 @@ namespace Lux {
 			});
 
 		DrawComponentSection<AudioSourceComponent>(m_Context, entityIDs, "Audio Source", EditorResources::AudioIcon,
-			[this, firstEntity](AudioSourceComponent& firstComponent, const std::vector<UUID>& selectedEntities, bool isMultiEdit) mutable
+			[this](AudioSourceComponent& firstComponent, const std::vector<UUID>& selectedEntities, bool isMultiEdit) mutable
 			{
-				if (isMultiEdit)
-					ImGui::TextDisabled("Audio source playback controls apply to the first selected entity.");
-
 				auto& component = firstComponent;
 				auto& config = component.Config;
 
-				// The event picker comes first because an event supersedes the raw file below: when
-				// one is set, spatialisation and attenuation are authored in FMOD Studio and this
-				// component's own config fields no longer apply.
+				// The event comes first: when one is assigned it supersedes the legacy file below,
+				// and the fields that used to shape playback here now live on the event.
 				ImGuiEx::BeginPropertyGrid();
 				DrawAudioEventPicker(component, selectedEntities);
-				ImGuiEx::EndPropertyGrid();
 
-				if (component.Event.IsValid())
-				{
-					ImGui::TextDisabled("Attenuation, cones and doppler are authored in the event.");
-					ImGui::Spacing();
-				}
-
-				ImGuiEx::BeginPropertyGrid();
-				AssetHandle audioHandle = component.Audio;
-				const bool mixedAudio = selectedEntities.size() > 1 && IsSelectionInconsistent<AssetHandle>(m_Context, selectedEntities, [](Entity entity)
-				{
-					return entity.GetComponent<AudioSourceComponent>().Audio;
-				});
-				ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, mixedAudio);
-				if (ImGuiEx::PropertyAssetReference<AudioFile>("Audio", audioHandle, "Audio Source only accepts audio assets"))
-				{
-					component.Audio = audioHandle;
-					if (!component.AudioSourceData.Playlist.empty())
-						component.AudioSourceData.Playlist[0] = audioHandle;
-
-					ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [audioHandle](AudioSourceComponent& audioComponent, Entity)
-					{
-						audioComponent.Audio = audioHandle;
-						if (!audioComponent.AudioSourceData.Playlist.empty())
-							audioComponent.AudioSourceData.Playlist[0] = audioHandle;
-					});
-				}
-				ImGui::PopItemFlag();
-
-				if (ImGuiEx::Property("Volume Multiplier", config.VolumeMultiplier, 0.01f, 0.0f, 2.0f))
+				if (ImGuiEx::Property("Volume", config.VolumeMultiplier, 0.01f, 0.0f, 2.0f))
 				{
 					ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [&config](AudioSourceComponent& audioComponent, Entity)
 					{
@@ -2811,7 +2876,7 @@ namespace Lux {
 					});
 				}
 
-				if (ImGuiEx::Property("Pitch Multiplier", config.PitchMultiplier, 0.01f, 0.0f, 3.0f))
+				if (ImGuiEx::Property("Pitch", config.PitchMultiplier, 0.01f, 0.0f, 3.0f))
 				{
 					ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [&config](AudioSourceComponent& audioComponent, Entity)
 					{
@@ -2826,123 +2891,53 @@ namespace Lux {
 						audioComponent.Config.PlayOnAwake = config.PlayOnAwake;
 					});
 				}
-
-				if (ImGuiEx::Property("Spatialization", config.Spatialization))
-				{
-					ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [&config](AudioSourceComponent& audioComponent, Entity)
-					{
-						audioComponent.Config.Spatialization = config.Spatialization;
-					});
-				}
-
-				if (!component.AudioSourceData.UsePlaylist)
-				{
-					if (ImGuiEx::Property("Looping", config.Looping))
-					{
-						ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [&config](AudioSourceComponent& audioComponent, Entity)
-						{
-							audioComponent.Config.Looping = config.Looping;
-						});
-					}
-				}
-
 				ImGuiEx::EndPropertyGrid();
 
-				if (config.Spatialization)
+				DrawAudioParameterOverrides(component);
+
+				// Legacy raw-file playback. Hidden entirely once an event is assigned, because the
+				// two paths are mutually exclusive and showing both invites setting one and hearing
+				// the other.
+				if (!component.Event.IsValid())
 				{
-					ImGuiEx::BeginPropertyGrid();
-
-					const char* attenuationTypeStrings[] = { "None", "Inverse", "Linear", "Exponential" };
-					int attenuationType = static_cast<int>(config.AttenuationModel);
-					if (ImGuiEx::PropertyDropdown("Attenuation Model", attenuationTypeStrings, IM_ARRAYSIZE(attenuationTypeStrings), &attenuationType))
+					ImGui::Spacing();
+					if (ImGuiEx::PropertyGridHeader("Legacy Audio File", false))
 					{
-						config.AttenuationModel = static_cast<AttenuationModelType>(attenuationType);
-						ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [attenuationType](AudioSourceComponent& audioComponent, Entity)
-						{
-							audioComponent.Config.AttenuationModel = static_cast<AttenuationModelType>(attenuationType);
-						});
-					}
+						ImGui::TextDisabled("Played through the Core API with default 3D attenuation.\nPrefer authoring an FMOD Studio event.");
 
-					if (ImGuiEx::Property("Roll Off", config.RollOff, 0.01f, 0.0f, 10.0f))
-					{
-						ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [&config](AudioSourceComponent& audioComponent, Entity)
+						ImGuiEx::BeginPropertyGrid();
+						AssetHandle audioHandle = component.Audio;
+						const bool mixedAudio = selectedEntities.size() > 1 && IsSelectionInconsistent<AssetHandle>(m_Context, selectedEntities, [](Entity entity)
 						{
-							audioComponent.Config.RollOff = config.RollOff;
+							return entity.GetComponent<AudioSourceComponent>().Audio;
 						});
-					}
-
-					if (ImGuiEx::Property("Min Gain", config.MinGain, 0.01f, 0.0f, 1.0f))
-					{
-						ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [&config](AudioSourceComponent& audioComponent, Entity)
+						ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, mixedAudio);
+						if (ImGuiEx::PropertyAssetReference<AudioFile>("Audio File", audioHandle, "Audio Source only accepts audio assets"))
 						{
-							audioComponent.Config.MinGain = config.MinGain;
-						});
-					}
+							component.Audio = audioHandle;
+							ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [audioHandle](AudioSourceComponent& audioComponent, Entity)
+							{
+								audioComponent.Audio = audioHandle;
+							});
+						}
+						ImGui::PopItemFlag();
 
-					if (ImGuiEx::Property("Max Gain", config.MaxGain, 0.01f, 0.0f, 1.0f))
-					{
-						ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [&config](AudioSourceComponent& audioComponent, Entity)
+						if (ImGuiEx::Property("Looping", config.Looping))
 						{
-							audioComponent.Config.MaxGain = config.MaxGain;
-						});
+							ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [&config](AudioSourceComponent& audioComponent, Entity)
+							{
+								audioComponent.Config.Looping = config.Looping;
+							});
+						}
+						ImGuiEx::EndPropertyGrid();
+						ImGui::TreePop();
 					}
-
-					if (ImGuiEx::Property("Min Distance", config.MinDistance, 0.01f, 0.0f, 100.0f))
-					{
-						ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [&config](AudioSourceComponent& audioComponent, Entity)
-						{
-							audioComponent.Config.MinDistance = config.MinDistance;
-						});
-					}
-
-					if (ImGuiEx::Property("Max Distance", config.MaxDistance, 0.01f, 0.0f, 100.0f))
-					{
-						ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [&config](AudioSourceComponent& audioComponent, Entity)
-						{
-							audioComponent.Config.MaxDistance = config.MaxDistance;
-						});
-					}
-
-					float innerAngle = glm::degrees(config.ConeInnerAngle);
-					if (ImGuiEx::Property("Cone Inner Angle", innerAngle, 0.1f, 0.0f, 360.0f))
-					{
-						config.ConeInnerAngle = glm::radians(innerAngle);
-						ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [innerAngle](AudioSourceComponent& audioComponent, Entity)
-						{
-							audioComponent.Config.ConeInnerAngle = glm::radians(innerAngle);
-						});
-					}
-
-					float outerAngle = glm::degrees(config.ConeOuterAngle);
-					if (ImGuiEx::Property("Cone Outer Angle", outerAngle, 0.1f, 0.0f, 360.0f))
-					{
-						config.ConeOuterAngle = glm::radians(outerAngle);
-						ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [outerAngle](AudioSourceComponent& audioComponent, Entity)
-						{
-							audioComponent.Config.ConeOuterAngle = glm::radians(outerAngle);
-						});
-					}
-
-					if (ImGuiEx::Property("Cone Outer Gain", config.ConeOuterGain, 0.01f, 0.0f, 1.0f))
-					{
-						ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [&config](AudioSourceComponent& audioComponent, Entity)
-						{
-							audioComponent.Config.ConeOuterGain = config.ConeOuterGain;
-						});
-					}
-
-					if (ImGuiEx::Property("Doppler Factor", config.DopplerFactor, 0.01f, 0.0f, 10.0f))
-					{
-						ApplyToSelection<AudioSourceComponent>(m_Context, selectedEntities, [&config](AudioSourceComponent& audioComponent, Entity)
-						{
-							audioComponent.Config.DopplerFactor = config.DopplerFactor;
-						});
-					}
-
-					ImGuiEx::EndPropertyGrid();
 				}
 
+				if (isMultiEdit)
+					ImGui::TextDisabled("Parameter overrides apply to the first selected entity.");
 			});
+
 
 		DrawComponentSection<AudioListenerComponent>(m_Context, entityIDs, "Audio Listener", EditorResources::AudioListenerIcon,
 			[this](AudioListenerComponent& firstComponent, const std::vector<UUID>& selectedEntities, bool)

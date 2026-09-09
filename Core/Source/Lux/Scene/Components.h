@@ -22,25 +22,6 @@
 
 namespace Lux {
 
-	struct AudioData // For audio sources only!
-	{
-		std::vector<AssetHandle> Playlist;
-		bool UsePlaylist = false;
-		bool RepeatPlaylist = false;
-		bool RepeatAfterSpecificTrackPlays = false;
-		bool PlayingCurrentIndex = false;
-		uint32_t NumberOfAudioSources = 0;
-		uint32_t OldIndex = 0;
-		uint32_t CurrentIndex = 0;
-		uint32_t StartIndex = 0;
-
-		// For Scene:
-		bool HasPlayedAudioSource = false;
-
-		// Copies
-		std::vector<AssetHandle> PlaylistCopy;
-	};
-
 	struct IDComponent
 	{
 		UUID ID;
@@ -430,7 +411,13 @@ namespace Lux {
 	struct AudioEventRef
 	{
 		std::string Guid;   // "{xxxxxxxx-....}", empty when no event is assigned
-		std::string Path;   // "event:/FX/Door" - display only, refreshed from the loaded banks
+
+		// Both advisory, both refreshed from the loaded banks on display, and neither ever used to
+		// resolve the event - the GUID does that on its own, whichever bank the event turns out to
+		// live in. Path is what a designer recognises; BankName lets the picker group by bank and
+		// gives on-demand bank loading something to work from later.
+		std::string Path;       // "event:/FX/Door"
+		std::string BankName;   // "Master.bank"
 
 		bool IsValid() const { return !Guid.empty(); }
 	};
@@ -440,53 +427,22 @@ namespace Lux {
 		AudioSourceConfig Config;
 
 		// The FMOD Studio event this source plays. Takes precedence over Audio below when set:
-		// spatialisation, attenuation, randomisation and DSP then come from the event as authored,
-		// and Config's corresponding fields are ignored.
+		// spatialisation, attenuation, randomisation and DSP then come from the event as authored.
 		AudioEventRef Event;
 
-		// Legacy raw-file playback through the Core API. Retained while the project's .fspro has no
-		// authored events; a source with an Event set never touches this.
+		// Author-defined event parameters applied when the instance is created, so two entities can
+		// share one event and still sound different - a large and a small door, one alarm that is
+		// more urgent than another. Names must match parameters authored on the event; anything
+		// else is ignored by FMOD rather than failing.
+		std::vector<std::pair<std::string, float>> ParameterOverrides;
+
+		// Legacy raw-file playback through the Core API, kept while projects still have audio that
+		// has not been moved into an FMOD Studio event. A source with an Event set never uses it.
 		AssetHandle Audio = 0;
-		AudioData AudioSourceData;
 
-		bool Paused = false;
-		bool Seek = false;
-		uint64_t SeekPosition = 0;
-
-		AssetHandle GetAudioSourceHandle(uint32_t index) const { return AudioSourceData.Playlist[index]; }
-		void SetAudioSource(uint32_t index) { Audio = AudioSourceData.Playlist[index]; }
-
-		void AddAudioSource(AssetHandle& audio)
-		{
-			AudioSourceData.Playlist.emplace_back(audio);
-			AudioSourceData.NumberOfAudioSources = (uint32_t)AudioSourceData.Playlist.size();
-		}
-
-		void RemoveAudioSource(uint32_t index)
-		{
-			AudioSourceData.Playlist.erase(AudioSourceData.Playlist.begin() + index);
-			AudioSourceData.Playlist.shrink_to_fit();
-			AudioSourceData.NumberOfAudioSources = (uint32_t)AudioSourceData.Playlist.size();
-		}
-
-		void RemoveAudioSource(AssetHandle& audio)
-		{
-			uint32_t index = 0;
-
-			for (uint32_t i = 0; i < AudioSourceData.Playlist.size(); i++)
-			{
-				AssetHandle audioSource = AudioSourceData.Playlist[i];
-
-				if (audioSource == audio)
-				{
-					index = i;
-				}
-			}
-
-			AudioSourceData.Playlist.erase(AudioSourceData.Playlist.begin() + index);
-			AudioSourceData.Playlist.shrink_to_fit();
-			AudioSourceData.NumberOfAudioSources = (uint32_t)AudioSourceData.Playlist.size();
-		}
+		// Runtime-only: false once the source has been started, so PlayOnAwake fires exactly once.
+		// Not serialized - a saved scene always begins un-started.
+		bool Paused = true;
 	};
 
 	struct AudioListenerComponent

@@ -209,7 +209,6 @@ namespace Lux {
 		void RenderScene(EditorCamera& camera);
 		Ref<AudioSource> GetOrCreateRuntimeAudioSource(Entity entity, AssetHandle audioHandle);
 		Ref<AudioEventInstance> GetOrCreateRuntimeEventInstance(Entity entity, const struct AudioEventRef& event);
-		Ref<AudioSource> GetOrCreateRuntimePlaylistSource(Entity entity, uint32_t index, AssetHandle audioHandle);
 		void ReleaseRuntimeAudio(Entity entity);
 		void ReleaseAllRuntimeAudio();
 		Entity CreatePrefabEntity(Entity entity, Entity parent, const glm::vec3* translation = nullptr, const glm::vec3* rotation = nullptr, const glm::vec3* scale = nullptr);
@@ -240,7 +239,6 @@ namespace Lux {
 		// Null entries are meaningful: they record an event that could not be resolved, so the
 		// failure is logged once rather than on every frame.
 		std::unordered_map<UUID, Ref<AudioEventInstance>> m_RuntimeEventInstances;
-		std::unordered_map<UUID, std::vector<Ref<AudioSource>>> m_RuntimeAudioPlaylists;
 		Ref<RaytracedAudioScene> m_RaytracedAudioScene;
 
 		// Per-entity C# script field values (serialized with the scene) and live instances.

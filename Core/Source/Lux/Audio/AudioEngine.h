@@ -71,6 +71,7 @@ namespace Lux {
 	{
 		std::string Path;        // "event:/FX/Door"
 		std::string Guid;        // "{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}" - the stable reference
+		std::string BankName;    // the bank that describes it, e.g. "Master.bank"
 		bool Is3D = false;
 		bool IsOneshot = false;
 	};

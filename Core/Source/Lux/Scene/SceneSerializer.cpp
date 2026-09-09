@@ -729,33 +729,10 @@ namespace Lux {
 				out << YAML::Key << "PitchMultiplier" << YAML::Value << config.PitchMultiplier;
 				out << YAML::Key << "PlayOnAwake" << YAML::Value << config.PlayOnAwake;
 				out << YAML::Key << "Looping" << YAML::Value << config.Looping;
-				out << YAML::Key << "Spatialization" << YAML::Value << config.Spatialization;
-				// Emitted as uint32_t, not uint8_t: yaml-cpp's unsigned-char overload writes the
-				// value as a *character* (Write(static_cast<char>(v))), so a uint8_t enum would
-				// land in the file as a raw control byte and corrupt the scene.
-				out << YAML::Key << "AttenuationModel" << YAML::Value << (uint32_t)config.AttenuationModel;
-				out << YAML::Key << "RollOff" << YAML::Value << config.RollOff;
-				out << YAML::Key << "MinGain" << YAML::Value << config.MinGain;
-				out << YAML::Key << "MaxGain" << YAML::Value << config.MaxGain;
-				out << YAML::Key << "MinDistance" << YAML::Value << config.MinDistance;
-				out << YAML::Key << "MaxDistance" << YAML::Value << config.MaxDistance;
-				out << YAML::Key << "ConeInnerAngle" << YAML::Value << config.ConeInnerAngle;
-				out << YAML::Key << "ConeOuterAngle" << YAML::Value << config.ConeOuterAngle;
-				out << YAML::Key << "ConeOuterGain" << YAML::Value << config.ConeOuterGain;
-				out << YAML::Key << "DopplerFactor" << YAML::Value << config.DopplerFactor;
-				out << YAML::Key << "UsePlaylist" << YAML::Value << audioSource.AudioSourceData.UsePlaylist;
-				out << YAML::Key << "RepeatPlaylist" << YAML::Value << audioSource.AudioSourceData.RepeatPlaylist;
-				out << YAML::Key << "StartIndex" << YAML::Value << audioSource.AudioSourceData.StartIndex;
-				out << YAML::Key << "Playlist" << YAML::Value << YAML::BeginSeq;
-				for (AssetHandle handle : audioSource.AudioSourceData.Playlist)
-					out << handle;
-				out << YAML::EndSeq;
 
-				// The GUID is the reference; the path is written alongside it purely so a human
-				// reading the scene file can tell which event this is without opening FMOD Studio.
-				// Deserialization refreshes the path from the loaded banks and never trusts it.
 				out << YAML::Key << "EventGuid" << YAML::Value << audioSource.Event.Guid;
 				out << YAML::Key << "EventPath" << YAML::Value << audioSource.Event.Path;
+				out << YAML::Key << "EventBank" << YAML::Value << audioSource.Event.BankName;
 				out << YAML::EndMap;
 			}
 
@@ -1206,30 +1183,26 @@ namespace Lux {
 					config.PitchMultiplier = audioSource["PitchMultiplier"].as<float>(1.0f);
 					config.PlayOnAwake = audioSource["PlayOnAwake"].as<bool>(true);
 					config.Looping = audioSource["Looping"].as<bool>(false);
-					config.Spatialization = audioSource["Spatialization"].as<bool>(false);
-					config.AttenuationModel = (AttenuationModelType)audioSource["AttenuationModel"].as<uint32_t>((uint32_t)AttenuationModelType::Inverse);
-					config.RollOff = audioSource["RollOff"].as<float>(1.0f);
-					config.MinGain = audioSource["MinGain"].as<float>(0.0f);
-					config.MaxGain = audioSource["MaxGain"].as<float>(1.0f);
-					config.MinDistance = audioSource["MinDistance"].as<float>(0.3f);
-					config.MaxDistance = audioSource["MaxDistance"].as<float>(1000.0f);
-					config.ConeInnerAngle = audioSource["ConeInnerAngle"].as<float>(glm::radians(360.0f));
-					config.ConeOuterAngle = audioSource["ConeOuterAngle"].as<float>(glm::radians(360.0f));
-					config.ConeOuterGain = audioSource["ConeOuterGain"].as<float>(0.0f);
-					config.DopplerFactor = audioSource["DopplerFactor"].as<float>(1.0f);
+
+					// Spatialization, AttenuationModel, RollOff, Min/MaxGain, Min/MaxDistance, the
+					// cone angles and DopplerFactor were removed: an FMOD Studio event authors all
+					// of them. Scenes saved before that still carry the keys, and they are ignored
+					// here deliberately rather than by accident - reading them would resurrect
+					// settings that no longer reach the mixer.
+
+					if (auto overrides = audioSource["ParameterOverrides"])
+					{
+						for (auto entry : overrides)
+						{
+							component.ParameterOverrides.emplace_back(
+								entry["Name"].as<std::string>(std::string{}),
+								entry["Value"].as<float>(0.0f));
+						}
+					}
 
 					component.Event.Guid = audioSource["EventGuid"].as<std::string>(std::string{});
 					component.Event.Path = audioSource["EventPath"].as<std::string>(std::string{});
-
-					component.AudioSourceData.UsePlaylist = audioSource["UsePlaylist"].as<bool>(false);
-					component.AudioSourceData.RepeatPlaylist = audioSource["RepeatPlaylist"].as<bool>(false);
-					component.AudioSourceData.StartIndex = audioSource["StartIndex"].as<uint32_t>(0);
-					if (auto playlist = audioSource["Playlist"])
-					{
-						for (auto handle : playlist)
-							component.AudioSourceData.Playlist.emplace_back(handle.as<uint64_t>(0));
-						component.AudioSourceData.NumberOfAudioSources = (uint32_t)component.AudioSourceData.Playlist.size();
-					}
+					component.Event.BankName = audioSource["EventBank"].as<std::string>(std::string{});
 				}
 
 				if (auto audioListener = entity["AudioListenerComponent"])

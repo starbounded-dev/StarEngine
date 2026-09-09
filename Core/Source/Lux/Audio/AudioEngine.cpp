@@ -263,8 +263,10 @@ namespace Lux {
 		// the load has actually completed.
 		s_StudioSystem->flushCommands();
 
-		for (FMOD::Studio::Bank* bank : s_Banks)
+		for (size_t bankIndex = 0; bankIndex < s_Banks.size(); bankIndex++)
 		{
+			FMOD::Studio::Bank* bank = s_Banks[bankIndex];
+
 			int eventCount = 0;
 			if (bank->getEventCount(&eventCount) != FMOD_OK || eventCount <= 0)
 				continue;
@@ -298,6 +300,10 @@ namespace Lux {
 				bool isOneshot = false;
 				description->isOneshot(&isOneshot);
 				info.IsOneshot = isOneshot;
+
+				// Recorded here rather than looked up later: this loop is the only place the
+				// bank-to-event relationship is known without asking FMOD again.
+				info.BankName = s_BankInfo[bankIndex].Name;
 
 				s_Events.push_back(std::move(info));
 			}

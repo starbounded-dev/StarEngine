@@ -15,34 +15,6 @@ namespace Lux {
 
 	namespace {
 
-		// AttenuationModelType::None combined with Spatialization=true has no direct FMOD rolloff
-		// flag equivalent (FMOD's flags are all distance-based falloff curves); it's approximated
-		// with a flat two-point custom rolloff instead, applied by SetAttenuationModel/SetConfig.
-		FMOD_MODE RolloffModeFor(AttenuationModelType model)
-		{
-			switch (model)
-			{
-				case AttenuationModelType::None:		return FMOD_3D_CUSTOMROLLOFF;
-				case AttenuationModelType::Inverse:		return FMOD_3D_INVERSEROLLOFF;
-				case AttenuationModelType::Linear:		return FMOD_3D_LINEARROLLOFF;
-				case AttenuationModelType::Exponential: return FMOD_3D_INVERSETAPEREDROLLOFF;
-			}
-
-			return FMOD_3D_INVERSEROLLOFF;
-		}
-
-		void ApplyFlatRolloffIfNone(FMOD::Sound* sound, AttenuationModelType model, float minDistance, float maxDistance)
-		{
-			if (model != AttenuationModelType::None || !sound)
-				return;
-
-			FMOD_VECTOR flatCurve[2] = {
-				{ minDistance, 1.0f, 0.0f },
-				{ maxDistance, 1.0f, 0.0f },
-			};
-			sound->set3DCustomRolloff(flatCurve, 2);
-		}
-
 		// How much more the high band is attenuated than the low band, as 0 (no spectral tilt) to
 		// 1 (highs gone entirely). This is the part of a two-band measurement that a single-scalar
 		// occlusion control can carry without also re-applying the broadband loss, which the
@@ -208,18 +180,12 @@ namespace Lux {
 		if (!m_Sound || !m_IsLoaded)
 			return;
 
-		m_Spatialization = config.Spatialization;
-
+		// Always 3D, matching how the sound was created. The old Spatialization flag defaulted to
+		// off, which quietly made every raw source 2D; tuning raw-file attenuation is exactly the
+		// thing an event should be doing instead, so the rolloff is left at FMOD's defaults.
 		FMOD_MODE mode = config.Looping ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
-		mode |= config.Spatialization ? (FMOD_3D | RolloffModeFor(config.AttenuationModel)) : FMOD_2D;
+		mode |= FMOD_3D;
 		m_Sound->setMode(mode);
-
-		if (config.Spatialization)
-		{
-			ApplyFlatRolloffIfNone(m_Sound, config.AttenuationModel, config.MinDistance, config.MaxDistance);
-			m_Sound->set3DMinMaxDistance(config.MinDistance, config.MaxDistance);
-			m_Sound->set3DConeSettings(glm::degrees(config.ConeInnerAngle), glm::degrees(config.ConeOuterAngle), config.ConeOuterGain);
-		}
 
 		m_ConfiguredVolume = config.VolumeMultiplier;
 
@@ -227,13 +193,6 @@ namespace Lux {
 		{
 			m_Channel->setVolume(m_ConfiguredVolume * m_OcclusionVolumeScale);
 			m_Channel->setPitch(config.PitchMultiplier);
-
-			if (config.Spatialization)
-			{
-				m_Channel->set3DMinMaxDistance(config.MinDistance, config.MaxDistance);
-				m_Channel->set3DConeSettings(glm::degrees(config.ConeInnerAngle), glm::degrees(config.ConeOuterAngle), config.ConeOuterGain);
-				m_Channel->set3DDopplerLevel(std::max(config.DopplerFactor, 0.0f));
-			}
 		}
 	}
 
@@ -273,99 +232,14 @@ namespace Lux {
 			m_Sound->setMode(state ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF);
 	}
 
-	void AudioSource::SetSpatialization(bool state)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetSpatialization");
 
-		m_Spatialization = state;
-		if (m_Sound)
-			m_Sound->setMode(state ? FMOD_3D : FMOD_2D);
-	}
 
-	void AudioSource::SetAttenuationModel(AttenuationModelType type)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetAttenuationModel");
 
-		if (!m_Sound || !m_Spatialization)
-			return;
 
-		m_Sound->setMode(FMOD_3D | RolloffModeFor(type));
 
-		float minDistance = 1.0f, maxDistance = 1000.0f;
-		m_Sound->get3DMinMaxDistance(&minDistance, &maxDistance);
-		ApplyFlatRolloffIfNone(m_Sound, type, minDistance, maxDistance);
-	}
 
-	void AudioSource::SetRollOff(float rollOff)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetRollOff");
-		// No direct FMOD equivalent to miniaudio's continuous rolloff scalar - the discrete
-		// rolloff curve selected by SetAttenuationModel is the closest match.
-		(void)rollOff;
-	}
 
-	void AudioSource::SetMinGain(float minGain)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetMinGain");
-		// No direct FMOD equivalent - min/max gain clamp the attenuation curve's output in
-		// miniaudio, independent of min/max distance. Unimplemented for FMOD.
-		(void)minGain;
-	}
 
-	void AudioSource::SetMaxGain(float maxGain)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetMaxGain");
-		(void)maxGain;
-	}
-
-	void AudioSource::SetMinDistance(float minDistance)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetMinDistance");
-
-		if (!m_Sound)
-			return;
-
-		float min = minDistance, max = 1000.0f;
-		m_Sound->get3DMinMaxDistance(&min, &max);
-		m_Sound->set3DMinMaxDistance(minDistance, max);
-		if (m_Channel)
-			m_Channel->set3DMinMaxDistance(minDistance, max);
-	}
-
-	void AudioSource::SetMaxDistance(float maxDistance)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetMaxDistance");
-
-		if (!m_Sound)
-			return;
-
-		float min = 0.3f, max = maxDistance;
-		m_Sound->get3DMinMaxDistance(&min, &max);
-		m_Sound->set3DMinMaxDistance(min, maxDistance);
-		if (m_Channel)
-			m_Channel->set3DMinMaxDistance(min, maxDistance);
-	}
-
-	void AudioSource::SetCone(float innerAngle, float outerAngle, float outerGain)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetCone");
-
-		const float innerDegrees = glm::degrees(innerAngle);
-		const float outerDegrees = glm::degrees(outerAngle);
-
-		if (m_Sound)
-			m_Sound->set3DConeSettings(innerDegrees, outerDegrees, outerGain);
-		if (m_Channel)
-			m_Channel->set3DConeSettings(innerDegrees, outerDegrees, outerGain);
-	}
-
-	void AudioSource::SetDopplerFactor(float factor)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetDopplerFactor");
-
-		if (m_Channel)
-			m_Channel->set3DDopplerLevel(std::max(factor, 0.0f));
-	}
 
 	void AudioSource::SetPosition(const glm::vec4& position)
 	{
@@ -558,21 +432,6 @@ namespace Lux {
 		return 0;
 	}
 
-	static ma_attenuation_model GetAttenuationModel(AttenuationModelType model)
-	{
-		LUX_PROFILE_FUNCTION("ma_attenuation_model GetAttenuationModel");
-
-		switch (model)
-		{
-		case AttenuationModelType::None:		return ma_attenuation_model_none;
-		case AttenuationModelType::Inverse:		return ma_attenuation_model_inverse;
-		case AttenuationModelType::Linear:		return ma_attenuation_model_linear;
-		case AttenuationModelType::Exponential: return ma_attenuation_model_exponential;
-		}
-
-		return ma_attenuation_model_none;
-	}
-
 	void AudioSource::SetConfig(const AudioSourceConfig& config)
 	{
 		LUX_PROFILE_FUNCTION("AudioSource::SetConfig");
@@ -591,28 +450,9 @@ namespace Lux {
 					ma_sound_set_looping(sound, MA_FALSE);
 			}
 
-			if (m_Spatialization != config.Spatialization)
-			{
-				m_Spatialization = config.Spatialization;
-				ma_sound_set_spatialization_enabled(sound, config.Spatialization);
-			}
-
-			if (config.Spatialization)
-			{
-				ma_sound_set_attenuation_model(sound, GetAttenuationModel(config.AttenuationModel));
-				ma_sound_set_rolloff(sound, config.RollOff);
-				ma_sound_set_min_gain(sound, config.MinGain);
-				ma_sound_set_max_gain(sound, config.MaxGain);
-				ma_sound_set_min_distance(sound, config.MinDistance);
-				ma_sound_set_max_distance(sound, config.MaxDistance);
-
-				ma_sound_set_cone(sound, config.ConeInnerAngle, config.ConeOuterAngle, config.ConeOuterGain);
-				ma_sound_set_doppler_factor(sound, std::max(config.DopplerFactor, 0.0f));
-			}
-			else
-			{
-				ma_sound_set_attenuation_model(sound, ma_attenuation_model_none);
-			}
+			// Spatialised with miniaudio's defaults, matching the FMOD branch: attenuation
+			// shaping belongs on an event, not on component fields.
+			ma_sound_set_spatialization_enabled(sound, MA_TRUE);
 		}
 	}
 
@@ -657,99 +497,14 @@ namespace Lux {
 		}
 	}
 
-	void AudioSource::SetSpatialization(bool state)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetSpatialization");
 
-		m_Spatialization = state;
-		if (m_Sound && m_IsLoaded)
-		{
-			ma_sound_set_spatialization_enabled(m_Sound.get(), state);
-		}
-	}
 
-	void AudioSource::SetAttenuationModel(AttenuationModelType type)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetAttenuationModel");
 
-		if (m_Sound && m_IsLoaded)
-		{
-			if (m_Spatialization)
-				ma_sound_set_attenuation_model(m_Sound.get(), GetAttenuationModel(type));
-			else
-				ma_sound_set_attenuation_model(m_Sound.get(), GetAttenuationModel(AttenuationModelType::None));
-		}
-	}
 
-	void AudioSource::SetRollOff(float rollOff)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetRollOff");
 
-		if (m_Sound && m_IsLoaded)
-		{
-			ma_sound_set_rolloff(m_Sound.get(), rollOff);
-		}
-	}
 
-	void AudioSource::SetMinGain(float minGain)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetRollOff");
 
-		if (m_Sound && m_IsLoaded)
-		{
-			ma_sound_set_min_gain(m_Sound.get(), minGain);
-		}
-	}
 
-	void AudioSource::SetMaxGain(float maxGain)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetRollOff");
-
-		if (m_Sound && m_IsLoaded)
-		{
-			ma_sound_set_max_gain(m_Sound.get(), maxGain);
-		}
-	}
-
-	void AudioSource::SetMinDistance(float minDistance)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetRollOff");
-
-		if (m_Sound && m_IsLoaded)
-		{
-			ma_sound_set_min_distance(m_Sound.get(), minDistance);
-		}
-	}
-
-	void AudioSource::SetMaxDistance(float maxDistance)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetRollOff");
-
-		if (m_Sound && m_IsLoaded)
-		{
-			ma_sound_set_max_distance(m_Sound.get(), maxDistance);
-		}
-	}
-
-	void AudioSource::SetCone(float innerAngle, float outerAngle, float outerGain)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetRollOff");
-
-		if (m_Sound && m_IsLoaded)
-		{
-			ma_sound_set_cone(m_Sound.get(), innerAngle, outerAngle, outerGain);
-		}
-	}
-
-	void AudioSource::SetDopplerFactor(float factor)
-	{
-		LUX_PROFILE_FUNCTION("AudioSource::SetDopplerFactor");
-
-		if (m_Sound && m_IsLoaded)
-		{
-			ma_sound_set_doppler_factor(m_Sound.get(), std::max(factor, 0.0f));
-		}
-	}
 
 	void AudioSource::SetPosition(const glm::vec4& position)
 	{

@@ -369,20 +369,6 @@ namespace Lux {
 		return runtimeAudio;
 	}
 
-	Ref<AudioSource> Scene::GetOrCreateRuntimePlaylistSource(Entity entity, uint32_t index, AssetHandle audioHandle)
-	{
-		if (!entity || !audioHandle)
-			return nullptr;
-
-		auto& runtimePlaylist = m_RuntimeAudioPlaylists[entity.GetUUID()];
-		if (runtimePlaylist.size() <= index)
-			runtimePlaylist.resize(index + 1);
-
-		if (!runtimePlaylist[index])
-			runtimePlaylist[index] = CreateRuntimeAudioSourceFromHandle(audioHandle);
-
-		return runtimePlaylist[index];
-	}
 
 	void Scene::ReleaseRuntimeAudio(Entity entity)
 	{
@@ -390,7 +376,6 @@ namespace Lux {
 			return;
 
 		m_RuntimeAudioSources.erase(entity.GetUUID());
-		m_RuntimeAudioPlaylists.erase(entity.GetUUID());
 		m_RuntimeEventInstances.erase(entity.GetUUID());
 
 		if (m_RaytracedAudioScene)
@@ -400,7 +385,6 @@ namespace Lux {
 	void Scene::ReleaseAllRuntimeAudio()
 	{
 		m_RuntimeAudioSources.clear();
-		m_RuntimeAudioPlaylists.clear();
 
 		// Event instances hold FMOD Studio resources and must not outlive the runtime that started
 		// them; the destructor stops each one immediately and releases it.
@@ -448,7 +432,7 @@ namespace Lux {
 						const glm::mat4 inverted = glm::inverse(worldTransform);
 						const glm::vec3 forward = glm::normalize(glm::vec3(inverted[2].x, inverted[2].y, inverted[2].z));
 
-						if (ac.Audio && !ac.AudioSourceData.UsePlaylist)
+						if (ac.Audio)
 						{
 							Ref<AudioSource> audioSource = GetOrCreateRuntimeAudioSource(entity, ac.Audio);
 
@@ -458,28 +442,14 @@ namespace Lux {
 								audioSource->SetPosition(glm::vec4(worldPosition, 1.0f));
 								audioSource->SetDirection(forward);
 								if (ac.Config.PlayOnAwake)
-									audioSource->Play();
-							}
-						}
-						else if (ac.Audio && ac.AudioSourceData.UsePlaylist)
-						{
-							if (ac.AudioSourceData.CurrentIndex >= ac.AudioSourceData.Playlist.size())
-								ac.AudioSourceData.CurrentIndex = 0;
-
-							if (ac.AudioSourceData.CurrentIndex < ac.AudioSourceData.Playlist.size())
-							{
-								Ref<AudioSource> playingSourceIndex = GetOrCreateRuntimePlaylistSource(entity, ac.AudioSourceData.CurrentIndex, ac.AudioSourceData.Playlist[ac.AudioSourceData.CurrentIndex]);
-
-								if (playingSourceIndex != nullptr)
 								{
-									playingSourceIndex->SetConfig(ac.Config);
-									playingSourceIndex->SetPosition(glm::vec4(worldPosition, 1.0f));
-									playingSourceIndex->SetDirection(forward);
-									if (ac.Config.PlayOnAwake)
-										playingSourceIndex->Play();
+									audioSource->Play();
 
-									ac.AudioSourceData.PlayingCurrentIndex = true;
-									ac.AudioSourceData.CurrentIndex++;
+									// Records that play-on-awake has fired. Without this the
+									// per-frame path below still sees Paused == true and restarts
+									// the source every time it finishes, turning a one-shot into an
+									// unintended loop.
+									ac.Paused = false;
 								}
 							}
 						}
@@ -536,25 +506,12 @@ namespace Lux {
 					auto& ac = asc;
 					if (AssetManager::IsAssetHandleValid(ac.Audio))
 					{
-						if (ac.Audio && !ac.AudioSourceData.UsePlaylist)
+						if (ac.Audio)
 						{
 							Ref<AudioSource> audioSource = GetOrCreateRuntimeAudioSource({ entity, this }, ac.Audio);
 
 							if (audioSource != nullptr && audioSource->IsPlaying())
 								audioSource->Stop();
-						}
-						else if (ac.Audio && ac.AudioSourceData.UsePlaylist)
-						{
-							ac.AudioSourceData.CurrentIndex = ac.AudioSourceData.StartIndex;
-							ac.AudioSourceData.PlayingCurrentIndex = false;
-
-							for (uint32_t i = 0; i < ac.AudioSourceData.Playlist.size(); i++)
-							{
-								Ref<AudioSource> audioSource = GetOrCreateRuntimePlaylistSource({ entity, this }, i, ac.AudioSourceData.Playlist[i]);
-
-								if (audioSource != nullptr && audioSource->IsPlaying())
-									audioSource->Stop();
-							}
 						}
 					}
 				});
@@ -690,9 +647,22 @@ namespace Lux {
 						// of it is applied here; only placement, level and pitch are the engine's.
 						if (asc.Event.IsValid())
 						{
+							const UUID entityID = entity.GetUUID();
+							const bool created = GetRuntimeEventInstance(entityID) == nullptr
+								&& !m_RuntimeEventInstances.contains(entityID);
+
 							Ref<AudioEventInstance> instance = GetOrCreateRuntimeEventInstance(entity, asc.Event);
 							if (!instance)
 								return;
+
+							// Applied once, on the frame the instance is created: these are the
+							// per-entity variation of a shared event, not something gameplay drives
+							// every frame. Scripts change parameters through the C# API instead.
+							if (created)
+							{
+								for (const auto& [name, value] : asc.ParameterOverrides)
+									instance->SetParameter(name, value);
+							}
 
 							const glm::vec3 forward = glm::normalize(glm::vec3(worldTransform[2]));
 							const glm::vec3 up = glm::normalize(glm::vec3(worldTransform[1]));
@@ -709,7 +679,7 @@ namespace Lux {
 							return;
 						}
 
-						if (asc.Audio && !asc.AudioSourceData.UsePlaylist)
+						if (asc.Audio)
 						{
 							Ref<AudioSource> audioSource = GetOrCreateRuntimeAudioSource(entity, asc.Audio);
 							if (!audioSource)
@@ -724,52 +694,6 @@ namespace Lux {
 
 							audioSource->SetConfig(asc.Config);
 							audioSource->SetPosition(glm::vec4(worldPosition, 1.0f));
-						}
-						else if (asc.Audio && asc.AudioSourceData.UsePlaylist)
-						{
-							auto& playlist = asc.AudioSourceData.Playlist;
-
-							if (playlist.empty())
-								return;
-
-							if (asc.AudioSourceData.OldIndex >= playlist.size())
-								asc.AudioSourceData.OldIndex = 0;
-
-							if (asc.AudioSourceData.CurrentIndex >= playlist.size())
-							{
-								if (asc.AudioSourceData.RepeatPlaylist)
-									asc.AudioSourceData.CurrentIndex = 0;
-								else
-									return;
-							}
-
-							Ref<AudioSource> oldSource = GetOrCreateRuntimePlaylistSource(entity, asc.AudioSourceData.OldIndex, playlist[asc.AudioSourceData.OldIndex]);
-							Ref<AudioSource> currentSource = GetOrCreateRuntimePlaylistSource(entity, asc.AudioSourceData.CurrentIndex, playlist[asc.AudioSourceData.CurrentIndex]);
-
-							if (!currentSource)
-								return;
-
-							if (asc.Config.PlayOnAwake && !asc.Paused && (!oldSource || !oldSource->IsPlaying()))
-							{
-								if (!currentSource->IsLooping())
-								{
-									currentSource->SetConfig(asc.Config);
-									currentSource->Play();
-									currentSource->SetPosition(glm::vec4(worldPosition, 1.0f));
-
-									asc.AudioSourceData.PlayingCurrentIndex = true;
-									asc.Paused = false;
-									asc.AudioSourceData.OldIndex = asc.AudioSourceData.CurrentIndex;
-									asc.AudioSourceData.CurrentIndex++;
-								}
-							}
-							else if (asc.Config.PlayOnAwake && asc.Paused)
-							{
-								currentSource->SetConfig(asc.Config);
-								currentSource->Play();
-								asc.AudioSourceData.PlayingCurrentIndex = true;
-								asc.Paused = false;
-							}
 						}
 					});
 			}
@@ -878,46 +802,22 @@ namespace Lux {
 
 						Entity e = { entity , this };
 
+						// Pausing the scene pauses whichever path this source is using.
+						if (asc.Event.IsValid())
+						{
+							if (Ref<AudioEventInstance> instance = GetRuntimeEventInstance(e.GetUUID()))
+								instance->SetPaused(true);
+
+							return;
+						}
+
 						if (asc.Audio)
 						{
-							if (!asc.AudioSourceData.UsePlaylist)
+							Ref<AudioSource> audioSource = GetOrCreateRuntimeAudioSource(e, asc.Audio);
+							if (audioSource && audioSource->IsPlaying())
 							{
-								Ref<AudioSource> audioSource = GetOrCreateRuntimeAudioSource(e, asc.Audio);
-								if (audioSource && audioSource->IsPlaying())
-								{
-									audioSource->SetConfig(asc.Config);
-									audioSource->Pause();
-									asc.Paused = true;
-								}
-							}
-							else if (asc.AudioSourceData.UsePlaylist)
-							{
-								if (asc.AudioSourceData.OldIndex == 0)
-								{
-									Ref<AudioSource> audioSourceIndex = GetOrCreateRuntimeAudioSource(e, asc.Audio);
-
-									if (audioSourceIndex && audioSourceIndex->IsPlaying())
-									{
-										audioSourceIndex->SetConfig(asc.Config);
-										audioSourceIndex->Pause();
-										//ac.AudioSourceData.PlayingCurrentIndex = false;
-										asc.Paused = true;
-									}
-								}
-								else if (asc.AudioSourceData.OldIndex > 0)
-								{
-									if (asc.AudioSourceData.OldIndex < asc.AudioSourceData.Playlist.size())
-									{
-										Ref<AudioSource> audioSourceIndex = GetOrCreateRuntimePlaylistSource(e, asc.AudioSourceData.OldIndex, asc.AudioSourceData.Playlist[asc.AudioSourceData.OldIndex]);
-										if (audioSourceIndex && audioSourceIndex->IsPlaying())
-										{
-											audioSourceIndex->SetConfig(asc.Config);
-											audioSourceIndex->Pause();
-											//ac.AudioSourceData.PlayingCurrentIndex = false;
-											asc.Paused = true;
-										}
-									}
-								}
+								audioSource->Pause();
+								asc.Paused = true;
 							}
 						}
 					});
@@ -2654,12 +2554,6 @@ namespace Lux {
 
 	template<>
 	void Scene::OnComponentAdded<TextComponent>(Entity entity, TextComponent& component)
-	{
-
-	}
-
-	template<>
-	void Scene::OnComponentAdded<AudioData>(Entity entity, AudioData& component)
 	{
 
 	}
