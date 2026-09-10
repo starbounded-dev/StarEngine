@@ -5,12 +5,7 @@
 #include <filesystem>
 #include <string>
 
-#ifdef LUX_ENABLE_FMOD
 namespace FMOD { class Sound; class Channel; }
-#else
-#include "miniaudio.h"
-struct ma_sound;
-#endif
 
 namespace Lux {
 
@@ -78,8 +73,7 @@ namespace Lux {
 		void SetDirection(const glm ::vec3& forward);
 		void SetVelocity(const glm ::vec3& velocity);
 
-		// Applied by RaytracedAudioScene's per-frame sync (Scene::OnUpdateRuntime). A no-op under
-		// miniaudio, which has no per-source occlusion or reverb send to drive.
+		// Applied by RaytracedAudioScene's per-frame sync (Scene::OnUpdateRuntime) to FMOD.
 		//
 		// Occlusion interacts with SetVolume: the low-frequency gain scales the source's level,
 		// so both go through the same effective-volume calculation and neither clobbers the other.
@@ -93,7 +87,6 @@ namespace Lux {
 		float GetAudibility() const;
 
 	private:
-#ifdef LUX_ENABLE_FMOD
 		FMOD::Sound* m_Sound = nullptr;
 		FMOD::Channel* m_Channel = nullptr;
 		// FMOD combines position+velocity, and separately direction, into single calls - cache
@@ -106,12 +99,6 @@ namespace Lux {
 		// change doesn't wipe out occlusion, and occlusion doesn't overwrite the authored volume.
 		float m_ConfiguredVolume = 1.0f;
 		float m_OcclusionVolumeScale = 1.0f;
-#else
-		std::unique_ptr<ma_sound> m_Sound;
-		// ma_uint64 (unsigned long long) and uint64_t (unsigned long on LP64) are distinct types
-		// here, and ma_sound_get_cursor_in_pcm_frames takes ma_uint64* - keep its native type.
-		ma_uint64 m_CursorPos = 0;
-#endif
 		std::filesystem::path m_FilePath;
 		bool m_IsLoaded = false;
 	};
