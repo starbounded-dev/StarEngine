@@ -547,17 +547,20 @@ namespace Lux {
 		const std::vector<AudioEventInfo>& events = AudioEngine::GetEvents();
 		ImGui::Text("%zu bank(s) loaded, %zu event(s)", banks.size(), events.size());
 
-		if (!AudioBankBuilder::IsAvailable())
+		const bool builderAvailable = AudioBankBuilder::IsAvailable();
+		if (!builderAvailable)
 		{
 			ImGui::TextColored(ImVec4(0.95f, 0.72f, 0.31f, 1.0f),
 				"fmodstudiocl not found - set LUX_FMOD_STUDIO_CL to build banks from the editor.");
-			return;
 		}
 
-		if (ImGui::Button("Build Banks Now"))
 		{
-			if (AudioBankBuilder::Build(studioProject))
-				AudioEngine::LoadBanks(m_Project->GetStudioBankDirectory());
+			ImGuiEx::ScopedDisable disabled(!builderAvailable);
+			if (ImGui::Button("Build Banks Now"))
+			{
+				if (AudioBankBuilder::Build(studioProject))
+					AudioEngine::LoadBanks(m_Project->GetStudioBankDirectory());
+			}
 		}
 
 		ImGui::SameLine();

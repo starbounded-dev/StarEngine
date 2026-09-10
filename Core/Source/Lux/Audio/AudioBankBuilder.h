@@ -9,20 +9,20 @@ namespace Lux {
 	// way ScriptBuilder shells out to dotnet. Banks are build output, not source: the .fspro is what
 	// lives in the repo, and the engine consumes only what this produces from it.
 	//
-	// Nothing here needs the FMOD API, so it is not behind LUX_ENABLE_FMOD - a build without the
-	// SDK can still keep a project's banks current.
+	// Building banks requires the FMOD Studio application in addition to the runtime SDK.
 	class AudioBankBuilder
 	{
 	public:
 		// Absolute path to fmodstudiocl, or an empty path when it cannot be found. Resolution order:
 		// the LUX_FMOD_STUDIO_CL environment variable, then the platform's usual install locations,
-		// then PATH. Result is cached after the first successful lookup.
+		// then PATH. The result is cached for two seconds so UI queries do not scan PATH per frame.
 		static std::filesystem::path FindStudioCommandLineTool();
 
 		static bool IsAvailable() { return !FindStudioCommandLineTool().empty(); }
 
-		// True when any file under the .fspro's directory is newer than the oldest built bank, or
-		// when no banks exist yet. A missing .fspro answers false: there is nothing to build, which
+		// True when authored input under the .fspro's directory is newer than the oldest built bank,
+		// or when no banks exist yet. Build output and Studio caches/workspace state are excluded.
+		// A missing .fspro answers false: there is nothing to build, which
 		// is not the same as being out of date.
 		static bool NeedsRebuild(const std::filesystem::path& studioProjectPath, const std::filesystem::path& bankDirectory);
 
