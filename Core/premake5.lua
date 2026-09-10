@@ -7,16 +7,34 @@ project "Core"
 
 	-- Deploy the Coral.Managed host assembly next to the editor (Editor/DotNet), which is the
 	-- CoralDirectory ScriptEngine points HostInstance at. Mirrors Hazel's Hazel-project postbuild.
+	--
+	-- PINNED TO RELEASE, deliberately, and not %{cfg.buildcfg}. Coral.Managed is deployed twice by
+	-- two independent paths: here, into Editor/DotNet (what the Coral host loads), and by
+	-- ScriptCore's ProjectReference into Editor/Resources/Scripts (what ScriptCore.deps.json
+	-- resolves). ScriptCore is built by dotnet in Release, so following Core's config here would
+	-- put a Debug Coral in one directory and a Release Coral in the other.
+	--
+	-- Two Coral.Managed assemblies with the same identity but different IL then end up in one
+	-- process, and because Coral marshals through raw function pointers, the native side runs
+	-- against offsets from the other build. That surfaces as
+	-- "System.BadImageFormatException: Bad IL range" on the next script reload, which does not
+	-- point anywhere near the actual cause.
+	--
+	-- On Linux this is also the only correct source: the Coral.Managed premake project is a
+	-- StaticLib stub there (see Core/vendor/Coral/Coral.Managed/premake5.lua), so premake never
+	-- produces the C# assembly at all and Build/Release is written solely by dotnet.
 	postbuildcommands {
 		'{MKDIR} "%{wks.location}/Editor/DotNet"',
-		'{COPYFILE} "%{wks.location}/Core/vendor/Coral/Build/%{cfg.buildcfg}/Coral.Managed.dll" "%{wks.location}/Editor/DotNet/Coral.Managed.dll"',
-		'{COPYFILE} "%{wks.location}/Core/vendor/Coral/Build/%{cfg.buildcfg}/Coral.Managed.runtimeconfig.json" "%{wks.location}/Editor/DotNet/Coral.Managed.runtimeconfig.json"',
-		'{COPYFILE} "%{wks.location}/Core/vendor/Coral/Build/%{cfg.buildcfg}/Coral.Managed.deps.json" "%{wks.location}/Editor/DotNet/Coral.Managed.deps.json"',
+		'{COPYFILE} "%{wks.location}/Core/vendor/Coral/Build/Release/Coral.Managed.dll" "%{wks.location}/Editor/DotNet/Coral.Managed.dll"',
+		'{COPYFILE} "%{wks.location}/Core/vendor/Coral/Build/Release/Coral.Managed.runtimeconfig.json" "%{wks.location}/Editor/DotNet/Coral.Managed.runtimeconfig.json"',
+		'{COPYFILE} "%{wks.location}/Core/vendor/Coral/Build/Release/Coral.Managed.deps.json" "%{wks.location}/Editor/DotNet/Coral.Managed.deps.json"',
 	}
 
+	-- The pdb has to come from the same build as the dll above, so it is pinned to Release too -
+	-- a Debug pdb against a Release assembly resolves to the wrong line numbers.
 	filter { "system:windows", "configurations:Debug or configurations:Debug-AS or configurations:Release" }
 		postbuildcommands {
-			'{COPYFILE} "%{wks.location}/Core/vendor/Coral/Build/%{cfg.buildcfg}/Coral.Managed.pdb" "%{wks.location}/Editor/DotNet/Coral.Managed.pdb"',
+			'{COPYFILE} "%{wks.location}/Core/vendor/Coral/Build/Release/Coral.Managed.pdb" "%{wks.location}/Editor/DotNet/Coral.Managed.pdb"',
 		}
 	filter {}
 
@@ -66,11 +84,11 @@ project "Core"
 		defines { "LUX_ENABLE_DISCORD" }
 	end
 
-	if _OPTIONS["raytraced-audio"] then
+	do -- Vercidium Audio is required.
 		defines { "LUX_ENABLE_RAYTRACED_AUDIO" }
 	end
 
-	if _OPTIONS["fmod"] then
+	do -- FMOD is required.
 		defines { "LUX_ENABLE_FMOD" }
 	end
 

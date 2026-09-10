@@ -59,7 +59,7 @@ JOBS=${JOBS:-$(nproc 2>/dev/null || echo 1)}
 # generation that omits them silently produces a build with the feature compiled out (and, against
 # already-built objects, a confusing undefined-reference link failure rather than a clear error).
 #
-#   LUX_PREMAKE_OPTIONS="--fmod --raytraced-audio" ./scripts/Linux-Build.sh release
+#   LUX_PREMAKE_OPTIONS="--no-tracy" ./scripts/Linux-Build.sh release
 #
 PREMAKE_OPTIONS=${LUX_PREMAKE_OPTIONS:-}
 if [ -n "$PREMAKE_OPTIONS" ]; then

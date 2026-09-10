@@ -52,14 +52,14 @@ project "Lux-Runtime"
 			}
 		end
 
-		if _OPTIONS["raytraced-audio"] then
+		do -- Vercidium Audio is required.
 			postbuildcommands {
 				'{COPY} "../Core/vendor/VA_RAY/3d/native/production/windows/vaudionative.dll" "%{cfg.targetdir}"',
 			}
 		end
 
 		-- Placeholder path - the Windows FMOD package hasn't been added yet (see Dependencies.lua).
-		if _OPTIONS["fmod"] then
+		do -- FMOD is required.
 			postbuildcommands {
 				'{COPY} "../Core/vendor/FMOD/FMOD Studio API Windows/api/core/lib/x64/fmod.dll" "%{cfg.targetdir}"',
 			}
@@ -90,7 +90,7 @@ project "Lux-Runtime"
 		linkoptions { "-Wl,--start-group", "-Wl,-rpath,'$$ORIGIN/lib'", "-Wl,--no-as-needed,-latomic,--as-needed" }
 
 		-- vaudionative.so is resolved via the $ORIGIN/lib rpath above, not the default loader path.
-		if _OPTIONS["raytraced-audio"] then
+		do -- Vercidium Audio is required.
 			postbuildcommands {
 				'{MKDIR} "%{cfg.targetdir}/lib"',
 				'{COPY} "../Core/vendor/VA_RAY/3d/native/production/linux/libvaudionative.so" "%{cfg.targetdir}/lib"',
@@ -98,7 +98,7 @@ project "Lux-Runtime"
 		end
 
 		-- See the Editor project for why {COPYFILE} + the exact SONAME, not a {COPY} glob.
-		if _OPTIONS["fmod"] then
+		do -- FMOD is required.
 			postbuildcommands {
 				'{MKDIR} "%{cfg.targetdir}/lib"',
 				'{COPYFILE} "../Core/vendor/FMOD/fmodstudioapi20314linux/api/core/lib/x86_64/libfmod.so.14" "%{cfg.targetdir}/lib/libfmod.so.14"',

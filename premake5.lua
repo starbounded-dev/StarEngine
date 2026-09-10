@@ -19,13 +19,32 @@ newoption {
 
 newoption {
 	trigger = "raytraced-audio",
-	description = "Enable ray-traced audio via the Vercidium Audio SDK (requires Core/vendor/VA_RAY)"
+	description = "Compatibility option: Vercidium Audio is always required"
 }
 
 newoption {
 	trigger = "fmod",
-	description = "Use FMOD Engine instead of miniaudio for audio playback (requires Core/vendor/FMOD)"
+	description = "Compatibility option: FMOD is always required"
 }
+
+-- Audio SDKs are required. Fail generation clearly instead of compiling a silent fallback.
+local audioSDK = os.target() == "windows" and {
+ "Core/vendor/FMOD/FMOD Studio API Windows/api/core/inc/fmod.hpp",
+ "Core/vendor/FMOD/FMOD Studio API Windows/api/studio/inc/fmod_studio.hpp",
+ "Core/vendor/VA_RAY/3d/native/production/windows/vaudionative.lib"
+} or {
+ "Core/vendor/FMOD/fmodstudioapi20314linux/api/core/inc/fmod.hpp",
+ "Core/vendor/FMOD/fmodstudioapi20314linux/api/studio/inc/fmod_studio.hpp",
+ "Core/vendor/FMOD/fmodstudioapi20314linux/api/core/lib/x86_64/libfmod.so.14",
+ "Core/vendor/FMOD/fmodstudioapi20314linux/api/studio/lib/x86_64/libfmodstudio.so.14",
+ "Core/vendor/VA_RAY/3d/native/production/linux/libvaudionative.so"
+}
+table.insert(audioSDK, "Core/vendor/VA_RAY/3d/native/include/vaudio.h")
+for _, sdkFile in ipairs(audioSDK) do
+ if not os.isfile(sdkFile) then
+  error("Required FMOD/VA SDK file missing: " .. sdkFile)
+ end
+end
 
 include "Dependencies.lua"
 

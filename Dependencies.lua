@@ -135,15 +135,15 @@ Dependencies = {
 		IncludeDir = "%{wks.location}/Core/vendor/discord_social_sdk/include",
 		Windows = { LibName = "discord_partner_sdk", LibDir = "%{wks.location}/Core/vendor/discord_social_sdk/lib/release/" },
 	} or nil,
-	-- Opt-in, enabled with the "--raytraced-audio" premake option. We link the "production" build
+	-- Required Vercidium Audio SDK. We link the "production" build
 	-- (no bundled GLFW/debug-visualisation window) on both platforms.
 	-- See Core/vendor/VA_RAY/README.txt.
-	VARay = _OPTIONS["raytraced-audio"] and {
+	VARay = {
 		IncludeDir = "%{wks.location}/Core/vendor/VA_RAY/3d/native/include",
 		Windows = { LibName = "vaudionative", LibDir = "%{wks.location}/Core/vendor/VA_RAY/3d/native/production/windows/" },
 		Linux = { LibName = "vaudionative", LibDir = "%{wks.location}/Core/vendor/VA_RAY/3d/native/production/linux/" },
-	} or nil,
-	-- Opt-in, enabled with the "--fmod" premake option. Two entries because FMOD ships the Studio
+	},
+	-- Required audio backend. Two entries because FMOD ships the Studio
 	-- API as a separate library layered on the Core one: Studio owns the events and banks the game
 	-- actually plays, and creates a Core system internally for the low-level work (3D listener,
 	-- reverb, CPU stats). Both must be linked - Studio alone does not resolve.
@@ -156,14 +156,14 @@ Dependencies = {
 	-- folder name is version-and-OS-coded per FMOD's Linux tarball convention. The Windows paths
 	-- below are unverified placeholders based on FMOD's typical Windows installer layout
 	-- ("FMOD Studio API Windows/api/...") - correct them once that package is actually added.
-	FMOD = _OPTIONS["fmod"] and {
+	FMOD = {
 		Windows = { LibName = "fmod_vc", IncludeDir = "%{wks.location}/Core/vendor/FMOD/FMOD Studio API Windows/api/core/inc", LibDir = "%{wks.location}/Core/vendor/FMOD/FMOD Studio API Windows/api/core/lib/x64/" },
 		Linux = { LibName = "fmod", IncludeDir = "%{wks.location}/Core/vendor/FMOD/fmodstudioapi20314linux/api/core/inc", LibDir = "%{wks.location}/Core/vendor/FMOD/fmodstudioapi20314linux/api/core/lib/x86_64/" },
-	} or nil,
-	FMODStudio = _OPTIONS["fmod"] and {
+	},
+	FMODStudio = {
 		Windows = { LibName = "fmodstudio_vc", IncludeDir = "%{wks.location}/Core/vendor/FMOD/FMOD Studio API Windows/api/studio/inc", LibDir = "%{wks.location}/Core/vendor/FMOD/FMOD Studio API Windows/api/studio/lib/x64/" },
 		Linux = { LibName = "fmodstudio", IncludeDir = "%{wks.location}/Core/vendor/FMOD/fmodstudioapi20314linux/api/studio/inc", LibDir = "%{wks.location}/Core/vendor/FMOD/fmodstudioapi20314linux/api/studio/lib/x86_64/" },
-	} or nil,
+	},
 	ACL = {
 		IncludeDir = "%{wks.location}/Core/vendor/acl/include"
 	},
@@ -199,9 +199,6 @@ Dependencies = {
 	NVRHI = {
 		LibName = { "NVRHI", "NVRHI-Vulkan" },
 		IncludeDir = "%{wks.location}/Core/vendor/nvrhi/include"
-	},
-	MiniAudio = {
-		IncludeDir = "%{wks.location}/Core/vendor/miniaudio/include",
 	},
 	Box2D = {
 		LibName = "Box2D",

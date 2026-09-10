@@ -189,9 +189,6 @@ def warn_missing_fmod_sdk(config, root):
     project that can't compile. Checks both known candidate layouts (see Dependencies.lua) since
     only the Linux package's folder name is confirmed - the Windows one is a placeholder until
     that package is actually added."""
-    if not config.enabled("fmod"):
-        return True
-
     candidates = [
         os.path.join(root, "Core", "vendor", "FMOD", "fmodstudioapi20314linux", "api", "core", "inc"),
         os.path.join(root, "Core", "vendor", "FMOD", "FMOD Studio API Windows", "api", "core", "inc"),
@@ -204,7 +201,7 @@ def warn_missing_fmod_sdk(config, root):
     print(f"fmod.hpp not found under either: {' or '.join(candidates)}")
     print("Download the FMOD Engine SDK and extract it into Core/vendor/FMOD/. If the archive's")
     print("folder name differs from the above, update the path in Dependencies.lua to match.")
-    print(f"{Fore.YELLOW}Continuing anyway - the generated project will not compile until it exists.{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}FMOD and VA are required; project generation will fail until the SDK is installed.{Style.RESET_ALL}")
     print("")
     return False
 
@@ -212,9 +209,6 @@ def warn_missing_fmod_sdk(config, root):
 def warn_missing_va_ray_sdk(config, root):
     """The Vercidium Audio (VA) SDK is fetched manually, so catch its absence before premake
     generates a project that can't compile."""
-    if not config.enabled("raytraced-audio"):
-        return True
-
     va_root = os.path.join(root, "Core", "vendor", "VA_RAY", "3d", "native")
     missing = [
         name
@@ -232,6 +226,6 @@ def warn_missing_va_ray_sdk(config, root):
     print(f"{Style.BRIGHT}{Back.RED} Vercidium Audio SDK incomplete {Style.RESET_ALL}")
     print(f"Missing from {va_root}: {', '.join(missing)}")
     print("Download the SDK (see Core/vendor/VA_RAY/README.txt) and extract it there.")
-    print(f"{Fore.YELLOW}Continuing anyway - the generated project will not compile until it exists.{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}FMOD and VA are required; project generation will fail until the SDK is installed.{Style.RESET_ALL}")
     print("")
     return False

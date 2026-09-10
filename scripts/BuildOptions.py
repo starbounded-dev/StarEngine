@@ -56,22 +56,6 @@ OPTIONS = [
         "default": False,
     },
     {
-        "key": "raytraced-audio",
-        "kind": "premake",
-        "flag": "raytraced-audio",
-        "label": "Ray-traced audio (Vercidium)",
-        "description": "occlusion/reverb via VA; needs Core/vendor/VA_RAY",
-        "default": False,
-    },
-    {
-        "key": "fmod",
-        "kind": "premake",
-        "flag": "fmod",
-        "label": "FMOD audio playback",
-        "description": "use FMOD instead of miniaudio; needs Core/vendor/FMOD",
-        "default": False,
-    },
-    {
         "key": "skip-submodules",
         "kind": "script",
         "label": "Skip submodule update",
