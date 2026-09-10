@@ -443,14 +443,17 @@ namespace Lux {
 		// Runtime-only: false once the source has been started, so PlayOnAwake fires exactly once.
 		// Not serialized - a saved scene always begins un-started.
 		bool Paused = true;
+		bool ScriptPaused = false;
+		bool ResumeAfterPause = false;
 	};
 
 	struct AudioListenerComponent
 	{
 		bool Active = true;
-		AudioListenerConfig Config;
-
-		Ref<AudioListener> Listener;
+		int ListenerIndex = 0;
+		float Weight = 1.0f;
+		bool UseAttenuationTarget = false;
+		UUID AttenuationTarget = 0;
 	};
 
 	// ============================================================================

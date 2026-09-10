@@ -57,7 +57,6 @@ namespace Lux
 		if (AudioEngine::HasInitializedEngine())
 		{
 			AudioEngine::Shutdown();
-			AudioEngine::SetInitalizedEngine(false);
 		}
 
 		s_AssetManager = Ref<EditorAssetManager>::Create();
@@ -83,7 +82,6 @@ namespace Lux
 		if (!AudioEngine::HasInitializedEngine())
 		{
 			AudioEngine::Init();
-			AudioEngine::SetInitalizedEngine(true);
 		}
 
 		// (Re)load scripting assemblies for the newly active project. Shutdown unloads any
@@ -107,7 +105,6 @@ namespace Lux
 		if (AudioEngine::HasInitializedEngine())
 		{
 			AudioEngine::Shutdown();
-			AudioEngine::SetInitalizedEngine(false);
 		}
 
 		if (!s_ActiveProject)
@@ -127,7 +124,6 @@ namespace Lux
 		if (!AudioEngine::HasInitializedEngine())
 		{
 			AudioEngine::Init();
-			AudioEngine::SetInitalizedEngine(true);
 		}
 	}
 

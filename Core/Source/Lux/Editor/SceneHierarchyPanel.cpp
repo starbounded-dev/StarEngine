@@ -1116,11 +1116,8 @@ namespace Lux {
 
 			ImGui::PushID(i);
 
-			char nameBuffer[64] = {};
-			std::snprintf(nameBuffer, sizeof(nameBuffer), "%s", name.c_str());
 			ImGui::SetNextItemWidth(150.0f);
-			if (ImGui::InputTextWithHint("##name", "Parameter", nameBuffer, sizeof(nameBuffer)))
-				name = nameBuffer;
+			ImGui::InputTextWithHint("##name", "Parameter", &name);
 
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(110.0f);
@@ -1149,8 +1146,9 @@ namespace Lux {
 		// Resolve the assignment against what is actually loaded. A stored event whose GUID is not
 		// in any loaded bank is shown and flagged rather than reading as "nothing assigned", which
 		// would invite someone to silently reassign it.
+		const std::string assignedGuid = Utils::String::ToLowerCopy(component.Event.Guid);
 		const auto assigned = std::find_if(events.begin(), events.end(),
-			[&](const AudioEventInfo& info) { return info.Guid == component.Event.Guid; });
+			[&](const AudioEventInfo& info) { return info.Guid == assignedGuid; });
 		const bool resolved = assigned != events.end();
 
 		if (resolved)
@@ -1161,10 +1159,18 @@ namespace Lux {
 			component.Event.BankName = assigned->BankName;
 		}
 
-		// Which bank the event list is filtered to. Editor state, not scene state: it follows the
-		// assigned event when there is one, and is otherwise whatever the user last picked.
-		if (resolved)
-			m_AudioEventBankFilter = assigned->BankName;
+		// Follow a new selection or assignment, but preserve the user's filter while browsing.
+		const UUID firstEntity = selectedEntities.empty() ? UUID(0) : selectedEntities.front();
+		const uint64_t generation = AudioEngine::GetEventGeneration();
+		if (m_AudioEventPickerEntity != firstEntity || m_AudioEventPickerGuid != component.Event.Guid
+			|| m_AudioEventPickerGeneration != generation)
+		{
+			m_AudioEventPickerEntity = firstEntity;
+			m_AudioEventPickerGuid = component.Event.Guid;
+			m_AudioEventPickerGeneration = generation;
+			m_AudioEventBankFilter = resolved ? assigned->BankName : std::string{};
+			m_AudioEventSearch.clear();
+		}
 
 		auto propertyRow = [](const char* label)
 			{
@@ -1245,7 +1251,9 @@ namespace Lux {
 						continue;
 
 					shown++;
-					if (ImGui::Selectable(info.Path.c_str(), info.Guid == component.Event.Guid))
+					ImGuiEx::ScopedID bankID(info.BankName.c_str());
+					ImGuiEx::ScopedID eventID(info.Guid.c_str());
+					if (ImGui::Selectable(info.Path.c_str(), info.Guid == assignedGuid))
 					{
 						AudioEventRef picked{ info.Guid, info.Path, info.BankName };
 						component.Event = picked;
@@ -1834,6 +1842,11 @@ namespace Lux {
 								instanceEntity.AddOrReplaceComponent<T>(sourceEntity.GetComponent<T>());
 							else
 								instanceEntity.RemoveComponentIfExists<T>();
+							if constexpr (std::is_same_v<T, AudioListenerComponent>)
+							{
+								if (auto* listener = instanceEntity.TryGetComponent<AudioListenerComponent>())
+									listener->AttenuationTarget = Scene::MapPrefabEntityReference(listener->AttenuationTarget, sourceEntity, instanceEntity);
+							}
 							EditorStack::Get().MarkSceneEdited("Revert Prefab Override");
 						}
 						ImGui::SameLine();
@@ -1843,6 +1856,11 @@ namespace Lux {
 								sourceEntity.AddOrReplaceComponent<T>(instanceEntity.GetComponent<T>());
 							else
 								sourceEntity.RemoveComponentIfExists<T>();
+							if constexpr (std::is_same_v<T, AudioListenerComponent>)
+							{
+								if (auto* listener = sourceEntity.TryGetComponent<AudioListenerComponent>())
+									listener->AttenuationTarget = Scene::MapPrefabEntityReference(listener->AttenuationTarget, instanceEntity, sourceEntity);
+							}
 							serializePrefab();
 							LUX_CORE_INFO_TAG("Prefab", "Applied {} to prefab '{}'", label, prefabName);
 						}
@@ -1886,6 +1904,8 @@ namespace Lux {
 						row.operator()<RigidBody2DComponent>("RigidBody2DComponent", "Rigid Body 2D");
 						row.operator()<BoxCollider2DComponent>("BoxCollider2DComponent", "Box Collider 2D");
 						row.operator()<CircleCollider2DComponent>("CircleCollider2DComponent", "Circle Collider 2D");
+						row.operator()<AudioSourceComponent>("AudioSourceComponent", "Audio Source");
+						row.operator()<AudioListenerComponent>("AudioListenerComponent", "Audio Listener");
 						row.operator()<FolderComponent>("Folder", "Folder");
 
 						ImGui::Spacing();
@@ -2942,10 +2962,7 @@ namespace Lux {
 		DrawComponentSection<AudioListenerComponent>(m_Context, entityIDs, "Audio Listener", EditorResources::AudioListenerIcon,
 			[this](AudioListenerComponent& firstComponent, const std::vector<UUID>& selectedEntities, bool)
 			{
-				auto& config = firstComponent.Config;
-
 				ImGuiEx::BeginPropertyGrid();
-
 				if (ImGuiEx::Property("Active", firstComponent.Active))
 				{
 					ApplyToSelection<AudioListenerComponent>(m_Context, selectedEntities, [&firstComponent](AudioListenerComponent& component, Entity)
@@ -2953,36 +2970,39 @@ namespace Lux {
 						component.Active = firstComponent.Active;
 					});
 				}
-
-				float innerAngle = glm::degrees(config.ConeInnerAngle);
-				if (ImGuiEx::Property("Cone Inner Angle", innerAngle, 0.1f, 0.0f, 360.0f))
+				if (ImGuiEx::Property("Listener Index", firstComponent.ListenerIndex, 0, AudioListener::MaxListeners - 1,
+					"Active listeners need unique indices. On a conflict, the lowest entity UUID wins."))
 				{
-					config.ConeInnerAngle = glm::radians(innerAngle);
-					ApplyToSelection<AudioListenerComponent>(m_Context, selectedEntities, [innerAngle](AudioListenerComponent& component, Entity)
+					firstComponent.ListenerIndex = std::clamp(firstComponent.ListenerIndex, 0, AudioListener::MaxListeners - 1);
+					ApplyToSelection<AudioListenerComponent>(m_Context, selectedEntities, [&firstComponent](AudioListenerComponent& component, Entity)
 					{
-						component.Config.ConeInnerAngle = glm::radians(innerAngle);
+						component.ListenerIndex = firstComponent.ListenerIndex;
 					});
 				}
-
-				float outerAngle = glm::degrees(config.ConeOuterAngle);
-				if (ImGuiEx::Property("Cone Outer Angle", outerAngle, 0.1f, 0.0f, 360.0f))
+				if (ImGuiEx::PropertySlider("Weight", firstComponent.Weight, 0.0f, 1.0f))
 				{
-					config.ConeOuterAngle = glm::radians(outerAngle);
-					ApplyToSelection<AudioListenerComponent>(m_Context, selectedEntities, [outerAngle](AudioListenerComponent& component, Entity)
+					ApplyToSelection<AudioListenerComponent>(m_Context, selectedEntities, [&firstComponent](AudioListenerComponent& component, Entity)
 					{
-						component.Config.ConeOuterAngle = glm::radians(outerAngle);
+						component.Weight = firstComponent.Weight;
 					});
 				}
-
-				if (ImGuiEx::PropertySlider("Cone Outer Gain", config.ConeOuterGain, 0.0f, 1.0f))
+				if (ImGuiEx::Property("Use Attenuation Target", firstComponent.UseAttenuationTarget))
 				{
-					ApplyToSelection<AudioListenerComponent>(m_Context, selectedEntities, [&config](AudioListenerComponent& component, Entity)
+					ApplyToSelection<AudioListenerComponent>(m_Context, selectedEntities, [&firstComponent](AudioListenerComponent& component, Entity)
 					{
-						component.Config.ConeOuterGain = config.ConeOuterGain;
+						component.UseAttenuationTarget = firstComponent.UseAttenuationTarget;
 					});
 				}
-
+				if (firstComponent.UseAttenuationTarget && ImGuiEx::PropertyEntityReference("Attenuation Target", firstComponent.AttenuationTarget,
+					m_Context, "Studio events pan at this listener and attenuate at the target. A missing target uses the listener position. Prefabs retain only targets within their own hierarchy."))
+				{
+					ApplyToSelection<AudioListenerComponent>(m_Context, selectedEntities, [&firstComponent](AudioListenerComponent& component, Entity)
+					{
+						component.AttenuationTarget = firstComponent.AttenuationTarget;
+					});
+				}
 				ImGuiEx::EndPropertyGrid();
+				ImGui::TextWrapped("Weights blend Studio listeners. FMOD raw audio uses the nearest active listener. Miniaudio and ray-traced acoustics use the highest-weight listener (lowest index on a tie).");
 			});
 
 		DrawComponentSection<StaticMeshComponent>(m_Context, entityIDs, "Static Mesh", EditorResources::StaticMeshIcon,

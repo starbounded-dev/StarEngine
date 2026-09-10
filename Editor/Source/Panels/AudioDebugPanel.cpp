@@ -485,22 +485,12 @@ namespace Lux {
 		// Where the listener is, so each source's distance can be shown next to its audibility. The
 		// pair is the whole diagnosis for "distance does not change the volume": if distance moves
 		// and audibility does not, the backend's 3D path is inert.
-		glm::vec3 listenerPosition{ 0.0f };
-		bool haveListener = false;
-		{
-			auto listeners = m_Context->GetAllEntitiesWith<TransformComponent, AudioListenerComponent>();
-			for (entt::entity listenerHandle : listeners)
-			{
-				const AudioListenerComponent& alc = listeners.get<AudioListenerComponent>(listenerHandle);
-				if (!alc.Active)
-					continue;
-
-				Entity listenerEntity = { listenerHandle, m_Context.Raw() };
-				listenerPosition = glm::vec3(m_Context->GetWorldSpaceTransformMatrix(listenerEntity)[3]);
-				haveListener = true;
-				break;
-			}
-		}
+		const AudioListenerState* listener = m_Context->GetPrimaryAudioListener();
+		const bool haveListener = listener != nullptr;
+		const glm::vec3 listenerPosition = listener
+			? (listener->UseAttenuationPosition ? listener->AttenuationPosition : listener->Position) : glm::vec3(0.0f);
+		if (listener)
+			ImGui::TextDisabled("Distances use the dominant listener: camera for raw audio, attenuation target for Studio events.");
 
 		if (ImGui::BeginTable("##audio_debugger_sources", 8, tableFlags, ImVec2(0.0f, 260.0f)))
 		{
@@ -551,7 +541,7 @@ namespace Lux {
 
 				ImGui::TableSetColumnIndex(2);
 				if (haveListener)
-					ImGui::Text("%.1f m", glm::distance(sourcePosition, listenerPosition));
+					ImGui::Text("%.1f m", glm::distance(sourcePosition, asc.Event.IsValid() ? listenerPosition : listener->Position));
 				else
 					ImGui::TextDisabled("%s", kNoValue);
 

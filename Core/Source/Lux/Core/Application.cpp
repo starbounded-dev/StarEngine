@@ -109,7 +109,6 @@ namespace Lux {
 			PushOverlay(m_ImGuiLayer);
 		}
 
-		//MiniAudioEngine::Init();
 		Font::Init();
 
 		// Bring up the .NET host once; per-project assemblies are loaded in Project::SetActive.
@@ -142,7 +141,8 @@ namespace Lux {
 		//Project::SetActive(nullptr);
 		PhysicsSystem::Shutdown();
 		Font::Shutdown();
-		//MiniAudioEngine::Shutdown();
+		// Layers and their scene/audio instances have been destroyed above.
+		AudioEngine::Shutdown();
 
 		Renderer::Shutdown();
 
@@ -271,8 +271,7 @@ namespace Lux {
 
 				{
 					// FMOD needs System::update() pumped regularly to process streaming, finish
-					// callbacks and recycle channels; miniaudio runs its own mixing thread and
-					// no-ops here.
+					// callbacks and recycle channels.
 					LUX_SCOPE_PERF("AudioEngine::Update");
 					AudioEngine::Update();
 				}

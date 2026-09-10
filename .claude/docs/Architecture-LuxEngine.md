@@ -366,30 +366,18 @@ UI style: use `ImGuiEx` scopes and widgets and `Colors::Theme` constants — see
 
 ### 2.10 Audio
 
-miniaudio-backed. `AudioEngine`, `AudioSource`, `AudioListener`, `AudioFileUtils`. `Scene` owns
+FMOD Studio playback with required Vercidium Audio acoustics. `AudioEngine`, `AudioSource`, `AudioListener`, `AudioFileUtils`. `Scene` owns
 runtime sources (`GetOrCreateRuntimeAudioSource`, playlists via
 `GetOrCreateRuntimePlaylistSource`) and releases them on stop (`ReleaseAllRuntimeAudio`). Components:
 `AudioSourceComponent`, `AudioListenerComponent`.
 
-**Ray-traced acoustics (optional):** `RaytracedAudioScene` (`Audio/RaytracedAudioScene.h`) wraps the
-Vercidium Audio SDK (`Core/vendor/VA_RAY/`, opt-in via the `--raytraced-audio` premake option,
-`LUX_ENABLE_RAYTRACED_AUDIO`) behind a Pimpl, so the header never leaks `vaudio.h` and is safe to
-include unconditionally. Built without the option, every method is a no-op (same pattern as
-`DiscordSocial` — see `Social/DiscordSocial.cpp`), so call sites need no `#ifdef`.
+**Ray-traced acoustics:** `RaytracedAudioScene` (`Audio/RaytracedAudioScene.h`) wraps the
+required Vercidium Audio SDK (`Core/vendor/VA_RAY/`) behind a Pimpl. FMOD and VA are mandatory
+build dependencies; generation fails if the target SDK is missing. No fallback backend is compiled.
 
 `Scene` owns one `Ref<RaytracedAudioScene> m_RaytracedAudioScene` (`GetRaytracedAudioScene()`).
-`OnRaytracedAudioStart()` checks `RaytracedAudioScene::IsAvailable()` first and returns without
-constructing anything if the feature isn't compiled in, so every other `m_RaytracedAudioScene` check
-(the per-frame sync in `OnUpdateRuntime`, `ReleaseRuntimeAudio`) short-circuits on a null `Ref` and a
-scene built without VA_RAY pays no runtime cost for it. Otherwise it's created in
-`OnRaytracedAudioStart()` (called from `OnRuntimeStart`) and torn down in
-`OnRaytracedAudioStop()` (`OnRuntimeStop`, and defensively in `~Scene`) — the same start/stop
-lifecycle shape as `PhysicsScene`. On start, it walks every `MeshColliderComponent` entity, resolves
-the collider's referenced render mesh (`StaticMesh` → `MeshSource`, the same `BaseIndex/3` triangle
-walk `PhysicsScene`/`JoltShapes` use for cooking), bakes each triangle into world space, and hands
-the flat triangle soup to `RaytracedAudioScene::SetStaticGeometry` — **mirrored once at runtime
-start, not kept in sync with moving colliders.** **The simulation is asynchronous, and a frame has two halves.** `OnUpdateRuntime`'s acoustics block
-must run in this order, and `RaytracedAudioScene`'s API is shaped to force it:
+`OnRaytracedAudioStart()` creates the simulation for runtime scenes. The simulation joins its work
+before scene teardown and geometry replacement.
 
 1. `WaitForResults()` (`vaWorldWait`) — joins the batch the *previous* frame kicked.
 2. Sync the active `AudioListenerComponent`'s position/forward, create/position one VA emitter per
@@ -437,13 +425,10 @@ copies it out under a mutex, and readers copy it again. Anything else races the 
 VA computes acoustic parameters only — it does not play audio itself, so this is a separate system
 from the playback backend below.
 
-**Playback backend (optional, dual):** `AudioEngine`/`AudioSource`/`AudioListener` build against
-either miniaudio (default) or FMOD Engine Core API (`--fmod`, `LUX_ENABLE_FMOD`, requires
-`Core/vendor/FMOD/`), selected by `#ifdef`/`#else` branches within each `.cpp` — both branches
-always compile, so call sites (including `Scene`) never see the backend. Same reasoning as
-`RaytracedAudioScene`/`DiscordSocial`: the default build never depends on an SDK that isn't checked
-out. `AudioEngine::Update()` pumps `FMOD::System::update()` once per frame from `Application::Run`
-(no-op under miniaudio, which mixes on its own thread).
+**Playback backend:** FMOD Studio owns the Core mixer. `AudioSource` retains raw-file asset
+compatibility using FMOD Core; events use Studio. Audio-file metadata also comes from FMOD via
+`FMOD_OPENONLY`, so the miniaudio dependency and bundled decoders have been removed. FMOD and
+VA shared libraries are copied beside both Linux applications, with `$ORIGIN/lib` lookup.
 
 Under FMOD, `AudioSource` owns an `FMOD::Sound` + a lazily-created `FMOD::Channel` kept paused
 rather than stopped between plays (`Channel::stop()` permanently invalidates an FMOD channel, which
@@ -486,10 +471,14 @@ return empty when the project has no authored audio — callers must check, not 
 `AudioBankBuilder` (`Audio/AudioBankBuilder.{h,cpp}`) shells out to FMOD's CLI, the same way
 `ScriptBuilder` shells out to `dotnet`, and deliberately does **not** sit behind `LUX_ENABLE_FMOD` —
 building banks needs the Studio *application*, not the SDK. It locates `fmodstudiocl` via
-`LUX_FMOD_STUDIO_CL`, then the usual install paths, then `PATH`. `NeedsRebuild` compares the newest
+`LUX_FMOD_STUDIO_CL`, then the usual install paths, then executable files on `PATH`; an unsuccessful
+lookup returns empty. Discovery refreshes every two seconds so the settings UI avoids per-frame I/O
+and picks up later installations. Tool arguments are quoted literally on Linux; Windows rejects
+names containing shell variable expansion or quote characters. `NeedsRebuild` compares the newest
 file under the `.fspro`'s directory against the *oldest* bank (a project that gained a bank since the
 last full build has one current file and one stale one, and the stale one is what matters), skipping
-the build directory so a build never invalidates itself. `EditorLayer::RebuildAudioBanksIfNeeded()`
+the build directory (including sibling `GUIDs.txt` and platform outputs), `.cache`, `.user`, and `.git`
+so generated files and workspace changes do not invalidate a build. `EditorLayer::RebuildAudioBanksIfNeeded()`
 runs this on entering Play; a failed build logs and lets Play continue, because a stale bank still
 plays something.
 
@@ -512,6 +501,9 @@ object so audio work merges. `Build/`, `.cache/` and `.user/` are ignored.)
 `FMOD::System_Create`, which would leave a second core system that nothing mixes through.
 Consequences that are easy to get wrong:
 
+- `AudioEngine` owns its initialized flag; callers cannot set it. Failed startup
+  leaves it false and clears the backend pointers. Repeated initialization and shutdown are safe.
+  `Application` shuts audio down after destroying layers and their scene instances.
 - `Shutdown` releases **only** the Studio system. It owns the core system, so releasing or closing
   `s_Engine` as well is a double free.
 - `Update` must call **both** `Studio::System::update()` and then `System::update()`. Studio's update
@@ -521,7 +513,7 @@ Consequences that are easy to get wrong:
   from spatialisation being switched off — while adding the Core update makes it track the rolloff
   curve exactly. Studio goes first so event state resolves before the core mixer consumes it.
 - `GetEngine()` still returns the core system, and remains the right handle for what Studio does not
-  cover: the 3D listener, the ray-traced `Reverb3D`, and CPU/memory stats. Core-API playback
+  cover: the legacy 3D listener, the ray-traced `Reverb3D`, and CPU/memory stats. Core-API playback
   (`createSound`/`playSound`, as `AudioSource` still uses) works on it unchanged, which is what lets
   the event migration land incrementally instead of as one breaking change.
 
@@ -529,18 +521,96 @@ Live update (`FMOD_STUDIO_INIT_LIVEUPDATE`) is gated on `ProjectAudioSettings::E
 compiled out of `dist` — it opens a listening socket so the FMOD Studio app can attach to the running
 editor and remix in place.
 
-`LoadBanks(directory)` loads every `.bank` in the built-bank directory, **strings bank first**: it
+`LoadBanks(directory)` validates the directory before replacing loaded banks, then loads every
+`.bank` in the built-bank directory, **strings bank first**: it
 carries the event path table, and loading it late makes every `getEvent("event:/…")` issued in
-between fail with `EVENT_NOTFOUND`, which does not hint at the cause. It then `flushCommands()` —
-bank loading is asynchronous by default and the event lists are empty until the load completes — and
-enumerates `AudioEventInfo` (path, GUID, 3D, oneshot) from the banks themselves rather than from
+between fail with `EVENT_NOTFOUND`, which does not hint at the cause. It flushes pending Studio
+commands before collecting event metadata and enumerates `AudioEventInfo` (path, GUID, 3D, oneshot)
+from the banks themselves rather than from
 `GUIDs.txt`, so the list cannot disagree with what is actually loaded. `EditorLayer` loads banks on
 project open (so events are listable in Edit mode, not just in Play) and reloads them after a
-successful rebuild on Play.
+successful rebuild on Play. A partial load reports failure while retaining the banks it could load;
+an invalid or empty directory preserves the previous banks. Reload invalidates existing event
+instances; scenes recreate them on their next update.
+
+**Listeners:** `AudioListenerComponent` stores authored `Active`, `ListenerIndex` (0–7), `Weight`
+(0–1), `UseAttenuationTarget`, and `AttenuationTarget` (entity UUID). The obsolete listener cone
+fields and component-owned runtime `Ref` are removed. Old YAML without the new keys retains an
+active listener at index 0 with weight 1; old cone keys are ignored. Listener data is copied through
+scenes, duplication, and prefabs. References inside cloned hierarchies are remapped after all
+entities exist; duplication preserves external scene targets, while prefab creation clears them.
+Prefab apply/revert maps references within the correct instance root, and override comparisons
+compare targets in instance UUID space.
+
+`Scene::SyncAudioListeners` runs on the main thread before initial playback and after scripts/physics
+on runtime updates, including paused updates. It submits a complete fixed-size snapshot to
+`AudioListener::Apply`; adding/removing a component during Play requires no backend object allocation.
+World-transform columns provide local -Z forward and +Y up; the bridge orthonormalizes scaled/sheared
+bases and supplies a stable orientation for collapsed axes. Scene-owned previous positions provide
+velocity, reset on start, slot reassignment, and paused frames. Non-finite transforms and invalid
+indices/weights are rejected with rate-limited diagnostics. Duplicate active indices choose the
+lowest UUID deterministically and report the conflict.
+
+Studio receives every populated slot, zero weights for holes, and weights normalized to sum to 1.
+A missing/deleted attenuation target falls back to the listener position and reports the problem.
+No positive-weight listeners resets Studio and Core to one neutral listener at the world origin
+(Studio requires at least one nonzero weight); this fallback is reported while playing. Stopping
+Play also resets listener state. Studio also publishes listener counts and camera attributes to Core during its asynchronous update;
+`AudioListener::Apply` must mirror identical slots in both APIs. Empty/zero-weight slots receive the
+dominant camera's attributes (with Studio weight zero) to avoid phantom Core listeners at the origin.
+Core raw-file playback uses FMOD's nearest-listener behavior across active cameras, without Studio
+weighting or independent attenuation positions. Miniaudio uses one dominant camera (highest weight,
+lowest index on ties). The current single-listener Vercidium simulation uses the dominant listener but traces from its attenuation target when
+present, after joining the previous worker batch. The Audio Debugger reports distances from that
+acoustic position. These are explicit legacy/acoustics limitations, not blended multi-listener
+acoustic simulation.
+
+**Event playback:** `Scene` owns one `AudioEventInstance` per entity. Its cache is keyed by entity
+UUID and checked against the assigned event GUID and `AudioEngine::GetEventGeneration()`; failed
+lookups are cached until the assignment or bank generation changes. Bank unload/system shutdown
+advance the generation before invalidating handles. Wrappers check it before any FMOD call, including
+destruction, so externally held references cannot touch a released system. These APIs are main-thread
+only. Component removal, entity destruction, and scene stop explicitly stop instances before dropping
+the scene's references.
+
+An assigned event takes precedence over legacy file playback at startup and on later updates.
+Creation applies serialized parameter overrides, world position/orientation, volume, and pitch before
+PlayOnAwake; a completed one-shot is not restarted on the next frame. Emitters face local -Z, with
+their basis orthonormalized for scaled/sheared transforms. Scene pause is layered over the caller's
+pause state, so resuming the editor does not unpause a gameplay-paused event. Event-only sources also
+participate in ray-traced acoustics without needing a legacy audio asset.
+
+`AudioEventRef` persists GUID, advisory path and bank name; `ParameterOverrides` persists name/value
+pairs through scene/prefab serialization and undo snapshots. Runtime instances are never serialized
+or shared by scene copies. The picker follows a new selection/assignment, then preserves the chosen
+bank filter while browsing. Events without a strings-bank label display their GUID; path buffers are
+sized from FMOD's reported length rather than truncating long event paths.
 
 `SetBusVolume` / `GetBusVolume` drive the mixer buses the sound designer authored (`bus:/`,
 `bus:/SFX`). The engine never invents the bus hierarchy — an unknown path returns false/0, which is
 the normal answer for a project that has not authored that bus.
+
+**Gameplay scripting (Phase 4):** `AudioScriptBindings` registers the managed `Audio`,
+`EventInstance`, `AudioSourceComponent`, and `AudioListenerComponent` APIs. All calls run on the
+main thread. Component state belongs to the scene; standalone events belong to a native registry
+with monotonically allocated handles, never managed raw pointers. `Dispose` releases an event;
+scene stop and assembly reload release the registry and invalidate managed wrappers. One-shots
+must be authored as finite events and are collected after playback. An event path requires loaded
+strings-bank metadata; GUID references do not. Existing raw-file source controls also use FMOD.
+
+FMOD callbacks copy handle/marker notifications into a mutex-protected bounded queue. The scene
+drains it before script updates, dispatching managed callbacks on the main thread; late callbacks
+for disposed handles are discarded. Script pause is separate from scene pause, and explicit Play
+or Stop consumes pending PlayOnAwake. Managed strings are scoped and freed after internal calls.
+Snapshot convenience methods, music, and dialogue remain in their later roadmap
+phases. New binding/managed files require Premake regeneration for both native and C# projects.
+
+`Audio.LoadBank(bankFile)` synchronously loads an additional bank during scene setup. Relative
+paths resolve beneath the active project's Assets directory; absolute paths are accepted. Load the
+master and strings bank before calling event paths. Repeated loads of the same canonical file are
+idempotent; adding banks preserves existing event handles. The bank catalog revision retries failed
+component lookups without restarting existing playback. Directory reload still invalidates all old
+handles. Banks remain engine-owned until bank reload or engine shutdown.
 
 **Editor observability:** `AudioDebugPanel` (`Editor/Source/Panels/AudioDebugPanel.{h,cpp}`, View →
 Audio Debugger, closed by default) renders both halves of the stack. It is pure visualization over
@@ -557,12 +627,8 @@ Splitting it this way keeps the settings next to their UI while the drawing stay
 already bound — a panel has no scene camera of its own. Note `EditorLayer` holds a `Ref<AudioDebugPanel>`
 *only* for this; `PanelManager` still owns the panel and drives its render and scene context.
 
-Both stats structs are POD and **name their backend as data** rather than exposing it as a macro:
-`LUX_ENABLE_FMOD` / `LUX_ENABLE_RAYTRACED_AUDIO` are defined only for the `Core` project
-(`Core/premake5.lua`), so the Editor cannot branch on them and no panel may try. This is the general
-rule for surfacing an opt-in SDK's state to editor code: add a backend-agnostic accessor in `Core`,
-never an `#ifdef` in `Editor/`. `AudioEngineStats::HasMixerStats` distinguishes "not measured"
-(miniaudio, which has no voice-count or mixer-CPU query) from a real zero.
+Both stats structs expose SDK status as data, so editor panels use read-only Core accessors.
+`AudioEngineStats::HasMixerStats` distinguishes unavailable measurements from a real zero.
 
 `RaytracedAudioScene::Impl` tracks `StaticTriangleCount` alongside its primitives purely so the panel
 can tell "no geometry mirrored" apart from "geometry the simulation is ignoring" — the SDK offers no

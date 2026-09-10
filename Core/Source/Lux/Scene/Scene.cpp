@@ -18,6 +18,7 @@
 #include "Lux/Scene/ScriptableEntity.h"
 #include "Lux/Renderer/Renderer.h"
 #include "Lux/Scripting/ScriptEngine.h"
+#include "Lux/Scripting/AudioScriptBindings.h"
 #include "Lux/Renderer/Renderer2D.h"
 #include "Lux/Renderer/RenderScene.h"
 #include "Lux/Renderer/SceneRenderer.h"
@@ -36,6 +37,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <thread>
 #include <unordered_map>
 
@@ -43,6 +45,17 @@ namespace Lux {
 
 	namespace
 	{
+		enum AudioListenerWarning : uint32_t
+		{
+			ListenerInvalidIndex = 1 << 0,
+			ListenerInvalidWeight = 1 << 1,
+			ListenerInvalidTransform = 1 << 2,
+			ListenerInvalidTarget = 1 << 3,
+			ListenerDuplicateIndex = 1 << 4,
+			ListenerInvalidVelocity = 1 << 5,
+			ListenerMissing = 1 << 6
+		};
+
 		std::filesystem::path ResolveAudioFilePath(const Ref<AudioFile>& audioFile)
 		{
 			if (!audioFile)
@@ -170,6 +183,11 @@ namespace Lux {
 	Scene::~Scene()
 	{
 		ReleaseAllRuntimeAudio();
+		if (m_IsRunning)
+		{
+			AudioScriptBindings::Reset();
+			AudioListener::Apply({});
+		}
 		m_EntityMap.clear();
 		OnPhysics2DStop();
 		OnPhysics3DStop();
@@ -376,7 +394,13 @@ namespace Lux {
 			return;
 
 		m_RuntimeAudioSources.erase(entity.GetUUID());
-		m_RuntimeEventInstances.erase(entity.GetUUID());
+		auto event = m_RuntimeEventInstances.find(entity.GetUUID());
+		if (event != m_RuntimeEventInstances.end())
+		{
+			if (event->second.Instance)
+				event->second.Instance->Stop(false);
+			m_RuntimeEventInstances.erase(event);
+		}
 
 		if (m_RaytracedAudioScene)
 			m_RaytracedAudioScene->DestroyEmitter(entity.GetUUID());
@@ -388,11 +412,101 @@ namespace Lux {
 
 		// Event instances hold FMOD Studio resources and must not outlive the runtime that started
 		// them; the destructor stops each one immediately and releases it.
+		for (auto& [id, event] : m_RuntimeEventInstances)
+		{
+			if (event.Instance)
+				event.Instance->Stop(false);
+		}
 		m_RuntimeEventInstances.clear();
+	}
+
+	const AudioListenerState* Scene::GetPrimaryAudioListener() const
+	{
+		const int index = AudioListener::GetPrimaryIndex(m_RuntimeAudioListeners);
+		return index >= 0 ? &m_RuntimeAudioListeners[index] : nullptr;
+	}
+
+	void Scene::SyncAudioListeners(float timestep)
+	{
+		LUX_PROFILE_FUNCTION("Scene::SyncAudioListeners");
+		AudioListener::States listeners;
+		uint32_t warnings = 0;
+		const auto report = [&](uint32_t flag, UUID entity, const char* message)
+		{
+			if (!(m_AudioListenerWarnings & flag) && !(warnings & flag))
+				LUX_CORE_WARN_TAG("Audio", "Listener on entity {0}: {1}", static_cast<uint64_t>(entity), message);
+			warnings |= flag;
+		};
+		for (auto handle : m_Registry.view<TransformComponent, AudioListenerComponent>())
+		{
+			Entity entity{ handle, this };
+			const auto& component = entity.GetComponent<AudioListenerComponent>();
+			if (!component.Active)
+				continue;
+			const UUID id = entity.GetUUID();
+			if (component.ListenerIndex < 0 || component.ListenerIndex >= AudioListener::MaxListeners)
+			{
+				report(ListenerInvalidIndex, id, "Index must be between 0 and 7; listener ignored.");
+				continue;
+			}
+			if (!std::isfinite(component.Weight) || component.Weight < 0.0f || component.Weight > 1.0f)
+			{
+				report(ListenerInvalidWeight, id, "Weight must be finite and between 0 and 1; listener ignored.");
+				continue;
+			}
+			if (component.Weight == 0.0f)
+				continue;
+
+			AudioListenerState state;
+			state.EntityID = id;
+			state.Weight = component.Weight;
+			if (!AudioListener::SetTransform(state, GetWorldSpaceTransformMatrix(entity)))
+			{
+				report(ListenerInvalidTransform, id, "World transform is not finite; listener ignored.");
+				continue;
+			}
+			if (component.UseAttenuationTarget)
+			{
+				Entity target = TryGetEntityWithUUID(component.AttenuationTarget);
+				AudioListenerState targetState;
+				if (target && AudioListener::SetTransform(targetState, GetWorldSpaceTransformMatrix(target)))
+				{
+					state.UseAttenuationPosition = true;
+					state.AttenuationPosition = targetState.Position;
+				}
+				else
+					report(ListenerInvalidTarget, id, "Attenuation target is missing or invalid; using the listener position.");
+			}
+
+			auto& slot = listeners[component.ListenerIndex];
+			if (slot.EntityID != 0)
+			{
+				report(ListenerDuplicateIndex, id, "Active listeners share an index; the entity with the lowest UUID wins. Assign unique indices.");
+				if (static_cast<uint64_t>(slot.EntityID) < static_cast<uint64_t>(id))
+					continue;
+			}
+			const auto& previous = m_RuntimeAudioListeners[component.ListenerIndex];
+			if (previous.EntityID == id && std::isfinite(timestep) && timestep > 0.0f)
+			{
+				const glm::dvec3 velocity = (glm::dvec3(state.Position) - glm::dvec3(previous.Position)) / static_cast<double>(timestep);
+				const double maxVelocity = std::numeric_limits<float>::max();
+				if (glm::all(glm::lessThanEqual(glm::abs(velocity), glm::dvec3(maxVelocity))))
+					state.Velocity = glm::vec3(velocity);
+				else
+					report(ListenerInvalidVelocity, id, "Movement exceeds the supported velocity range; using zero velocity.");
+			}
+			slot = state;
+		}
+		if (AudioListener::GetPrimaryIndex(listeners) < 0)
+			report(ListenerMissing, UUID(0), "No active weighted listener; using the world origin until a listener is enabled.");
+		m_AudioListenerWarnings = warnings;
+		m_RuntimeAudioListeners = listeners;
+		AudioListener::Apply(listeners);
 	}
 
 	void Scene::OnRuntimeStart()
 	{
+		AudioScriptBindings::Reset();
 		m_IsRunning = true;
 
 		OnPhysics2DStart();
@@ -401,29 +515,23 @@ namespace Lux {
 
 		PhysicsScene2D::SetPlaying(true);
 
-		{
-			auto filter = m_Registry.view<TransformComponent, AudioListenerComponent>();
-			filter.each([&](entt::entity entityHandle, TransformComponent&, AudioListenerComponent& ac)
-				{
-					ac.Listener = Ref<AudioListener>::Create();
-					if (ac.Active)
-					{
-						Entity entity = { entityHandle, this };
-						const glm::mat4 worldTransform = GetWorldSpaceTransformMatrix(entity);
-						const glm::mat4 inverted = glm::inverse(worldTransform);
-						const glm::vec3 worldPosition = glm::vec3(worldTransform[3]);
-						const glm::vec3 forward = glm::normalize(glm::vec3(inverted[2].x, inverted[2].y, inverted[2].z));
-						ac.Listener->SetConfig(ac.Config);
-						ac.Listener->SetPosition(glm::vec4(worldPosition, 1.0f));
-						ac.Listener->SetDirection(glm::vec3{ -forward.x, -forward.y, -forward.z });
-					}
-				});
-		}
+		m_RuntimeAudioListeners = {};
+		m_AudioListenerWarnings = 0;
+		SyncAudioListeners(0.0f);
 
 		{
 			auto view = m_Registry.view<TransformComponent, AudioSourceComponent>();
 			view.each([&](entt::entity entityHandle, TransformComponent&, AudioSourceComponent& ac)
 				{
+					ac.Paused = true;
+					ac.ScriptPaused = false;
+					ac.ResumeAfterPause = false;
+					if (ac.Event.IsValid())
+					{
+						Entity entity = { entityHandle, this };
+						GetOrCreateRuntimeEventInstance(entity, ac, GetWorldSpaceTransformMatrix(entity));
+						return;
+					}
 					if (AssetManager::IsAssetHandleValid(ac.Audio))
 					{
 						Entity entity = { entityHandle, this };
@@ -504,7 +612,7 @@ namespace Lux {
 			view.each([&](entt::entity entity, AudioSourceComponent& asc)
 				{
 					auto& ac = asc;
-					if (AssetManager::IsAssetHandleValid(ac.Audio))
+					if (!ac.Event.IsValid() && AssetManager::IsAssetHandleValid(ac.Audio))
 					{
 						if (ac.Audio)
 						{
@@ -530,10 +638,8 @@ namespace Lux {
 				}
 			});
 
-		m_Registry.view<AudioListenerComponent>().each([](auto, auto& alc)
-			{
-				alc.Listener.reset();
-			});
+		m_RuntimeAudioListeners = {};
+		AudioListener::Apply(m_RuntimeAudioListeners);
 
 		// Scripting: fire OnDestroy and tear down live managed instances (values stay in storage).
 		{
@@ -551,6 +657,7 @@ namespace Lux {
 				scriptEngine.DestroyInstance(entityID, m_ScriptStorage);
 			}
 			m_ScriptInstances.clear();
+			AudioScriptBindings::Reset();
 			scriptEngine.SetCurrentScene(nullptr);
 		}
 	}
@@ -569,6 +676,7 @@ namespace Lux {
 
 	void Scene::OnUpdateRuntime(Timestep ts)
 	{
+		AudioScriptBindings::Update(m_IsPaused);
 		if (!m_IsPaused || m_StepFrames-- > 0)
 		{
 			// Update scripts
@@ -609,27 +717,7 @@ namespace Lux {
 
 			StepPhysics(ts);
 
-			{
-				LUX_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::AudioListenerComponent Scope", 0xFF7200);
-
-				auto view = m_Registry.view<AudioListenerComponent>();
-				view.each([&](entt::entity entity, AudioListenerComponent& alc)
-					{
-						Entity e = { entity, this };
-						auto& ac = e.GetComponent<AudioListenerComponent>();
-
-						if (ac.Active)
-						{
-							const glm::mat4 worldTransform = GetWorldSpaceTransformMatrix(e);
-							const glm::mat4 inverted = glm::inverse(worldTransform);
-							const glm::vec3 worldPosition = glm::vec3(worldTransform[3]);
-							const glm::vec3 forward = glm::normalize(glm::vec3(inverted[2].x, inverted[2].y, inverted[2].z));
-							ac.Listener->SetPosition(glm::vec4(worldPosition, 1.0f));
-							ac.Listener->SetDirection(glm::vec3{ -forward.x, -forward.y, -forward.z });
-							//break;
-						}
-					});
-			}
+			SyncAudioListeners(m_IsPaused ? 0.0f : static_cast<float>(ts));
 
 			{
 				LUX_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::AudioSourceComponent Scope", 0xFF7200);
@@ -647,36 +735,15 @@ namespace Lux {
 						// of it is applied here; only placement, level and pitch are the engine's.
 						if (asc.Event.IsValid())
 						{
-							const UUID entityID = entity.GetUUID();
-							const bool created = GetRuntimeEventInstance(entityID) == nullptr
-								&& !m_RuntimeEventInstances.contains(entityID);
-
-							Ref<AudioEventInstance> instance = GetOrCreateRuntimeEventInstance(entity, asc.Event);
-							if (!instance)
-								return;
-
-							// Applied once, on the frame the instance is created: these are the
-							// per-entity variation of a shared event, not something gameplay drives
-							// every frame. Scripts change parameters through the C# API instead.
-							if (created)
-							{
-								for (const auto& [name, value] : asc.ParameterOverrides)
-									instance->SetParameter(name, value);
-							}
-
-							const glm::vec3 forward = glm::normalize(glm::vec3(worldTransform[2]));
-							const glm::vec3 up = glm::normalize(glm::vec3(worldTransform[1]));
-							instance->Set3DAttributes(worldPosition, glm::vec3(0.0f), forward, up);
-							instance->SetVolume(asc.Config.VolumeMultiplier);
-							instance->SetPitch(asc.Config.PitchMultiplier);
-
-							if (asc.Config.PlayOnAwake && asc.Paused)
-							{
-								instance->Start();
-								asc.Paused = false;
-							}
+							GetOrCreateRuntimeEventInstance(entity, asc, worldTransform);
 
 							return;
+						}
+
+						if (m_RuntimeEventInstances.contains(entity.GetUUID()))
+						{
+							ReleaseRuntimeAudio(entity);
+							asc.Paused = true;
 						}
 
 						if (asc.Audio)
@@ -685,7 +752,12 @@ namespace Lux {
 							if (!audioSource)
 								return;
 
-							if (!audioSource->IsPlaying() && asc.Paused)
+							if (asc.ResumeAfterPause && !asc.ScriptPaused)
+							{
+								audioSource->UnPause();
+								asc.ResumeAfterPause = false;
+							}
+							if (!audioSource->IsPlaying() && asc.Paused && asc.Config.PlayOnAwake && !asc.ScriptPaused)
 							{
 								audioSource->SetConfig(asc.Config);
 								audioSource->Play();
@@ -707,18 +779,12 @@ namespace Lux {
 				// world, and OnUpdate at the bottom kicks the next batch.
 				m_RaytracedAudioScene->WaitForResults();
 
-				m_Registry.view<AudioListenerComponent>().each([&](entt::entity entityHandle, AudioListenerComponent& alc)
-					{
-						if (!alc.Active)
-							return;
-
-						Entity entity = { entityHandle, this };
-						const glm::mat4 worldTransform = GetWorldSpaceTransformMatrix(entity);
-						const glm::mat4 inverted = glm::inverse(worldTransform);
-						const glm::vec3 worldPosition = glm::vec3(worldTransform[3]);
-						const glm::vec3 forward = glm::normalize(glm::vec3(inverted[2].x, inverted[2].y, inverted[2].z));
-						m_RaytracedAudioScene->SetListener(worldPosition, glm::vec3{ -forward.x, -forward.y, -forward.z });
-					});
+				// Vercidium currently simulates one listener. Match the dominant mixer listener,
+				// using the character's position for acoustic paths when attenuation is detached.
+				const AudioListenerState fallback;
+				const AudioListenerState* primaryListener = GetPrimaryAudioListener();
+				const auto& listener = primaryListener ? *primaryListener : fallback;
+				m_RaytracedAudioScene->SetListener(listener.UseAttenuationPosition ? listener.AttenuationPosition : listener.Position, listener.Forward);
 
 				// Reverb belongs to the space, not to any one source, so it is read once per frame
 				// from the listener and pushed to the backend's single reverb unit. Each source
@@ -732,7 +798,7 @@ namespace Lux {
 						Entity entity = { entityHandle, this };
 						UUID entityID = entity.GetUUID();
 
-						if (!AssetManager::IsAssetHandleValid(asc.Audio))
+						if (!asc.Event.IsValid() && !AssetManager::IsAssetHandleValid(asc.Audio))
 						{
 							m_RaytracedAudioScene->DestroyEmitter(entityID);
 							return;
@@ -773,25 +839,7 @@ namespace Lux {
 		}
 		else if (m_IsPaused)
 		{
-			LUX_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::AudioListenerComponent 2 Scope", 0xFF7200);
-
-			auto view = m_Registry.view<AudioListenerComponent>();
-			view.each([&](entt::entity acEntity, AudioListenerComponent& alc)
-				{
-					Entity e = { acEntity, this };
-					auto& ac = e.GetComponent<AudioListenerComponent>();
-
-					if (ac.Active)
-					{
-						const glm::mat4 worldTransform = GetWorldSpaceTransformMatrix(e);
-						const glm::mat4 inverted = glm::inverse(worldTransform);
-						const glm::vec3 worldPosition = glm::vec3(worldTransform[3]);
-						const glm::vec3 forward = glm::normalize(glm::vec3(inverted[2].x, inverted[2].y, inverted[2].z));
-						ac.Listener->SetPosition(glm::vec4(worldPosition, 1.0f));
-						ac.Listener->SetDirection(glm::vec3{ -forward.x, -forward.y, -forward.z });
-					}
-				});
-
+			SyncAudioListeners(0.0f);
 
 			{
 				LUX_PROFILE_SCOPE_COLOR("Scene::OnUpdateRuntime::AudioSourceComponent 2 Scope", 0xFF7200);
@@ -806,7 +854,7 @@ namespace Lux {
 						if (asc.Event.IsValid())
 						{
 							if (Ref<AudioEventInstance> instance = GetRuntimeEventInstance(e.GetUUID()))
-								instance->SetPaused(true);
+								instance->SetScenePaused(true);
 
 							return;
 						}
@@ -817,7 +865,7 @@ namespace Lux {
 							if (audioSource && audioSource->IsPlaying())
 							{
 								audioSource->Pause();
-								asc.Paused = true;
+								asc.ResumeAfterPause = true;
 							}
 						}
 					});
@@ -979,33 +1027,77 @@ namespace Lux {
 		return m_RaytracedAudioScene;
 	}
 
+	Ref<AudioSource> Scene::GetAudioSourceForScript(UUID entityID)
+	{
+		Entity entity = TryGetEntityWithUUID(entityID);
+		if (!m_IsRunning || !entity || !entity.HasComponent<AudioSourceComponent>())
+			return nullptr;
+		return GetOrCreateRuntimeAudioSource(entity, entity.GetComponent<AudioSourceComponent>().Audio);
+	}
+
+	Ref<AudioEventInstance> Scene::GetAudioEventForScript(UUID entityID, bool suppressPlayOnAwake)
+	{
+		Entity entity = TryGetEntityWithUUID(entityID);
+		if (!m_IsRunning || !entity || !entity.HasComponent<AudioSourceComponent>())
+			return nullptr;
+		auto event = GetOrCreateRuntimeEventInstance(entity, entity.GetComponent<AudioSourceComponent>(), GetWorldSpaceTransformMatrix(entity), false);
+		if (suppressPlayOnAwake)
+			m_RuntimeEventInstances.at(entityID).AwakeHandled = true;
+		return event;
+	}
+
 	Ref<AudioSource> Scene::GetRuntimeAudioSource(UUID entityID) const
 	{
 		auto it = m_RuntimeAudioSources.find(entityID);
 		return it != m_RuntimeAudioSources.end() ? it->second : nullptr;
 	}
 
-	Ref<AudioEventInstance> Scene::GetOrCreateRuntimeEventInstance(Entity entity, const AudioEventRef& event)
+	Ref<AudioEventInstance> Scene::GetOrCreateRuntimeEventInstance(Entity entity, const AudioSourceComponent& source, const glm::mat4& worldTransform, bool allowPlayOnAwake)
 	{
 		const UUID entityID = entity.GetUUID();
-
-		auto it = m_RuntimeEventInstances.find(entityID);
-		if (it != m_RuntimeEventInstances.end())
+		const uint64_t bankRevision = AudioEngine::GetBankRevision();
+		auto [it, inserted] = m_RuntimeEventInstances.try_emplace(entityID);
+		RuntimeAudioEvent& event = it->second;
+		const bool changed = inserted || event.Guid != source.Event.Guid || (!event.Instance && event.BankRevision != bankRevision)
+			|| (event.Instance && !event.Instance->IsValid());
+		if (changed)
 		{
-			// A cached null means Create already failed for this entity - the event is not in any
-			// loaded bank. Kept rather than retried so the warning is logged once, not every frame.
-			return it->second;
+			if (event.Instance)
+				event.Instance->Stop(false);
+			m_RuntimeAudioSources.erase(entityID);
+			event = { source.Event.Guid, bankRevision, AudioEventInstance::Create(source.Event.Guid) };
 		}
 
-		Ref<AudioEventInstance> instance = AudioEventInstance::Create(event.Guid);
-		m_RuntimeEventInstances[entityID] = instance;
+		Ref<AudioEventInstance> instance = event.Instance;
+		if (!instance)
+			return nullptr;
+
+		if (changed)
+		{
+			for (const auto& [name, value] : source.ParameterOverrides)
+				instance->SetParameter(name, value);
+		}
+		instance->Set3DAttributes(glm::vec3(worldTransform[3]), glm::vec3(0.0f),
+			-glm::vec3(worldTransform[2]), glm::vec3(worldTransform[1]));
+		instance->SetVolume(source.Config.VolumeMultiplier);
+		instance->SetPitch(source.Config.PitchMultiplier);
+		instance->SetScenePaused(m_IsPaused);
+		instance->SetPaused(source.ScriptPaused);
+		if (allowPlayOnAwake && !event.AwakeHandled)
+		{
+			event.AwakeHandled = true;
+			if (source.Config.PlayOnAwake)
+				instance->Start();
+		}
 		return instance;
 	}
 
 	Ref<AudioEventInstance> Scene::GetRuntimeEventInstance(UUID entityID) const
 	{
 		auto it = m_RuntimeEventInstances.find(entityID);
-		return it != m_RuntimeEventInstances.end() ? it->second : nullptr;
+		if (it == m_RuntimeEventInstances.end() || !it->second.Instance || !it->second.Instance->IsValid())
+			return nullptr;
+		return it->second.Instance;
 	}
 
 	Entity Scene::DuplicateEntity(Entity entity)
@@ -1022,11 +1114,13 @@ namespace Lux {
 		if (!entity)
 			return {};
 
+		std::unordered_map<UUID, UUID> entityMap;
 		std::function<Entity(Entity, Entity)> duplicateHierarchy;
 		duplicateHierarchy = [&](Entity source, Entity parent) -> Entity
 		{
 			Entity destination = CreateEntity(source.GetName());
 			CopyComponentIfExists(DuplicateComponents{}, destination, source);
+			entityMap[source.GetUUID()] = destination.GetUUID();
 
 			// TagComponent isn't in DuplicateComponents (name is set above); carry the editor lock/label.
 			const auto& srcTag = source.GetComponent<TagComponent>();
@@ -1047,7 +1141,9 @@ namespace Lux {
 			return destination;
 		};
 
-		return duplicateHierarchy(entity, {});
+		Entity root = duplicateHierarchy(entity, {});
+		RemapAudioListenerTargets(entityMap, false);
+		return root;
 	}
 
 	Entity Scene::Instantiate(Ref<Prefab> prefab, const glm::vec3* translation, const glm::vec3* rotation, const glm::vec3* scale)
@@ -1079,13 +1175,15 @@ namespace Lux {
 			RigidBodyComponent, CharacterControllerComponent, CompoundColliderComponent, BoxColliderComponent, SphereColliderComponent, CapsuleColliderComponent, MeshColliderComponent, TextComponent,
 			MeshComponent, MeshTagComponent, StaticMeshComponent, SubmeshComponent,
 			DirectionalLightComponent, PointLightComponent, SpotLightComponent, SkyLightComponent,
-			FolderComponent>;
+			AudioSourceComponent, AudioListenerComponent, FolderComponent>;
 
+		std::unordered_map<UUID, UUID> entityMap;
 		std::function<Entity(Entity, Entity)> instantiateHierarchy;
 		instantiateHierarchy = [&](Entity source, Entity destinationParent) -> Entity
 			{
 				Entity destination = CreateEntity(source.GetName());
 				CopyComponentIfExists(PrefabInstantiationComponents{}, destination, source);
+				entityMap[source.GetUUID()] = destination.GetUUID();
 
 				auto& prefabComponent = destination.AddOrReplaceComponent<PrefabComponent>();
 				prefabComponent.PrefabID = source.HasComponent<PrefabComponent>() ? source.GetComponent<PrefabComponent>().PrefabID : AssetHandle(0);
@@ -1105,6 +1203,7 @@ namespace Lux {
 			};
 
 		Entity root = instantiateHierarchy(entity, parent);
+		RemapAudioListenerTargets(entityMap, true);
 		if (translation)
 			root.Transform().Translation = *translation;
 		if (rotation)
@@ -1112,6 +1211,90 @@ namespace Lux {
 		if (scale)
 			root.Transform().Scale = *scale;
 		return root;
+	}
+
+	void Scene::RemapAudioListenerTargets(const std::unordered_map<UUID, UUID>& entityMap, bool clearExternal)
+	{
+		// Run after the entire hierarchy exists: a listener may reference a later sibling.
+		for (const auto& [sourceID, destinationID] : entityMap)
+		{
+			Entity destination = TryGetEntityWithUUID(destinationID);
+			if (!destination || !destination.HasComponent<AudioListenerComponent>())
+				continue;
+			auto& listener = destination.GetComponent<AudioListenerComponent>();
+			const auto it = entityMap.find(listener.AttenuationTarget);
+			if (it != entityMap.end())
+				listener.AttenuationTarget = it->second;
+			else if (clearExternal && listener.AttenuationTarget != 0)
+			{
+				LUX_CORE_WARN_TAG("Audio", "Cleared attenuation target {0} on cloned listener {1}: target is outside the prefab hierarchy",
+					static_cast<uint64_t>(listener.AttenuationTarget), static_cast<uint64_t>(destinationID));
+				listener.AttenuationTarget = 0;
+			}
+		}
+	}
+
+	UUID Scene::MapPrefabEntityReference(UUID target, Entity source, Entity destination)
+	{
+		if (target == 0 || !source || !destination)
+			return UUID(0);
+		if (source.GetScene() == destination.GetScene())
+			return target;
+
+		Entity targetEntity = source.GetScene()->TryGetEntityWithUUID(target);
+		if (!targetEntity)
+			return UUID(0);
+		if (source.HasComponent<PrefabComponent>())
+		{
+			// Scene copies/variants preserve UUIDs. Applying a placed instance to an asset must
+			// verify the reverse mapping, so a target in another (even nested) instance is rejected.
+			if (destination.HasComponent<PrefabComponent>())
+				return destination.GetScene()->TryGetEntityWithUUID(target) ? target : UUID(0);
+			if (!targetEntity.HasComponent<PrefabComponent>())
+				return UUID(0);
+			const UUID sourceTarget = targetEntity.GetComponent<PrefabComponent>().EntityID;
+			return MapPrefabEntityReference(sourceTarget, destination, source) == target ? sourceTarget : UUID(0);
+		}
+		if (!destination.HasComponent<PrefabComponent>())
+			return destination.GetScene()->TryGetEntityWithUUID(target) ? target : UUID(0);
+
+		// Walk the authored hierarchy and instance together. Ascending solely by PrefabID would
+		// merge nested instances of the same asset and map their targets into the wrong instance.
+		Entity sourceRoot = source;
+		Entity destinationRoot = destination;
+		while (Entity parent = sourceRoot.GetParent())
+		{
+			sourceRoot = parent;
+			destinationRoot = destinationRoot.GetParent();
+			if (!destinationRoot)
+				return UUID(0);
+		}
+		std::vector<UUID> path;
+		while (targetEntity != sourceRoot)
+		{
+			path.push_back(targetEntity.GetUUID());
+			targetEntity = targetEntity.GetParent();
+			if (!targetEntity)
+				return UUID(0);
+		}
+		Entity mapped = destinationRoot;
+		for (auto step = path.rbegin(); step != path.rend(); ++step)
+		{
+			Entity childMatch;
+			for (UUID childID : mapped.Children())
+			{
+				Entity child = destination.GetScene()->TryGetEntityWithUUID(childID);
+				if (child && child.HasComponent<PrefabComponent>() && child.GetComponent<PrefabComponent>().EntityID == *step)
+				{
+					childMatch = child;
+					break;
+				}
+			}
+			if (!childMatch)
+				return UUID(0);
+			mapped = childMatch;
+		}
+		return mapped.GetUUID();
 	}
 
 	void Scene::ReconcilePrefabComponents(Entity destination, Entity source)
@@ -1128,9 +1311,17 @@ namespace Lux {
 			RigidBodyComponent, CharacterControllerComponent, CompoundColliderComponent, BoxColliderComponent, SphereColliderComponent, CapsuleColliderComponent, MeshColliderComponent, TextComponent,
 			MeshComponent, MeshTagComponent, StaticMeshComponent, SubmeshComponent,
 			DirectionalLightComponent, PointLightComponent, SpotLightComponent, SkyLightComponent,
-			FolderComponent>;
+			AudioSourceComponent, AudioListenerComponent, FolderComponent>;
 
 		ReconcileComponents(PrefabSyncComponents{}, destination, source);
+		if (destination.HasComponent<AudioListenerComponent>())
+		{
+			auto& listener = destination.GetComponent<AudioListenerComponent>();
+			const UUID target = listener.AttenuationTarget;
+			listener.AttenuationTarget = MapPrefabEntityReference(target, source, destination);
+			if (target != 0 && listener.AttenuationTarget == 0)
+				LUX_CORE_WARN_TAG("Audio", "Cleared listener attenuation target {0}: it cannot be mapped into the destination prefab hierarchy", static_cast<uint64_t>(target));
+		}
 	}
 
 	void Scene::PropagatePrefabEdits(AssetHandle prefabID, Ref<Scene> oldPrefab, Ref<Scene> newPrefab)
@@ -2561,15 +2752,15 @@ namespace Lux {
 	template<>
 	void Scene::OnComponentAdded<AudioSourceComponent>(Entity entity, AudioSourceComponent& component)
 	{
-		(void)component;
+		component.Paused = true;
+		component.ScriptPaused = false;
+		component.ResumeAfterPause = false;
 		ReleaseRuntimeAudio(entity);
 	}
 
 	template<>
 	void Scene::OnComponentAdded<AudioListenerComponent>(Entity entity, AudioListenerComponent& component)
 	{
-		if (component.Listener)
-			component.Listener->SetConfig(component.Config);
 	}
 
 	// 3D Component specializations

@@ -7,20 +7,14 @@
 #include <string>
 #include <vector>
 
-#ifdef LUX_ENABLE_FMOD
 namespace FMOD {
 	class System;
 	namespace Studio { class System; }
 }
-#else
-struct ma_engine;
-#endif
 
 namespace Lux {
 
-	// Backend-agnostic snapshot of the playback engine for editor tooling. LUX_ENABLE_FMOD is a
-	// Core-only define (see Core/premake5.lua), so consumers outside Core cannot branch on the
-	// backend themselves - the backend identifies itself here as data instead.
+	// Read-only FMOD playback statistics for editor tooling.
 	struct AudioEngineStats
 	{
 		const char* BackendName = "None";
@@ -33,8 +27,7 @@ namespace Lux {
 
 		int SampleRate = 0;
 
-		// False under miniaudio, which exposes no voice-count or CPU-usage equivalent; the fields
-		// below stay zero and the editor labels them unavailable rather than showing a false zero.
+		// False until mixer statistics are available from the initialized FMOD system.
 		bool HasMixerStats = false;
 		int ChannelsPlaying = 0;
 		int RealChannelsPlaying = 0;
@@ -91,7 +84,6 @@ namespace Lux {
 		// frame from Scene::OnUpdateRuntime; individual sources control only how much they send
 		// into it, via AudioSource::SetReverbSend.
 		//
-		// A no-op under miniaudio, which has no reverb unit to drive.
 		static void SetReverb(const RaytracedAudioReverb& reverb);
 
 		// The reverb parameters most recently pushed to the backend, in that backend's own units,
@@ -114,18 +106,20 @@ namespace Lux {
 		};
 		static ReverbSnapshot GetReverbSnapshot();
 
-		// Pumped once per frame from Application::Run. Required by FMOD (Studio::System::update(),
-		// which also pumps the core system); a no-op under miniaudio, which mixes on its own thread.
+		// Pumped once per frame from Application::Run: Studio update, then Core update.
 		static void Update();
 
 		// --- FMOD Studio banks and events -------------------------------------------------------
 		//
 		// Banks are what the engine actually consumes: the .fspro is authored in the FMOD Studio
 		// app and AudioBankBuilder turns it into these. Loading replaces whatever was loaded before,
-		// so this is safe to call again after a rebuild.
+		// Existing event wrappers become invalid; scenes recreate their instances on the next update.
+		// Returns false if any bank failed; successfully loaded banks remain available.
 		//
 		// The strings bank is loaded first and deliberately: it carries the path table, and without
 		// it every "event:/..." lookup fails with a not-found that does not explain itself.
+		static bool LoadBank(const std::filesystem::path& bankFile);
+		static uint64_t GetBankRevision() { return s_BankRevision; }
 		static bool LoadBanks(const std::filesystem::path& bankDirectory);
 		static void UnloadAllBanks();
 		static const std::vector<AudioBankInfo>& GetLoadedBanks();
@@ -134,40 +128,43 @@ namespace Lux {
 		// no banks are loaded.
 		static const std::vector<AudioEventInfo>& GetEvents();
 
+		// Changes whenever bank/system teardown invalidates Studio event handles. Main thread only.
+		static uint64_t GetEventGeneration() { return s_EventGeneration; }
+
 		// --- Mixer buses ------------------------------------------------------------------------
 		//
 		// The game-facing volume controls. busPath is an FMOD bus path ("bus:/", "bus:/SFX"), which
 		// the sound designer defines in Studio - the engine does not invent the hierarchy, it only
-		// drives what is authored. Volume is linear, 0 to 1. Both return false / 0 when the bus does
+		// drives what is authored. Volume is linear and nonnegative. Both return false / 0 when the bus does
 		// not exist, which is the normal answer for a project that has not authored that bus.
+		static std::string ResolveEventReference(const std::string& reference);
+		static bool SetBusMuted(const std::string& path, bool muted);
+		static bool SetVCAVolume(const std::string& path, float volume);
+		static bool SetGlobalParameter(const std::string& name, float value);
+		static float GetGlobalParameter(const std::string& name);
 		static bool SetBusVolume(const std::string& busPath, float volume);
 		static float GetBusVolume(const std::string& busPath);
 
-#ifdef LUX_ENABLE_FMOD
 		// The Core system. Under Studio this is not created directly - Studio::System::initialize
 		// creates it, and this is the handle it hands back. Still the right object for the low-level
-		// work Studio does not cover: the 3D listener, the ray-traced reverb unit, and CPU stats.
+		// work such as legacy playback, the ray-traced reverb unit, and CPU stats. Listener slots
+		// must mirror Studio: its asynchronous update also publishes them to Core.
 		static FMOD::System* GetEngine() { return s_Engine; }
 
 		// The Studio system, which owns banks, events and buses. Null when FMOD failed to
 		// initialize.
 		static FMOD::Studio::System* GetStudioSystem() { return s_StudioSystem; }
-#else
-		static ma_engine* GetEngine() { return s_Engine; }
-#endif
 		static bool ShuttingDownEngine() { return s_ShuttingDown; }
 
 		static bool HasInitializedEngine() { return s_HasInitializedAudioEngine; }
-		static void SetInitalizedEngine(bool value) { s_HasInitializedAudioEngine = value; }
 
 	private:
-#ifdef LUX_ENABLE_FMOD
 		static FMOD::System* s_Engine;
 		static FMOD::Studio::System* s_StudioSystem;
-#else
-		static ma_engine* s_Engine;
-#endif
 		inline static bool s_HasInitializedAudioEngine = false;
 		inline static bool s_ShuttingDown = false;
+		static bool RefreshBankEvents();
+		inline static uint64_t s_BankRevision = 0;
+		inline static uint64_t s_EventGeneration = 0;
 	};
 }

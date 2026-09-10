@@ -48,6 +48,9 @@ namespace Lux {
 		// the event dropdown. Follows the assigned event when there is one.
 		std::string m_AudioEventBankFilter;
 		std::string m_AudioEventSearch;
+		UUID m_AudioEventPickerEntity = 0;
+		std::string m_AudioEventPickerGuid;
+		uint64_t m_AudioEventPickerGeneration = 0;
 		bool TagSearchRecursive(Entity entity, std::string_view searchFilter, uint32_t maxSearchDepth, uint32_t currentDepth = 1);
 	private:
 		Ref<Scene> m_Context;

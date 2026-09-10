@@ -3,6 +3,7 @@
 #include "Entity.h"
 
 #include "Lux/Asset/Asset.h"
+#include "Lux/Audio/AudioListener.h"
 #include "Lux/Core/Base.h"
 #include "Lux/Core/Timestep.h"
 #include "Lux/Core/UUID.h"
@@ -97,6 +98,9 @@ namespace Lux {
 		// and removes destination-only ones (component add/remove reconciliation). Cross-scene safe.
 		// Backs prefab Revert-All (source = prefab entity) and Apply-All (source = scene instance).
 		static void ReconcilePrefabComponents(Entity destination, Entity source);
+		static UUID MapPrefabEntityReference(UUID target, Entity source, Entity destination);
+		void RemapAudioListenerTargets(const std::unordered_map<UUID, UUID>& entityMap, bool clearExternal);
+		const AudioListenerState* GetPrimaryAudioListener() const;
 
 		// After a prefab is edited, refresh this scene's instances of it: un-overridden instances
 		// (identical to oldPrefab) adopt newPrefab's values; modified instances are left untouched.
@@ -208,9 +212,10 @@ namespace Lux {
 		void StepPhysics(Timestep ts);
 		void RenderScene(EditorCamera& camera);
 		Ref<AudioSource> GetOrCreateRuntimeAudioSource(Entity entity, AssetHandle audioHandle);
-		Ref<AudioEventInstance> GetOrCreateRuntimeEventInstance(Entity entity, const struct AudioEventRef& event);
+		Ref<AudioEventInstance> GetOrCreateRuntimeEventInstance(Entity entity, const AudioSourceComponent& source, const glm::mat4& worldTransform, bool allowPlayOnAwake = true);
 		void ReleaseRuntimeAudio(Entity entity);
 		void ReleaseAllRuntimeAudio();
+		void SyncAudioListeners(float timestep);
 		Entity CreatePrefabEntity(Entity entity, Entity parent, const glm::vec3* translation = nullptr, const glm::vec3* rotation = nullptr, const glm::vec3* scale = nullptr);
 
 	private:
@@ -236,9 +241,17 @@ namespace Lux {
 		std::unordered_map<UUID, entt::entity> m_EntityMap;
 		std::vector<std::function<void()>> m_PostUpdateQueue;
 		std::unordered_map<UUID, Ref<AudioSource>> m_RuntimeAudioSources;
-		// Null entries are meaningful: they record an event that could not be resolved, so the
-		// failure is logged once rather than on every frame.
-		std::unordered_map<UUID, Ref<AudioEventInstance>> m_RuntimeEventInstances;
+		struct RuntimeAudioEvent
+		{
+			std::string Guid;
+			uint64_t BankRevision = 0;
+			Ref<AudioEventInstance> Instance;
+			bool AwakeHandled = false;
+		};
+		// A null instance records a failed lookup until its GUID or bank catalog revision changes.
+		std::unordered_map<UUID, RuntimeAudioEvent> m_RuntimeEventInstances;
+		AudioListener::States m_RuntimeAudioListeners;
+		uint32_t m_AudioListenerWarnings = 0;
 		Ref<RaytracedAudioScene> m_RaytracedAudioScene;
 
 		// Per-entity C# script field values (serialized with the scene) and live instances.
@@ -258,6 +271,8 @@ namespace Lux {
 		// The live voice playing for an entity, or null when it has none. Editor tooling only -
 		// gameplay drives sources through the component, not by reaching in here.
 		Ref<AudioSource> GetRuntimeAudioSource(UUID entityID) const;
+		Ref<AudioSource> GetAudioSourceForScript(UUID entityID);
+		Ref<AudioEventInstance> GetAudioEventForScript(UUID entityID, bool suppressPlayOnAwake = false);
 		Ref<AudioEventInstance> GetRuntimeEventInstance(UUID entityID) const;
 
 	private:

@@ -3,6 +3,7 @@
 
 #include "Components.h"
 #include "Entity.h"
+#include "Prefab.h"
 
 #include "Lux/Asset/AssetManager.h"
 #include "Lux/Project/Project.h"
@@ -733,6 +734,15 @@ namespace Lux {
 				out << YAML::Key << "EventGuid" << YAML::Value << audioSource.Event.Guid;
 				out << YAML::Key << "EventPath" << YAML::Value << audioSource.Event.Path;
 				out << YAML::Key << "EventBank" << YAML::Value << audioSource.Event.BankName;
+				out << YAML::Key << "ParameterOverrides" << YAML::Value << YAML::BeginSeq;
+				for (const auto& [name, value] : audioSource.ParameterOverrides)
+				{
+					out << YAML::BeginMap;
+					out << YAML::Key << "Name" << YAML::Value << name;
+					out << YAML::Key << "Value" << YAML::Value << value;
+					out << YAML::EndMap;
+				}
+				out << YAML::EndSeq;
 				out << YAML::EndMap;
 			}
 
@@ -742,9 +752,10 @@ namespace Lux {
 				out << YAML::Key << "AudioListenerComponent";
 				out << YAML::BeginMap;
 				out << YAML::Key << "Active" << YAML::Value << listener.Active;
-				out << YAML::Key << "ConeInnerAngle" << YAML::Value << listener.Config.ConeInnerAngle;
-				out << YAML::Key << "ConeOuterAngle" << YAML::Value << listener.Config.ConeOuterAngle;
-				out << YAML::Key << "ConeOuterGain" << YAML::Value << listener.Config.ConeOuterGain;
+				out << YAML::Key << "ListenerIndex" << YAML::Value << listener.ListenerIndex;
+				out << YAML::Key << "Weight" << YAML::Value << listener.Weight;
+				out << YAML::Key << "UseAttenuationTarget" << YAML::Value << listener.UseAttenuationTarget;
+				out << YAML::Key << "AttenuationTarget" << YAML::Value << listener.AttenuationTarget;
 				out << YAML::EndMap;
 			}
 
@@ -1209,9 +1220,11 @@ namespace Lux {
 				{
 					auto& component = deserializedEntity.AddComponent<AudioListenerComponent>();
 					component.Active = audioListener["Active"].as<bool>(true);
-					component.Config.ConeInnerAngle = audioListener["ConeInnerAngle"].as<float>(glm::radians(360.0f));
-					component.Config.ConeOuterAngle = audioListener["ConeOuterAngle"].as<float>(glm::radians(360.0f));
-					component.Config.ConeOuterGain = audioListener["ConeOuterGain"].as<float>(0.0f);
+					// Legacy cone keys are intentionally ignored; old scenes retain listener 0.
+					component.ListenerIndex = audioListener["ListenerIndex"].as<int>(0);
+					component.Weight = audioListener["Weight"].as<float>(1.0f);
+					component.UseAttenuationTarget = audioListener["UseAttenuationTarget"].as<bool>(false);
+					component.AttenuationTarget = audioListener["AttenuationTarget"].as<uint64_t>(0);
 				}
 				}
 				catch (const YAML::Exception& e)
@@ -1337,7 +1350,13 @@ namespace Lux {
 		SerializeEntity(instOut, instance);
 		SerializeEntity(srcOut, prefabSource);
 		const YAML::Node instNode = YAML::Load(instOut.c_str());
-		const YAML::Node srcNode = YAML::Load(srcOut.c_str());
+		YAML::Node srcNode = YAML::Load(srcOut.c_str());
+		if (prefabSource.HasComponent<AudioListenerComponent>())
+		{
+			// Compare in the instance's UUID space; remapped references are not user overrides.
+			srcNode["AudioListenerComponent"]["AttenuationTarget"] = static_cast<uint64_t>(Scene::MapPrefabEntityReference(
+				prefabSource.GetComponent<AudioListenerComponent>().AttenuationTarget, prefabSource, instance));
+		}
 
 		// A key is an override if it is present on one side only, or present on both but serializes
 		// differently. Scanning both directions catches instance-only and prefab-only components.
@@ -1397,6 +1416,92 @@ namespace Lux {
 		parent.GetComponent<TransformComponent>().Translation = { 1.0f, 2.0f, 3.0f };
 		childA.AddComponent<PointLightComponent>().Radiance = { 0.5f, 0.25f, 0.1f };
 		childB.AddComponent<DirectionalLightComponent>();
+		auto& audio = childB.AddComponent<AudioSourceComponent>();
+		audio.Event = { "{12345678-1234-1234-1234-123456789abc}", "event:/Test/Door", "Test.bank" };
+		audio.ParameterOverrides = { { "Size", 0.75f }, { "Urgency", 2.0f } };
+		audio.Config.PlayOnAwake = false;
+		audio.Paused = false;
+		const AudioSourceComponent expectedAudio = audio;
+		auto checkAudioCopy = [&](Entity entity, const char* operation)
+		{
+			if (!entity || !entity.HasComponent<AudioSourceComponent>())
+			{
+				fail(std::format("{} lost the audio source", operation));
+				return;
+			}
+			const auto& copied = entity.GetComponent<AudioSourceComponent>();
+			if (copied.Event.Guid != expectedAudio.Event.Guid || copied.ParameterOverrides != expectedAudio.ParameterOverrides
+				|| copied.Config.PlayOnAwake || !copied.Paused)
+				fail(std::format("{} changed audio event data or copied runtime playback state", operation));
+		};
+		Entity duplicate = src->DuplicateEntity(childB);
+		checkAudioCopy(duplicate, "Duplicate");
+		Ref<Prefab> prefab = Ref<Prefab>::Create();
+		prefab->Create(childB, false);
+		checkAudioCopy(prefab->GetScene()->TryGetEntityWithUUID(prefab->GetRootEntityID()), "Prefab creation");
+		checkAudioCopy(src->Instantiate(prefab), "Prefab instantiation");
+		src->ReconcilePrefabComponents(duplicate, parent);
+		if (duplicate.HasComponent<AudioSourceComponent>())
+			fail("Prefab reconciliation did not remove an absent audio source");
+		src->ReconcilePrefabComponents(duplicate, childB);
+		checkAudioCopy(duplicate, "Prefab reconciliation");
+
+		Entity listenerRig = src->CreateEntity("ListenerRig");
+		Entity attenuationTarget = src->CreateChildEntity(listenerRig, "ListenerTarget");
+		auto& listener = listenerRig.AddComponent<AudioListenerComponent>();
+		listener.ListenerIndex = 7;
+		listener.Weight = 0.25f;
+		listener.UseAttenuationTarget = true;
+		listener.AttenuationTarget = attenuationTarget.GetUUID();
+		const auto checkListener = [&](Entity root, const char* operation)
+		{
+			if (!root || !root.HasComponent<AudioListenerComponent>() || root.Children().size() != 1)
+			{
+				fail(std::format("{} lost the listener hierarchy", operation));
+				return;
+			}
+			const auto& copied = root.GetComponent<AudioListenerComponent>();
+			if (!copied.Active || copied.ListenerIndex != 7 || copied.Weight != 0.25f || !copied.UseAttenuationTarget
+				|| copied.AttenuationTarget != root.Children()[0])
+				fail(std::format("{} changed listener data or failed to remap its target", operation));
+		};
+		checkListener(src->DuplicateEntity(listenerRig), "Duplicate listener");
+		Ref<Prefab> listenerPrefab = Ref<Prefab>::Create();
+		listenerPrefab->Create(listenerRig, false);
+		Entity prefabListener = listenerPrefab->GetScene()->TryGetEntityWithUUID(listenerPrefab->GetRootEntityID());
+		checkListener(prefabListener, "Create listener prefab");
+		Entity listenerInstance = src->Instantiate(listenerPrefab);
+		Entity secondListenerInstance = src->Instantiate(listenerPrefab);
+		checkListener(listenerInstance, "Instantiate listener prefab");
+		checkListener(secondListenerInstance, "Instantiate second listener prefab");
+		Entity nestedListenerInstance = src->InstantiateChild(listenerPrefab, secondListenerInstance);
+		Scene::ReconcilePrefabComponents(nestedListenerInstance, prefabListener);
+		checkListener(nestedListenerInstance, "Revert nested listener prefab");
+		if (GetOverriddenComponentKeys(nestedListenerInstance, prefabListener).contains("AudioListenerComponent"))
+			fail("nested listener instance mapped its target into its parent instance");
+		if (GetOverriddenComponentKeys(listenerInstance, prefabListener).contains("AudioListenerComponent"))
+			fail("remapped listener target was incorrectly marked as a prefab override");
+		listenerInstance.GetComponent<AudioListenerComponent>().AttenuationTarget = secondListenerInstance.Children()[0];
+		if (!GetOverriddenComponentKeys(listenerInstance, prefabListener).contains("AudioListenerComponent"))
+			fail("external listener target override was not detected");
+		Scene::ReconcilePrefabComponents(listenerInstance, prefabListener);
+		checkListener(listenerInstance, "Revert listener prefab");
+		Scene::ReconcilePrefabComponents(prefabListener, listenerInstance);
+		checkListener(prefabListener, "Apply listener prefab");
+		Scene::ReconcilePrefabComponents(listenerInstance, parent);
+		if (listenerInstance.HasComponent<AudioListenerComponent>())
+			fail("prefab reconciliation did not remove an absent listener");
+		Scene::ReconcilePrefabComponents(listenerInstance, prefabListener);
+		checkListener(listenerInstance, "Restore listener prefab");
+		listenerRig.GetComponent<AudioListenerComponent>().AttenuationTarget = childB.GetUUID();
+		Entity externalCopy = src->DuplicateEntity(listenerRig);
+		if (externalCopy.GetComponent<AudioListenerComponent>().AttenuationTarget != childB.GetUUID())
+			fail("duplicate lost an external scene listener target");
+		Ref<Prefab> externalPrefab = Ref<Prefab>::Create();
+		externalPrefab->Create(listenerRig, false);
+		if (externalPrefab->GetScene()->TryGetEntityWithUUID(externalPrefab->GetRootEntityID()).GetComponent<AudioListenerComponent>().AttenuationTarget != 0)
+			fail("prefab retained a listener target outside its hierarchy");
+		listenerRig.GetComponent<AudioListenerComponent>().AttenuationTarget = attenuationTarget.GetUUID();
 
 		std::string meta1;
 		std::map<UUID, std::string> ents1 = SceneSerializer(src).SerializeEntitySnapshots(meta1);
@@ -1413,7 +1518,19 @@ namespace Lux {
 			return ok;
 		}
 
+		checkListener(dst->TryGetEntityWithUUID(listenerRig.GetUUID()), "Listener round-trip");
 		std::string meta2;
+		Entity restoredAudioEntity = dst->TryGetEntityWithUUID(childB.GetUUID());
+		if (!restoredAudioEntity || !restoredAudioEntity.HasComponent<AudioSourceComponent>())
+			fail("audio source disappeared during the round-trip");
+		else
+		{
+			const auto& restoredAudio = restoredAudioEntity.GetComponent<AudioSourceComponent>();
+			if (restoredAudio.Event.Guid != expectedAudio.Event.Guid || restoredAudio.Event.Path != expectedAudio.Event.Path
+				|| restoredAudio.Event.BankName != expectedAudio.Event.BankName || restoredAudio.ParameterOverrides != expectedAudio.ParameterOverrides
+				|| restoredAudio.Config.PlayOnAwake || !restoredAudio.Paused)
+				fail("audio event reference/overrides changed or runtime playback state was serialized");
+		}
 		std::map<UUID, std::string> ents2 = SceneSerializer(dst).SerializeEntitySnapshots(meta2);
 
 		if (meta1 != meta2)
