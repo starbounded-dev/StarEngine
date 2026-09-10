@@ -1,0 +1,106 @@
+# FMOD demo and project setup
+
+The ready-made scene is `Assets/Scenes/FMODDemo.luxscene`. It uses your existing
+`event:/Fart` from `Assets/Audio/SampleProject/SampleProject.fspro`.
+The engine already builds with FMOD Core, FMOD Studio, and Vercidium Audio (VA).
+You do not need a Unity/Unreal integration package or another audio backend toggle.
+
+## Run the supplied scene
+
+1. Start the rebuilt editor from the repository root:
+   ```sh
+   LUX_SKIP_BUILD=1 ./scripts/Linux-Run.sh release
+   ```
+2. Open `Editor/LuxSampleProject/LuxSample.luxproj` if it is not already open.
+3. If the editor was running while the scripts were built, stop Play and choose
+   **Edit > Reload C# Assembly** (`Ctrl+R`). This reloads the compiled DLL; it does not compile source.
+4. Open `Assets/Scenes/FMODDemo.luxscene` from the Content Browser, or use the scene-open dialog.
+5. Press **Play**, then click the game viewport to give it keyboard focus. The source plays once
+   on startup. The console should report `FMOD Demo ready`.
+6. Hold the right mouse button and use **W/A/S/D** to move the listener. **Q/E** move down/up,
+   and **Left Shift** increases speed. Walk around the wall and compare near/far positions.
+
+| Key | Action |
+| --- | --- |
+| K | Restart the Audio Source component's event |
+| L | Fire an additional one-shot at the emitter position |
+| I | Start/restart an independently owned event instance |
+| P | Pause/resume the component's event |
+| O | Stop the component and independently owned instance |
+
+One-shots finish naturally; O cannot cancel them. `L` requires an event authored as a finite
+one-shot. For looping events, use K or I. Stop Play before rebuilding/reloading banks.
+
+The camera already has `LuxSample.FlyCamera` and an Audio Listener (index 0, weight 1).
+The emitter already has `LuxSample.FmodAudioDemo` and an Audio Source. The script's `PlayOnStart`
+field controls startup playback; the component's Play On Awake is off to prevent duplicate starts.
+The floor and wall have mesh colliders for VA's geometry collection.
+
+## Link an FMOD Studio project to Lux
+
+1. Use FMOD Studio **2.03.x**, matching the installed FMOD Engine SDK series (2.03.14).
+   For this sample, open `Assets/Audio/SampleProject/SampleProject.fspro` in FMOD Studio.
+2. Create/select an event and put an audio instrument in it. Confirm it plays inside Studio.
+   For position/distance testing, author it as a 3D event with a Spatializer on its output.
+3. Right-click the event in Studio's Events browser and choose **Assign to Bank > Browse > Master**.
+   Unassigned events are not included in bank builds.
+4. In Studio, choose **File > Build...**. With the normal Desktop platform output, verify that
+   `Build/Desktop/Master.bank` and `Build/Desktop/Master.strings.bank` exist beside the `.fspro`.
+   If you use additional content banks, build those too.
+5. In Lux, open **View > Project Settings**, then its **Audio** section. Enter:
+
+   | Setting | Value for this sample | Relative to |
+   | --- | --- | --- |
+   | Studio Project (.fspro) | `Audio/SampleProject/SampleProject.fspro` | The Lux project's `Assets` directory |
+   | Bank Output | `Build/Desktop` | The directory containing the `.fspro` |
+
+   **Bank Output is a directory, not `Master.bank`.** These values are already configured for the sample.
+6. Save the project settings and reopen the Lux project. Lux loads the banks on project open.
+   The Audio section should show loaded banks and events. **View > Audio Debugger** also shows audio status.
+7. To let Lux build banks when you press Play, enable **Rebuild Banks On Play**. **Build Banks Now**
+   requires FMOD Studio's command-line executable, `fmodstudiocl`. If Lux cannot find it, either
+   build manually in Studio or launch Lux with `LUX_FMOD_STUDIO_CL` set to its absolute executable path.
+8. In the demo scene, select **FMOD Emitter - Fart**. Change the script's **EventPath** to your
+   event's full path (for example, `event:/SFX/Explosion`). Change **MasterBank** and **StringsBank**
+   if using a different project. The script's bank paths are relative to **Assets**, unlike Bank Output.
+   If the event lives in another content bank, add an `Audio.LoadBank(...)` call for that file before
+   `Audio.CreateInstance(...)`. The script sets the component event on startup.
+9. Build changed C# source, then reload the assembly in Lux while stopped:
+   ```sh
+   Editor/LuxSampleProject/Assets/Scripts/Linux-GenProjects.sh
+   dotnet build Editor/LuxSampleProject/Assets/Scripts/LuxSample.csproj -c Release
+   ```
+   The demo scripts are already generated and built. Re-run generation after adding new script files.
+10. Open the demo scene and press Play. FMOD playback uses built banks; the Studio application does
+    not need to remain open for ordinary playback.
+
+FMOD's official [quick-start tutorial](https://www.fmod.com/docs/2.03/studio/quick-start-tutorial.html)
+explains assigning an event and building the Master/strings banks.
+
+## Optional live connection to Studio
+
+Enable **Live Update** in Lux's Project Settings > Audio, save, then reopen the project so FMOD
+initializes with live update enabled. Start Play. In FMOD Studio choose **File > Connect to Game...**
+and connect to `localhost` (`127.0.0.1`, default port 9264). This is for tuning the running mix;
+regular event playback only needs the bank files. Rebuild banks to preserve authored changes for
+future runs. Live update is disabled in Dist builds.
+
+See FMOD's [connection instructions](https://qa.fmod.com/t/how-to-use-the-profiler-in-fmod-studio/11138).
+
+## VA occlusion and reverb
+
+The wall supplies geometry to VA, but a Studio event must author how VA affects its sound.
+Lux supplies optional event parameters named **Occlusion** and **ReverbSend**, each from 0 to 1.
+Add those parameters to your event and automate a low-pass/level reduction and reverb send,
+respectively. Rebuild its bank afterward. Without that authoring, 3D distance attenuation can work
+while the wall does not audibly muffle the event. The K/component path receives scene acoustics;
+the L and I paths demonstrate independent playback and do not automatically register VA targets.
+
+## If it is silent
+
+- Check the Lux console for the actual bank path/event error.
+- `event:/...` paths need the strings bank and must match the authored event exactly.
+- The event must be assigned to a bank, and that bank must be built and loaded.
+- Press K after a short sound finishes. Make sure the viewport has focus.
+- Check the FMOD event/master bus volume and the operating system's audio output.
+- Reopen Play after replacing banks so the script recreates its event instance.

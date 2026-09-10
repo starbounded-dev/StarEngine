@@ -149,6 +149,11 @@ Assets:
     Type: Texture
     FileLastWriteTime: 18446744069059611435
     Status: None
+  - Handle: 5028464577764957996
+    FilePath: Scripts/Source/FmodAudioDemo.cs
+    Type: ScriptFile
+    FileLastWriteTime: 18446744069060944484
+    Status: None
   - Handle: 5040029817225809111
     FilePath: Meshes/Source/Sponza/3455394979645218238.jpg
     Type: Texture
@@ -332,7 +337,7 @@ Assets:
   - Handle: 8868489982347245392
     FilePath: Scripts/Intermediates/Release/LuxSample.AssemblyInfo.cs
     Type: ScriptFile
-    FileLastWriteTime: 18446744069060858895
+    FileLastWriteTime: 18446744069060933445
     Status: None
   - Handle: 8873821167095533110
     FilePath: Meshes/Source/Sponza/Materials/Sponza_10_Material_10.lmat
@@ -527,7 +532,7 @@ Assets:
   - Handle: 13137233102113716417
     FilePath: Scenes/AudioTest.luxscene
     Type: Scene
-    FileLastWriteTime: 18446744069060861852
+    FileLastWriteTime: 18446744069060867327
     Status: Ready
   - Handle: 13274671615592977719
     FilePath: Scenes/NewSceneSystem.luxscene
@@ -559,6 +564,11 @@ Assets:
     Type: Texture
     FileLastWriteTime: 18446744069059611435
     Status: Ready
+  - Handle: 14293776709940706397
+    FilePath: Scenes/FMODDemo.luxscene
+    Type: Scene
+    FileLastWriteTime: 18446744069060944484
+    Status: None
   - Handle: 14667370932801951154
     FilePath: Meshes/Source/Default/Materials/Plane_0_Material_0.lmat
     Type: Material
