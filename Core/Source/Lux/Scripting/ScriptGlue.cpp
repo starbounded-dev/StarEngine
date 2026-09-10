@@ -1,5 +1,6 @@
 #include "lpch.h"
 #include "ScriptGlue.h"
+#include "AudioScriptBindings.h"
 #include "ScriptEngine.h"
 
 #include "Lux/Core/UUID.h"
@@ -815,6 +816,7 @@ namespace Lux {
 	{
 		RegisterComponentTypes(coreAssembly);
 		RegisterInternalCalls(coreAssembly);
+		AudioScriptBindings::Register(coreAssembly);
 		coreAssembly.UploadInternalCalls();
 	}
 

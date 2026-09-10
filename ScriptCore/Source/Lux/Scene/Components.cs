@@ -366,6 +366,98 @@ namespace Lux
 
 	// Registered for HasComponent/AddComponent/RemoveComponent; no scriptable surface yet.
 	public class MeshColliderComponent : Component { }
-	public class AudioSourceComponent : Component { }
-	public class AudioListenerComponent : Component { }
+	public unsafe class AudioSourceComponent : Component
+	{
+		public bool IsPlaying => InternalCalls.Audio_SourceIsPlaying(Entity.ID);
+		public bool IsPaused
+		{
+			get => InternalCalls.Audio_SourceIsPaused(Entity.ID);
+			set => InternalCalls.Audio_SourceSetPaused(Entity.ID, value);
+		}
+		public float Volume
+		{
+			get => InternalCalls.Audio_SourceGetVolume(Entity.ID);
+			set { Audio.Finite(value); InternalCalls.Audio_SourceSetVolume(Entity.ID, value); }
+		}
+		public float Pitch
+		{
+			get => InternalCalls.Audio_SourceGetPitch(Entity.ID);
+			set { Audio.Finite(value); InternalCalls.Audio_SourceSetPitch(Entity.ID, value); }
+		}
+		public void Play() => InternalCalls.Audio_SourcePlay(Entity.ID);
+		public void Stop(bool allowFadeOut = true) => InternalCalls.Audio_SourceStop(Entity.ID, allowFadeOut);
+		public void Restart() { Stop(false); Play(); }
+		private void RequireEvent()
+		{
+			if (!InternalCalls.Audio_SourceHasEvent(Entity.ID))
+				throw new System.InvalidOperationException("This operation requires an assigned Studio event.");
+		}
+		public void SetParameter(string name, float value)
+		{
+			RequireEvent(); Audio.Finite(value);
+			using NativeString parameter = Audio.String(name);
+			InternalCalls.Audio_SourceSetParameter(Entity.ID, parameter, value);
+		}
+		public float GetParameter(string name)
+		{
+			RequireEvent();
+			using NativeString parameter = Audio.String(name);
+			return InternalCalls.Audio_SourceGetParameter(Entity.ID, parameter);
+		}
+		public void SetParameterLabel(string name, string label)
+		{
+			RequireEvent();
+			using NativeString parameter = Audio.String(name);
+			using NativeString nativeLabel = Audio.String(label);
+			InternalCalls.Audio_SourceSetParameterLabel(Entity.ID, parameter, nativeLabel);
+		}
+		public void SetEvent(string guidOrPath)
+		{
+			using NativeString reference = Audio.String(guidOrPath);
+			InternalCalls.Audio_SourceSetEvent(Entity.ID, reference);
+		}
+		public int TimelinePosition
+		{
+			get { RequireEvent(); return InternalCalls.Audio_SourceGetTimeline(Entity.ID); }
+			set
+			{
+				RequireEvent();
+				if (value < 0) throw new System.ArgumentOutOfRangeException(nameof(value));
+				InternalCalls.Audio_SourceSetTimeline(Entity.ID, value);
+			}
+		}
+	}
+
+	public unsafe class AudioListenerComponent : Component
+	{
+		public bool Active
+		{
+			get => InternalCalls.Audio_ListenerGetActive(Entity.ID);
+			set => InternalCalls.Audio_ListenerSetActive(Entity.ID, value);
+		}
+		public int ListenerIndex
+		{
+			get => InternalCalls.Audio_ListenerGetIndex(Entity.ID);
+			set
+			{
+				if (value < 0 || value > 7) throw new System.ArgumentOutOfRangeException(nameof(value));
+				InternalCalls.Audio_ListenerSetIndex(Entity.ID, value);
+			}
+		}
+		public float Weight
+		{
+			get => InternalCalls.Audio_ListenerGetWeight(Entity.ID);
+			set { Audio.Finite(value); InternalCalls.Audio_ListenerSetWeight(Entity.ID, value); }
+		}
+		public bool UseAttenuationTarget
+		{
+			get => InternalCalls.Audio_ListenerGetUseTarget(Entity.ID);
+			set => InternalCalls.Audio_ListenerSetUseTarget(Entity.ID, value);
+		}
+		public Entity? AttenuationTarget
+		{
+			get { ulong id = InternalCalls.Audio_ListenerGetTarget(Entity.ID); return id == 0 ? null : new Entity(id); }
+			set => InternalCalls.Audio_ListenerSetTarget(Entity.ID, value?.ID ?? 0);
+		}
+	}
 }

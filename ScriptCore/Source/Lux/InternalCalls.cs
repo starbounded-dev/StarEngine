@@ -193,6 +193,51 @@ namespace Lux
 		internal static delegate*<ulong, Vector3*, void> CapsuleColliderComponent_SetOffset;
 		#endregion
 
+
+		internal static delegate*<NativeString, Bool32> Audio_LoadBank;
+		internal static delegate*<Bool32> Audio_IsMainThread;
+		internal static delegate*<NativeString, Bool32, Vector3*, ulong> Audio_CreateInstance;
+		internal static delegate*<ulong, Bool32> Audio_IsValid;
+		internal static delegate*<ulong, Bool32> Audio_IsPlaying;
+		internal static delegate*<ulong, void> Audio_Start;
+		internal static delegate*<ulong, Bool32, void> Audio_Stop;
+		internal static delegate*<ulong, void> Audio_Dispose;
+		internal static delegate*<ulong, float, void> Audio_SetVolume;
+		internal static delegate*<ulong, float, void> Audio_SetPitch;
+		internal static delegate*<ulong, NativeString, float, void> Audio_SetParameter;
+		internal static delegate*<ulong, Vector3*, Vector3*, Vector3*, Vector3*, void> Audio_Set3DAttributes;
+		internal static delegate*<ulong, void> Audio_SourcePlay;
+		internal static delegate*<ulong, Bool32, void> Audio_SourceStop;
+		internal static delegate*<ulong, Bool32> Audio_SourceIsPlaying;
+		internal static delegate*<ulong, Bool32> Audio_SourceIsPaused;
+		internal static delegate*<ulong, Bool32, void> Audio_SourceSetPaused;
+		internal static delegate*<ulong, float> Audio_SourceGetVolume;
+		internal static delegate*<ulong, float> Audio_SourceGetPitch;
+		internal static delegate*<ulong, float, void> Audio_SourceSetVolume;
+		internal static delegate*<ulong, float, void> Audio_SourceSetPitch;
+		internal static delegate*<ulong, Bool32> Audio_SourceHasEvent;
+		internal static delegate*<ulong, NativeString, float, void> Audio_SourceSetParameter;
+		internal static delegate*<ulong, NativeString, float> Audio_SourceGetParameter;
+		internal static delegate*<ulong, NativeString, NativeString, void> Audio_SourceSetParameterLabel;
+		internal static delegate*<ulong, int> Audio_SourceGetTimeline;
+		internal static delegate*<ulong, int, void> Audio_SourceSetTimeline;
+		internal static delegate*<ulong, NativeString, void> Audio_SourceSetEvent;
+		internal static delegate*<ulong, Bool32> Audio_ListenerGetActive;
+		internal static delegate*<ulong, Bool32, void> Audio_ListenerSetActive;
+		internal static delegate*<ulong, int> Audio_ListenerGetIndex;
+		internal static delegate*<ulong, int, void> Audio_ListenerSetIndex;
+		internal static delegate*<ulong, float> Audio_ListenerGetWeight;
+		internal static delegate*<ulong, float, void> Audio_ListenerSetWeight;
+		internal static delegate*<ulong, Bool32> Audio_ListenerGetUseTarget;
+		internal static delegate*<ulong, Bool32, void> Audio_ListenerSetUseTarget;
+		internal static delegate*<ulong, ulong> Audio_ListenerGetTarget;
+		internal static delegate*<ulong, ulong, void> Audio_ListenerSetTarget;
+		internal static delegate*<NativeString, float, void> Audio_SetBusVolume;
+		internal static delegate*<NativeString, float> Audio_GetBusVolume;
+		internal static delegate*<NativeString, Bool32, void> Audio_SetBusMuted;
+		internal static delegate*<NativeString, float, void> Audio_SetVCAVolume;
+		internal static delegate*<NativeString, float, void> Audio_SetGlobalParameter;
+		internal static delegate*<NativeString, float> Audio_GetGlobalParameter;
 #pragma warning restore CS0649
 	}
 }

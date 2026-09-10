@@ -1,0 +1,516 @@
+#include "lpch.h"
+#include "AudioScriptBindings.h"
+#include "ScriptEngine.h"
+
+#include "Lux/Audio/AudioEngine.h"
+#include "Lux/Audio/AudioEventInstance.h"
+#include "Lux/Core/Application.h"
+#include "Lux/Scene/Entity.h"
+#include "Lux/Scene/Scene.h"
+#include "Lux/Project/Project.h"
+
+#include <Coral/Assembly.hpp>
+#include <Coral/String.hpp>
+#include <Coral/Type.hpp>
+#include <cmath>
+
+namespace Lux
+{
+
+	namespace
+	{
+		struct ScriptEvent
+		{
+			Ref<AudioEventInstance> Instance;
+			bool OneShot = false;
+		};
+		std::unordered_map<uint64_t, ScriptEvent> s_Instances;
+		uint64_t s_NextHandle = 1; // Never recycled, including across scene/assembly/bank reloads.
+		Coral::Type* s_AudioType = nullptr;
+
+		bool OnMainThread()
+		{
+			if (Application::IsMainThread())
+				return true;
+			LUX_CORE_ERROR_TAG("Audio", "The scripting audio API must be called on the main thread");
+			return false;
+		}
+
+		Scene* AudioScene()
+		{
+			if (!OnMainThread())
+				return nullptr;
+			auto scene = ScriptEngine::GetInstance().GetCurrentScene();
+			if (scene && scene->IsRunning())
+				return scene.Raw();
+			LUX_CORE_ERROR_TAG("Audio", "Gameplay audio requires a running scene");
+			return nullptr;
+		}
+
+		Entity AudioEntity(uint64_t id)
+		{
+			Scene* scene = AudioScene();
+			Entity entity = scene ? scene->TryGetEntityWithUUID(id) : Entity{};
+			if (!entity)
+				LUX_CORE_ERROR_TAG("Audio", "Audio operation references unavailable entity {0}", id);
+			return entity;
+		}
+
+		Ref<AudioEventInstance> Instance(uint64_t handle)
+		{
+			if (!OnMainThread())
+				return nullptr;
+			auto it = s_Instances.find(handle);
+			return it != s_Instances.end() && it->second.Instance->IsValid() ? it->second.Instance : nullptr;
+		}
+
+		AudioSourceComponent* Source(uint64_t id)
+		{
+			Entity entity = AudioEntity(id);
+			auto* component = entity ? entity.TryGetComponent<AudioSourceComponent>() : nullptr;
+			if (entity && !component)
+				LUX_CORE_ERROR_TAG("Audio", "Entity {0} no longer has AudioSourceComponent", id);
+			return component;
+		}
+
+		Ref<AudioEventInstance> SourceEvent(uint64_t id, bool create = true, bool suppressAwake = false)
+		{
+			auto* source = Source(id);
+			if (!source || !source->Event.IsValid())
+				return nullptr;
+			return create ? AudioScene()->GetAudioEventForScript(id, suppressAwake) : AudioScene()->GetRuntimeEventInstance(id);
+		}
+
+		uint64_t Audio_CreateInstance(Coral::String reference, Coral::Bool32 oneShot, const glm::vec3* position)
+		{
+			Scene* scene = AudioScene();
+			if (!scene)
+				return 0;
+			Ref<AudioEventInstance> event = AudioEventInstance::Create(static_cast<std::string>(reference));
+			if (!event)
+				return 0;
+			if (oneShot && !event->IsOneShot())
+			{
+				LUX_CORE_ERROR_TAG("Audio", "PlayOneShot requires a finite one-shot event; use CreateInstance for looping events");
+				return 0;
+			}
+			if (s_NextHandle == 0)
+			{
+				LUX_CORE_ERROR_TAG("Audio", "Script audio handle space exhausted");
+				return 0;
+			}
+			const uint64_t handle = s_NextHandle++;
+			if (!event->SetCallbackHandle(handle))
+				return 0;
+			event->Set3DAttributes(position ? *position : glm::vec3(0), glm::vec3(0), glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
+			event->SetScenePaused(scene->IsPaused());
+			s_Instances.emplace(handle, ScriptEvent{event, oneShot != 0});
+			if (oneShot)
+				event->Start();
+			return handle;
+		}
+
+		Coral::Bool32 Audio_IsMainThread()
+		{
+			return Application::IsMainThread();
+		}
+
+		Coral::Bool32 Audio_IsValid(uint64_t handle)
+		{
+			return Instance(handle) != nullptr;
+		}
+		Coral::Bool32 Audio_IsPlaying(uint64_t handle)
+		{
+			auto event = Instance(handle);
+			return event && event->IsPlaying();
+		}
+		void Audio_Start(uint64_t handle)
+		{
+			if (auto event = Instance(handle))
+				event->Start();
+		}
+		void Audio_Stop(uint64_t handle, Coral::Bool32 fade)
+		{
+			if (auto event = Instance(handle))
+				event->Stop(fade);
+		}
+		void Audio_Dispose(uint64_t handle)
+		{
+			if (OnMainThread())
+				s_Instances.erase(handle);
+		}
+		void Audio_SetVolume(uint64_t handle, float value)
+		{
+			if (auto event = Instance(handle))
+				event->SetVolume(value);
+		}
+		void Audio_SetPitch(uint64_t handle, float value)
+		{
+			if (auto event = Instance(handle))
+				event->SetPitch(value);
+		}
+		void Audio_SetParameter(uint64_t handle, Coral::String name, float value)
+		{
+			if (auto event = Instance(handle))
+				event->SetParameter(name, value);
+		}
+		void Audio_Set3DAttributes(uint64_t handle, const glm::vec3* position, const glm::vec3* velocity, const glm::vec3* forward,
+								   const glm::vec3* up)
+		{
+			if (auto event = Instance(handle); event && position && velocity && forward && up)
+				event->Set3DAttributes(*position, *velocity, *forward, *up);
+		}
+
+		void Audio_SourcePlay(uint64_t id)
+		{
+			auto* source = Source(id);
+			if (!source)
+				return;
+			source->ScriptPaused = false;
+			source->ResumeAfterPause = false;
+			if (source->Event.IsValid())
+			{
+				if (auto event = SourceEvent(id, true, true))
+				{
+					event->SetPaused(false);
+					event->Start();
+				}
+			}
+			else if (auto raw = AudioScene()->GetAudioSourceForScript(id))
+			{
+				raw->SetConfig(source->Config);
+				raw->SetPosition(glm::vec4(glm::vec3(AudioScene()->GetWorldSpaceTransformMatrix(AudioEntity(id))[3]), 1.0f));
+				raw->Play();
+				if (AudioScene()->IsPaused())
+				{
+					raw->Pause();
+					source->ResumeAfterPause = true;
+				}
+			}
+			source->Paused = false;
+		}
+
+		void Audio_SourceStop(uint64_t id, Coral::Bool32 fade)
+		{
+			auto* source = Source(id);
+			if (!source)
+				return;
+			if (auto event = SourceEvent(id, true, true))
+				event->Stop(fade);
+			else if (auto raw = AudioScene()->GetRuntimeAudioSource(id))
+				raw->Stop();
+			source->ScriptPaused = false;
+			source->ResumeAfterPause = false;
+			source->Paused = false; // Suppress another PlayOnAwake after an explicit stop.
+		}
+
+		Coral::Bool32 Audio_SourceIsPlaying(uint64_t id)
+		{
+			if (auto event = SourceEvent(id, false))
+				return event->IsPlaying();
+			auto scene = AudioScene();
+			auto raw = scene ? scene->GetRuntimeAudioSource(id) : nullptr;
+			return raw && raw->IsPlaying();
+		}
+
+		Coral::Bool32 Audio_SourceIsPaused(uint64_t id)
+		{
+			auto* source = Source(id);
+			return source && (source->ScriptPaused || AudioScene()->IsPaused());
+		}
+
+		void Audio_SourceSetPaused(uint64_t id, Coral::Bool32 paused)
+		{
+			auto* source = Source(id);
+			if (!source)
+				return;
+			source->ScriptPaused = paused;
+			if (auto event = SourceEvent(id, false))
+				event->SetPaused(paused);
+			else if (auto raw = AudioScene()->GetRuntimeAudioSource(id))
+			{
+				if (paused)
+				{
+					source->ResumeAfterPause |= raw->IsPlaying();
+					raw->Pause();
+				}
+				else if (source->ResumeAfterPause && !AudioScene()->IsPaused())
+				{
+					raw->UnPause();
+					source->ResumeAfterPause = false;
+				}
+			}
+		}
+
+		float Audio_SourceGetVolume(uint64_t id)
+		{
+			auto* source = Source(id);
+			return source ? source->Config.VolumeMultiplier : 0.0f;
+		}
+		float Audio_SourceGetPitch(uint64_t id)
+		{
+			auto* source = Source(id);
+			return source ? source->Config.PitchMultiplier : 0.0f;
+		}
+		void Audio_SourceSetVolume(uint64_t id, float value)
+		{
+			if (auto* source = Source(id); source && std::isfinite(value))
+			{
+				source->Config.VolumeMultiplier = std::max(0.0f, value);
+				if (auto event = SourceEvent(id, false))
+					event->SetVolume(value);
+				else if (auto raw = AudioScene()->GetRuntimeAudioSource(id))
+					raw->SetVolume(value);
+			}
+		}
+		void Audio_SourceSetPitch(uint64_t id, float value)
+		{
+			if (auto* source = Source(id); source && std::isfinite(value))
+			{
+				source->Config.PitchMultiplier = std::max(0.0f, value);
+				if (auto event = SourceEvent(id, false))
+					event->SetPitch(value);
+				else if (auto raw = AudioScene()->GetRuntimeAudioSource(id))
+					raw->SetPitch(value);
+			}
+		}
+		Coral::Bool32 Audio_SourceHasEvent(uint64_t id)
+		{
+			auto* source = Source(id);
+			return source && source->Event.IsValid();
+		}
+		void Audio_SourceSetParameter(uint64_t id, Coral::String name, float value)
+		{
+			if (auto event = SourceEvent(id))
+				event->SetParameter(name, value);
+		}
+		float Audio_SourceGetParameter(uint64_t id, Coral::String name)
+		{
+			auto event = SourceEvent(id);
+			return event ? event->GetParameter(name) : 0.0f;
+		}
+		void Audio_SourceSetParameterLabel(uint64_t id, Coral::String name, Coral::String label)
+		{
+			if (auto event = SourceEvent(id))
+				event->SetParameterLabel(name, label);
+		}
+		int32_t Audio_SourceGetTimeline(uint64_t id)
+		{
+			auto event = SourceEvent(id);
+			return event ? event->GetTimelinePosition() : 0;
+		}
+		void Audio_SourceSetTimeline(uint64_t id, int32_t value)
+		{
+			if (auto event = SourceEvent(id))
+				event->SetTimelinePosition(value);
+		}
+		void Audio_SourceSetEvent(uint64_t id, Coral::String reference)
+		{
+			auto* source = Source(id);
+			if (!source)
+				return;
+			auto probe = AudioEventInstance::Create(reference);
+			if (!probe)
+				return;
+			source->Event = {probe->GetReference(), {}, {}};
+			AudioScene()->GetAudioEventForScript(id);
+		}
+
+		AudioListenerComponent* Listener(uint64_t id)
+		{
+			Entity entity = AudioEntity(id);
+			auto* component = entity ? entity.TryGetComponent<AudioListenerComponent>() : nullptr;
+			if (entity && !component)
+				LUX_CORE_ERROR_TAG("Audio", "Entity {0} no longer has AudioListenerComponent", id);
+			return component;
+		}
+		Coral::Bool32 Audio_ListenerGetActive(uint64_t id)
+		{
+			auto* c = Listener(id);
+			return c && c->Active;
+		}
+		void Audio_ListenerSetActive(uint64_t id, Coral::Bool32 value)
+		{
+			if (auto* c = Listener(id))
+				c->Active = value;
+		}
+		int32_t Audio_ListenerGetIndex(uint64_t id)
+		{
+			auto* c = Listener(id);
+			return c ? c->ListenerIndex : 0;
+		}
+		void Audio_ListenerSetIndex(uint64_t id, int32_t value)
+		{
+			if (auto* c = Listener(id))
+				c->ListenerIndex = std::clamp(value, 0, AudioListener::MaxListeners - 1);
+		}
+		float Audio_ListenerGetWeight(uint64_t id)
+		{
+			auto* c = Listener(id);
+			return c ? c->Weight : 0.0f;
+		}
+		void Audio_ListenerSetWeight(uint64_t id, float value)
+		{
+			if (auto* c = Listener(id); c && std::isfinite(value))
+				c->Weight = std::clamp(value, 0.0f, 1.0f);
+		}
+		Coral::Bool32 Audio_ListenerGetUseTarget(uint64_t id)
+		{
+			auto* c = Listener(id);
+			return c && c->UseAttenuationTarget;
+		}
+		void Audio_ListenerSetUseTarget(uint64_t id, Coral::Bool32 value)
+		{
+			if (auto* c = Listener(id))
+				c->UseAttenuationTarget = value;
+		}
+		uint64_t Audio_ListenerGetTarget(uint64_t id)
+		{
+			auto* c = Listener(id);
+			return c ? static_cast<uint64_t>(c->AttenuationTarget) : 0;
+		}
+		void Audio_ListenerSetTarget(uint64_t id, uint64_t target)
+		{
+			if (auto* c = Listener(id))
+				c->AttenuationTarget = target;
+		}
+
+		bool MixerAvailable()
+		{
+			if (!AudioScene())
+				return false;
+			if (AudioEngine::GetStudioSystem())
+				return true;
+			LUX_CORE_ERROR_TAG("Audio", "Mixer controls require an initialized FMOD Studio backend");
+			return false;
+		}
+
+		Coral::Bool32 Audio_LoadBank(Coral::String file)
+		{
+			if (!MixerAvailable())
+				return false;
+			std::filesystem::path path = static_cast<std::string>(file);
+			if (path.is_relative())
+			{
+				auto project = Project::GetActive();
+				if (!project)
+				{
+					LUX_CORE_ERROR_TAG("Audio", "Relative bank paths require an active project");
+					return false;
+				}
+				path = project->GetAssetDirectory() / path;
+			}
+			return AudioEngine::LoadBank(path);
+		}
+
+		void Audio_SetBusVolume(Coral::String name, float value)
+		{
+			if (MixerAvailable())
+				AudioEngine::SetBusVolume(name, value);
+		}
+		float Audio_GetBusVolume(Coral::String name)
+		{
+			return MixerAvailable() ? AudioEngine::GetBusVolume(name) : 0.0f;
+		}
+		void Audio_SetBusMuted(Coral::String name, Coral::Bool32 value)
+		{
+			if (MixerAvailable())
+				AudioEngine::SetBusMuted(name, value);
+		}
+		void Audio_SetVCAVolume(Coral::String name, float value)
+		{
+			if (MixerAvailable())
+				AudioEngine::SetVCAVolume(name, value);
+		}
+		void Audio_SetGlobalParameter(Coral::String name, float value)
+		{
+			if (MixerAvailable())
+				AudioEngine::SetGlobalParameter(name, value);
+		}
+		float Audio_GetGlobalParameter(Coral::String name)
+		{
+			return MixerAvailable() ? AudioEngine::GetGlobalParameter(name) : 0.0f;
+		}
+	} // namespace
+
+	void AudioScriptBindings::Reset()
+	{
+		s_Instances.clear();
+		AudioEventInstance::DrainNotifications();
+		if (s_AudioType)
+			s_AudioType->InvokeStaticMethod("Reset");
+	}
+
+	void AudioScriptBindings::Shutdown()
+	{
+		Reset();
+		s_AudioType = nullptr;
+	}
+
+	void AudioScriptBindings::Update(bool paused)
+	{
+		for (auto& [handle, entry] : s_Instances)
+			entry.Instance->SetScenePaused(paused);
+		for (const auto& notification : AudioEventInstance::DrainNotifications())
+		{
+			if (!s_AudioType || !Instance(notification.Handle))
+				continue;
+			Coral::ScopedString marker = Coral::String::New(notification.Marker);
+			s_AudioType->InvokeStaticMethod("Dispatch", notification.Handle, static_cast<int32_t>(notification.Stopped ? 0 : 1),
+											static_cast<Coral::String>(marker));
+		}
+		std::erase_if(s_Instances, [](const auto& item) {
+			return !item.second.Instance->IsValid() || (item.second.OneShot && !item.second.Instance->IsPlaying());
+		});
+	}
+
+	void AudioScriptBindings::Register(Coral::ManagedAssembly& assembly)
+	{
+		s_AudioType = &assembly.GetLocalType("Lux.Audio");
+		// Registrations below are kept one-to-one with InternalCalls.cs.
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_LoadBank", reinterpret_cast<void*>(&Audio_LoadBank));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_IsMainThread", reinterpret_cast<void*>(&Audio_IsMainThread));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_CreateInstance", reinterpret_cast<void*>(&Audio_CreateInstance));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_IsValid", reinterpret_cast<void*>(&Audio_IsValid));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_IsPlaying", reinterpret_cast<void*>(&Audio_IsPlaying));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_Start", reinterpret_cast<void*>(&Audio_Start));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_Stop", reinterpret_cast<void*>(&Audio_Stop));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_Dispose", reinterpret_cast<void*>(&Audio_Dispose));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SetVolume", reinterpret_cast<void*>(&Audio_SetVolume));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SetPitch", reinterpret_cast<void*>(&Audio_SetPitch));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SetParameter", reinterpret_cast<void*>(&Audio_SetParameter));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_Set3DAttributes", reinterpret_cast<void*>(&Audio_Set3DAttributes));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourcePlay", reinterpret_cast<void*>(&Audio_SourcePlay));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourceStop", reinterpret_cast<void*>(&Audio_SourceStop));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourceIsPlaying", reinterpret_cast<void*>(&Audio_SourceIsPlaying));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourceIsPaused", reinterpret_cast<void*>(&Audio_SourceIsPaused));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourceSetPaused", reinterpret_cast<void*>(&Audio_SourceSetPaused));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourceGetVolume", reinterpret_cast<void*>(&Audio_SourceGetVolume));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourceGetPitch", reinterpret_cast<void*>(&Audio_SourceGetPitch));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourceSetVolume", reinterpret_cast<void*>(&Audio_SourceSetVolume));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourceSetPitch", reinterpret_cast<void*>(&Audio_SourceSetPitch));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourceHasEvent", reinterpret_cast<void*>(&Audio_SourceHasEvent));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourceSetParameter", reinterpret_cast<void*>(&Audio_SourceSetParameter));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourceGetParameter", reinterpret_cast<void*>(&Audio_SourceGetParameter));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourceSetParameterLabel", reinterpret_cast<void*>(&Audio_SourceSetParameterLabel));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourceGetTimeline", reinterpret_cast<void*>(&Audio_SourceGetTimeline));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourceSetTimeline", reinterpret_cast<void*>(&Audio_SourceSetTimeline));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SourceSetEvent", reinterpret_cast<void*>(&Audio_SourceSetEvent));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_ListenerGetActive", reinterpret_cast<void*>(&Audio_ListenerGetActive));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_ListenerSetActive", reinterpret_cast<void*>(&Audio_ListenerSetActive));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_ListenerGetIndex", reinterpret_cast<void*>(&Audio_ListenerGetIndex));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_ListenerSetIndex", reinterpret_cast<void*>(&Audio_ListenerSetIndex));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_ListenerGetWeight", reinterpret_cast<void*>(&Audio_ListenerGetWeight));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_ListenerSetWeight", reinterpret_cast<void*>(&Audio_ListenerSetWeight));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_ListenerGetUseTarget", reinterpret_cast<void*>(&Audio_ListenerGetUseTarget));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_ListenerSetUseTarget", reinterpret_cast<void*>(&Audio_ListenerSetUseTarget));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_ListenerGetTarget", reinterpret_cast<void*>(&Audio_ListenerGetTarget));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_ListenerSetTarget", reinterpret_cast<void*>(&Audio_ListenerSetTarget));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SetBusVolume", reinterpret_cast<void*>(&Audio_SetBusVolume));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_GetBusVolume", reinterpret_cast<void*>(&Audio_GetBusVolume));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SetBusMuted", reinterpret_cast<void*>(&Audio_SetBusMuted));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SetVCAVolume", reinterpret_cast<void*>(&Audio_SetVCAVolume));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_SetGlobalParameter", reinterpret_cast<void*>(&Audio_SetGlobalParameter));
+		assembly.AddInternalCall("Lux.InternalCalls", "Audio_GetGlobalParameter", reinterpret_cast<void*>(&Audio_GetGlobalParameter));
+	}
+} // namespace Lux
