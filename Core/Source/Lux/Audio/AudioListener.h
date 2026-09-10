@@ -1,37 +1,33 @@
 #pragma once
 
-#include <stdint.h>
+#include "Lux/Core/UUID.h"
+
+#include <array>
+#include <glm/glm.hpp>
 
 namespace Lux {
 
-	struct AudioListenerConfig
+	struct AudioListenerState
 	{
-		float ConeInnerAngle = glm::radians(360.0f);
-		float ConeOuterAngle = glm::radians(360.0f);
-		float ConeOuterGain = 0.0f;
+		UUID EntityID = 0;
+		float Weight = 0.0f;
+		glm::vec3 Position{ 0.0f };
+		glm::vec3 Velocity{ 0.0f };
+		glm::vec3 Forward{ 0.0f, 0.0f, -1.0f };
+		glm::vec3 Up{ 0.0f, 1.0f, 0.0f };
+		bool UseAttenuationPosition = false;
+		glm::vec3 AttenuationPosition{ 0.0f };
 	};
 
-	class AudioListener : public RefCounted
+	// Main-thread bridge: Scene supplies the complete set each frame, including empty slots.
+	class AudioListener
 	{
 	public:
-		AudioListener() = default;
+		static constexpr int MaxListeners = 8;
+		using States = std::array<AudioListenerState, MaxListeners>;
 
-		void SetConfig(const AudioListenerConfig& config) const;
-		void SetPosition(const glm::vec4& position) const;
-		void SetDirection(const glm::vec3& forward) const;
-		void SetVelocity(const glm::vec3& velocity) const;
-		//void SetPosition(const glm::vec3& position) const;
-		//void SetDirection(const glm::vec3& forward) const;
-		//void SetVelocity(const glm::vec3& velocity) const;
-
-	private:
-		uint32_t m_ListenerIndex = 0;
-#ifdef LUX_ENABLE_FMOD
-		// FMOD's System::set3DListenerAttributes() takes position/velocity/forward/up together;
-		// each individual setter below resends this whole cached state.
-		mutable glm::vec3 m_CachedPosition{ 0.0f };
-		mutable glm::vec3 m_CachedVelocity{ 0.0f };
-		mutable glm::vec3 m_CachedForward{ 0.0f, 0.0f, -1.0f };
-#endif
+		static bool SetTransform(AudioListenerState& listener, const glm::mat4& transform);
+		static int GetPrimaryIndex(const States& listeners);
+		static void Apply(const States& listeners);
 	};
 }

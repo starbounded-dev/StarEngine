@@ -239,6 +239,9 @@ a corrupted style stack, and the scopes make that unrepresentable.
 Widgets and layout helpers are in `ImGuiEx.h` / `ImGuiWidgets.h` (property rows, message boxes,
 collapsing headers, `ShiftCursor`, `HelpMarker`, `Draw::Underline`, …); fonts in `ImGuiFonts.h`.
 New reusable widgets go into `ImGuiEx`, not inline in a panel.
+`ImGuiEx::PropertyEntityReference` provides a scene entity picker with search, clear, hierarchy
+drag/drop, and scene snapshot undo. Pass the current scene and a UUID field; it validates dropped
+entities against that scene.
 
 ### Colours — `Colors::Theme`
 

@@ -163,14 +163,11 @@ namespace Lux {
 	// describes, and it means the expensive ray budget is paid once per listener rather than once
 	// per source: adding a hundred sources adds a hundred *targets*, not a hundred ray casters.
 	//
-	// Built without Core/vendor/VA_RAY present (LUX_ENABLE_RAYTRACED_AUDIO undefined), every method
-	// is a no-op and the getters never return a valid result, so call sites need no #ifdef.
+	// Vercidium Audio is a required build dependency; scene simulation can be disabled by settings.
 	class RaytracedAudioScene : public RefCounted
 	{
 	public:
-		// True when Core/vendor/VA_RAY was compiled in (LUX_ENABLE_RAYTRACED_AUDIO). Independent of
-		// whether Start() has run. Scene checks this before constructing a RaytracedAudioScene at
-		// all, so a scene running without the feature compiled in pays no per-frame cost for it.
+		// SDK availability, independent of whether this scene has started its simulation.
 		static bool IsAvailable();
 
 		explicit RaytracedAudioScene(Scene* scene);

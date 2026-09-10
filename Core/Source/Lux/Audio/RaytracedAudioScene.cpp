@@ -1,51 +1,16 @@
 #include "lpch.h"
 #include "Lux/Audio/RaytracedAudioScene.h"
 
-#ifdef LUX_ENABLE_RAYTRACED_AUDIO
-	#include "vaudio.h"
+#include "vaudio.h"
 
-	#include <algorithm>
-	#include <cmath>
-	#include <limits>
-	#include <mutex>
-	#include <unordered_map>
-#endif
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <mutex>
+#include <unordered_map>
 
 namespace Lux {
 
-#ifndef LUX_ENABLE_RAYTRACED_AUDIO
-
-	// Built without Core/vendor/VA_RAY. Every entry point degrades to a no-op so call sites in
-	// Scene stay free of #ifdef.
-
-	bool RaytracedAudioScene::IsAvailable() { return false; }
-
-	struct RaytracedAudioScene::Impl {};
-
-	RaytracedAudioScene::RaytracedAudioScene(Scene* scene)
-		: m_Scene(scene), m_Impl(CreateScope<Impl>())
-	{
-	}
-
-	RaytracedAudioScene::~RaytracedAudioScene() = default;
-
-	void RaytracedAudioScene::Start() {}
-	void RaytracedAudioScene::Stop() {}
-	void RaytracedAudioScene::WaitForResults() {}
-	void RaytracedAudioScene::OnUpdate(Timestep) {}
-	void RaytracedAudioScene::SetStaticGeometry(const std::vector<glm::vec3>&) {}
-	void RaytracedAudioScene::SetListener(const glm::vec3&, const glm::vec3&) {}
-	void RaytracedAudioScene::CreateEmitter(UUID) {}
-	void RaytracedAudioScene::DestroyEmitter(UUID) {}
-	void RaytracedAudioScene::SetEmitterPosition(UUID, const glm::vec3&) {}
-	void RaytracedAudioScene::SetEmitterMaxVolume(UUID, float) {}
-	RaytracedAudioResult RaytracedAudioScene::GetResult(UUID) const { return {}; }
-	RaytracedAudioAmbience RaytracedAudioScene::GetAmbience() const { return {}; }
-	void RaytracedAudioScene::SetVisualisationEnabled(bool, int, int, int) {}
-	void RaytracedAudioScene::GetVisualisation(RaytracedAudioVisualisation& outVisualisation) const { outVisualisation = {}; }
-	RaytracedAudioStats RaytracedAudioScene::GetStats() const { return {}; }
-
-#else
 
 	namespace {
 
@@ -654,6 +619,5 @@ namespace Lux {
 		return stats;
 	}
 
-#endif
 
 }

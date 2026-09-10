@@ -3,105 +3,128 @@
 
 #include "AudioEngine.h"
 
-#ifdef LUX_ENABLE_FMOD
-	#include <fmod.hpp>
-#else
-	#include <miniaudio.h>
-#endif
+#include <algorithm>
+#include <cmath>
+
+#include <fmod_studio.hpp>
+#include <fmod_errors.h>
 
 namespace Lux {
 
-#ifdef LUX_ENABLE_FMOD
-
 	namespace {
 
-		void SendListenerAttributes(FMOD::System* engine, int listenerIndex, const glm::vec3& position, const glm::vec3& velocity, const glm::vec3& forward)
-		{
-			if (!engine)
-				return;
+		constexpr double kMinUpLength = 1.0e-6;
+		constexpr double kParallelUpThreshold = 0.9;
 
-			const FMOD_VECTOR pos{ position.x, position.y, position.z };
-			const FMOD_VECTOR vel{ velocity.x, velocity.y, velocity.z };
-			const FMOD_VECTOR fwd{ forward.x, forward.y, forward.z };
-			const FMOD_VECTOR up{ 0.0f, 1.0f, 0.0f };
-			engine->set3DListenerAttributes(listenerIndex, &pos, &vel, &fwd, &up);
+		bool IsFinite(const glm::vec3& value)
+		{
+			return std::isfinite(value.x) && std::isfinite(value.y) && std::isfinite(value.z);
 		}
 
-	}
+		// Distinct slots/operations must not reset each other's error suppression each frame.
+		std::array<std::array<FMOD_RESULT, AudioListener::MaxListeners>, 7> s_LastResults{};
 
-	void AudioListener::SetConfig(const AudioListenerConfig& config) const
-	{
-		LUX_PROFILE_FUNCTION("AudioListener::SetConfig");
-		// FMOD has no listener-level cone equivalent to miniaudio's - listener cones apply to
-		// emitter-relative attenuation per Channel (see AudioSource::SetCone), not the listener.
-		(void)config;
-	}
-
-	void AudioListener::SetPosition(const glm::vec4& position) const
-	{
-		LUX_PROFILE_FUNCTION("AudioListener::SetPosition");
-
-		m_CachedPosition = glm::vec3(position);
-		SendListenerAttributes(AudioEngine::GetEngine(), (int)m_ListenerIndex, m_CachedPosition, m_CachedVelocity, m_CachedForward);
-	}
-
-	void AudioListener::SetDirection(const glm::vec3& forward) const
-	{
-		LUX_PROFILE_FUNCTION("AudioListener::SetDirection");
-
-		m_CachedForward = forward;
-		SendListenerAttributes(AudioEngine::GetEngine(), (int)m_ListenerIndex, m_CachedPosition, m_CachedVelocity, m_CachedForward);
-	}
-
-	void AudioListener::SetVelocity(const glm::vec3& velocity) const
-	{
-		LUX_PROFILE_FUNCTION("AudioListener::SetVelocity");
-
-		m_CachedVelocity = velocity;
-		SendListenerAttributes(AudioEngine::GetEngine(), (int)m_ListenerIndex, m_CachedPosition, m_CachedVelocity, m_CachedForward);
-	}
-
-#else
-
-	void AudioListener::SetConfig(const AudioListenerConfig& config) const
-	{
-		LUX_PROFILE_FUNCTION("AudioListener::SetConfig");
-
-		auto* engine = static_cast<ma_engine*>(AudioEngine::GetEngine());
-		ma_engine_listener_set_cone(engine, m_ListenerIndex, config.ConeInnerAngle, config.ConeOuterAngle, config.ConeOuterGain);
-	}
-
-	void AudioListener::SetPosition(const glm::vec4& position) const
-	{
-		LUX_PROFILE_FUNCTION("AudioListener::SetPosition");
-
-		auto* engine = static_cast<ma_engine*>(AudioEngine::GetEngine());
-		ma_engine_listener_set_position(engine, m_ListenerIndex, position.x, position.y, position.z);
-
-		static bool setupWorldUp = false;
-		if (!setupWorldUp)
+		bool CheckListenerResult(FMOD_RESULT result, int operation, int index, const char* name)
 		{
-			ma_engine_listener_set_world_up(engine, m_ListenerIndex, 0, 1, 0);
-			setupWorldUp = true;
+			auto& last = s_LastResults[operation][index];
+			if (result != FMOD_OK && result != last)
+				LUX_CORE_ERROR_TAG("Audio", "Listener {0}: {1}: {2}", index, name, FMOD_ErrorString(result));
+			last = result;
+			return result == FMOD_OK;
 		}
 	}
 
-	void AudioListener::SetDirection(const glm::vec3& forward) const
+	bool AudioListener::SetTransform(AudioListenerState& listener, const glm::mat4& transform)
 	{
-		LUX_PROFILE_FUNCTION("AudioListener::SetDirection");
+		if (!IsFinite(glm::vec3(transform[3])) || !IsFinite(glm::vec3(transform[2])) || !IsFinite(glm::vec3(transform[1])))
+			return false;
 
-		auto* engine = static_cast<ma_engine*>(AudioEngine::GetEngine());
-		ma_engine_listener_set_direction(engine, m_ListenerIndex, forward.x, forward.y, forward.z);
+		// World-space columns preserve parent rotations. Remove scale/shear and handle collapsed
+		// axes without sending NaNs or a non-orthonormal frame to either mixer.
+		glm::dvec3 forward = -glm::dvec3(transform[2]);
+		forward = glm::length(forward) > 0.0 ? glm::normalize(forward) : glm::dvec3(0.0, 0.0, -1.0);
+		glm::dvec3 up = glm::dvec3(transform[1]);
+		if (glm::length(up) > 0.0)
+			up = glm::normalize(up);
+		up -= forward * glm::dot(up, forward);
+		if (glm::length(up) < kMinUpLength)
+		{
+			up = std::abs(forward.y) < kParallelUpThreshold ? glm::dvec3(0.0, 1.0, 0.0) : glm::dvec3(1.0, 0.0, 0.0);
+			up -= forward * glm::dot(up, forward);
+		}
+		listener.Position = glm::vec3(transform[3]);
+		listener.Forward = glm::vec3(forward);
+		listener.Up = glm::vec3(glm::normalize(up));
+		return true;
 	}
 
-	void AudioListener::SetVelocity(const glm::vec3& velocity) const
+	int AudioListener::GetPrimaryIndex(const States& listeners)
 	{
-		LUX_PROFILE_FUNCTION("AudioListener::SetVelocity");
-
-		auto* engine = static_cast<ma_engine*>(AudioEngine::GetEngine());
-		ma_engine_listener_set_velocity(engine, m_ListenerIndex, velocity.x, velocity.y, velocity.z);
+		int primary = -1;
+		for (int index = 0; index < MaxListeners; ++index)
+		{
+			if (std::isfinite(listeners[index].Weight) && listeners[index].Weight > 0.0f &&
+				(primary < 0 || listeners[index].Weight > listeners[primary].Weight))
+				primary = index;
+		}
+		return primary;
 	}
 
-#endif
+	void AudioListener::Apply(const States& listeners)
+	{
+		LUX_PROFILE_FUNCTION("AudioListener::Apply");
+		if (!AudioEngine::HasInitializedEngine())
+			return;
 
+		const int primary = GetPrimaryIndex(listeners);
+		const AudioListenerState fallback;
+		const auto& legacy = primary >= 0 ? listeners[primary] : fallback;
+		auto* studio = AudioEngine::GetStudioSystem();
+		auto* core = AudioEngine::GetEngine();
+		int count = 1;
+		float totalWeight = 0.0f;
+		for (int index = 0; index < MaxListeners; ++index)
+		{
+			if (std::isfinite(listeners[index].Weight) && listeners[index].Weight > 0.0f)
+			{
+				count = index + 1;
+				totalWeight += std::clamp(listeners[index].Weight, 0.0f, 1.0f);
+			}
+		}
+		int currentCount = 0;
+		if (!CheckListenerResult(studio->getNumListeners(&currentCount), 0, 0, "getNumListeners"))
+			return;
+		if (currentCount != count && !CheckListenerResult(studio->setNumListeners(count), 1, 0, "setNumListeners"))
+			return;
+
+		// Studio also owns Core's listener count and rewrites it on its asynchronous update.
+		// Mirror the same slots in both APIs; giving Core an independent count races Studio.
+		bool coreReady = CheckListenerResult(core->get3DNumListeners(&currentCount), 4, 0, "get3DNumListeners");
+		if (coreReady && currentCount != count)
+			coreReady = CheckListenerResult(core->set3DNumListeners(count), 5, 0, "set3DNumListeners");
+
+		for (int index = 0; index < count; ++index)
+		{
+			const float authoredWeight = std::isfinite(listeners[index].Weight) ? std::clamp(listeners[index].Weight, 0.0f, 1.0f) : 0.0f;
+			// Core has no listener weights. Put unused slots at an active camera so they cannot
+			// create phantom ears at the origin when Studio publishes these attributes to Core.
+			const auto& state = authoredWeight > 0.0f ? listeners[index] : legacy;
+			const FMOD_3D_ATTRIBUTES attributes{
+				{ state.Position.x, state.Position.y, state.Position.z },
+				{ state.Velocity.x, state.Velocity.y, state.Velocity.z },
+				{ state.Forward.x, state.Forward.y, state.Forward.z },
+				{ state.Up.x, state.Up.y, state.Up.z }
+			};
+			const FMOD_VECTOR attenuation{ state.AttenuationPosition.x, state.AttenuationPosition.y, state.AttenuationPosition.z };
+			CheckListenerResult(studio->setListenerAttributes(index, &attributes, state.UseAttenuationPosition ? &attenuation : nullptr),
+				2, index, "setListenerAttributes");
+			// Studio requires a nonzero total. Weights are relative; an empty scene uses a neutral
+			// origin listener so a deleted camera cannot leave a stale location behind.
+			const float weight = primary < 0 ? 1.0f : authoredWeight / totalWeight;
+			CheckListenerResult(studio->setListenerWeight(index, weight), 3, index, "setListenerWeight");
+			if (coreReady)
+				CheckListenerResult(core->set3DListenerAttributes(index, &attributes.position, &attributes.velocity, &attributes.forward, &attributes.up),
+					6, index, "set3DListenerAttributes");
+		}
+	}
 }
